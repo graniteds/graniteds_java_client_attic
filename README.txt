@@ -10,6 +10,13 @@ Granite Data Services Wizard (http://www.graniteds.org)
 * Requirements:
 
   JDK 5+.
+  
+* Build:
+
+  Download the complete source bundle and import it as an Eclipse project.
+  
+  Run the build.xml file: it will create a granite-java-client.jar that you
+  may use in your applications.
 
 * Examples:
 

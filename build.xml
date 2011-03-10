@@ -21,7 +21,7 @@
 -->
 <project name="graniteds-java-client" default="jar">
 
-	<property name="jarFile" value="graniteds-java-client.jar"/>
+	<property name="jarFile" value="granite-java-client.jar"/>
 
 	<target name="jar">
 		<echo message="Building ${zipFile}" />
