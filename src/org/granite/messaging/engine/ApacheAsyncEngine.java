@@ -21,19 +21,13 @@
 package org.granite.messaging.engine;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.nio.client.DefaultHttpAsyncClient;
-import org.apache.http.message.BasicHeader;
 import org.apache.http.nio.client.HttpAsyncClient;
 import org.apache.http.nio.concurrent.FutureCallback;
 import org.apache.http.nio.reactor.IOReactorStatus;
@@ -45,10 +39,6 @@ import org.granite.messaging.amf.AMF0Message;
 public class ApacheAsyncEngine extends AbstractEngine {
 
 	protected HttpAsyncClient httpClient = null;
-	
-	// TODO: horrible hack for managing session cookies (Apache async client does not
-	// support cookies yet).
-	protected Map<URI, List<Header>> cookiesByUri = new HashMap<URI, List<Header>>();
 
 	@Override
 	public synchronized void start() {
@@ -99,14 +89,11 @@ public class ApacheAsyncEngine extends AbstractEngine {
 		
 		final HttpPost request = new HttpPost(uri);
 		request.setHeader("Content-Type", CONTENT_TYPE);
-		setCookies(uri, request); // TODO: horrible hack.
 		request.setEntity(new ByteArrayEntity(os.getBytes()));
 		
 		httpClient.execute(request, new FutureCallback<HttpResponse>() {
 
             public void completed(final HttpResponse response) {
-            	storeCookies(uri, response); // TODO: horrible hack.
-            	
             	AMF0Message responseMessage = null;
             	try {
                 	HttpEntity entity = response.getEntity();
@@ -129,33 +116,6 @@ public class ApacheAsyncEngine extends AbstractEngine {
             	handler.cancelled();
             }
         });
-	}
-	
-	// TODO: horrible hack.
-	protected void storeCookies(URI uri, HttpResponse response) {
-		Header[] setCookies = response.getHeaders("Set-Cookie");
-		if (setCookies != null && setCookies.length > 0) {
-			synchronized(cookiesByUri) {
-				List<Header> cookies = cookiesByUri.get(uri);
-				if (cookies == null) {
-					cookies = new ArrayList<Header>();
-					cookiesByUri.put(uri, cookies);
-				}
-				for (Header cookie : setCookies)
-		    		cookies.add(new BasicHeader("Cookie", cookie.getValue()));
-			}
-		}
-	}
-	
-	// TODO: horrible hack.
-	protected void setCookies(URI uri, HttpPost request) {
-		synchronized(cookiesByUri) {
-			List<Header> cookies = cookiesByUri.get(uri);
-			if (cookies != null) {
-				for (Header header : cookies)
-					request.addHeader(header);
-			}
-		}
 	}
 
 	@Override

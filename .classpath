@@ -5,16 +5,14 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="libs/commons-codec-1.4.jar"/>
 	<classpathentry kind="lib" path="libs/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/granite.jar"/>
-	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-alpha1.jar" sourcepath="/httpcomponents-asyncclient-4.0-alpha1"/>
-	<classpathentry kind="lib" path="libs/httpclient-4.1.jar" sourcepath="/httpcomponents-client-4.1"/>
-	<classpathentry kind="lib" path="libs/httpclient-cache-4.1.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-4.1.jar" sourcepath="/httpcomponents-core-4.1"/>
-	<classpathentry kind="lib" path="libs/httpcore-nio-4.1.jar" sourcepath="/httpcomponents-core-4.1"/>
-	<classpathentry kind="lib" path="libs/httpmime-4.1.jar"/>
+	<classpathentry kind="lib" path="libs/granite.jar" sourcepath="/graniteds"/>
 	<classpathentry kind="lib" path="examples-libs/ejb3-persistence.jar"/>
 	<classpathentry kind="lib" path="examples-libs/granite-hibernate.jar"/>
 	<classpathentry kind="lib" path="examples-libs/graniteds-ejb3.jar"/>
 	<classpathentry kind="lib" path="examples-libs/hibernate3.jar"/>
+	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-alpha2.jar"/>
+	<classpathentry kind="lib" path="libs/httpclient-4.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-4.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-nio-4.1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
