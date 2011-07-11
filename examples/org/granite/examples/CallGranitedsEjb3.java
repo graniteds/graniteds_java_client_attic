@@ -62,7 +62,7 @@ public class CallGranitedsEjb3 {
 		});
 		
 		// Create a channel with the specified uri.
-		Channel channel = new Channel(engine, uri);
+		Channel channel = new Channel(engine, "my-graniteamf", uri);
 
 		// Create a remote object with the channel and a destination.
 		RemoteObject ro = new RemoteObject(channel, "person");

@@ -55,6 +55,7 @@ import flex.messaging.messages.Message;
 public class Channel {
 
 	private final Engine engine;
+	private final String id;
 	private final URI uri;
 	
 	private String credentials = null;
@@ -72,13 +73,14 @@ public class Channel {
 	
 	private final ConcurrentHashMap<String, AsyncToken> activeTokens = new ConcurrentHashMap<String, AsyncToken>();
 	
-	public Channel(Engine engine, URI uri) {
+	public Channel(Engine engine, String id, URI uri) {
 		if (engine == null)
 			throw new NullPointerException("Engine cannot be null");
 		if (uri == null)
 			throw new NullPointerException("Uri cannot be null");
 		
 		this.engine = engine;
+		this.id = id;
 		this.uri = uri;
 	}
 
@@ -176,8 +178,17 @@ public class Channel {
 				try {
 					for (int i = 0; i < messages.length; i++) {
 						AsyncToken token = tokens.get(i);
-						messages[i] = token.getMessage();
-						activeTokens.putIfAbsent(token.getMessage().getMessageId(), token);
+						
+						Message message = token.getMessage();
+						
+						if (id != null) {
+							if (message.getHeaders() == null)
+								message.setHeaders(new HashMap<String, Object>());
+							message.setHeader(Message.ENDPOINT_HEADER, id);
+						}
+						
+						messages[i] = message;
+						activeTokens.putIfAbsent(message.getMessageId(), token);
 					}
 
 					AMF0Message amf0Message = createAMF0Message(messages);
