@@ -33,8 +33,8 @@ import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.rpc.remoting.RemoteObject;
 
-import test.granite.ejb3.entity.Person;
-import test.granite.ejb3.entity.embed.Document;
+import org.granite.example.addressbook.entity.Person;
+import org.granite.example.addressbook.entity.embed.Document;
 
 /**
  * @author Franck WOLFF

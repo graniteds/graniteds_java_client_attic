@@ -10,9 +10,9 @@
 	<classpathentry kind="lib" path="examples-libs/granite-hibernate.jar"/>
 	<classpathentry kind="lib" path="examples-libs/graniteds-ejb3.jar"/>
 	<classpathentry kind="lib" path="examples-libs/hibernate3.jar"/>
-	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-alpha2.jar"/>
-	<classpathentry kind="lib" path="libs/httpclient-4.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-4.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-nio-4.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-alpha3.jar"/>
+	<classpathentry kind="lib" path="libs/httpclient-4.1.2.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-4.2-alpha2.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-nio-4.2-alpha2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

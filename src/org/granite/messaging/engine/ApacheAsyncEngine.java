@@ -26,10 +26,10 @@ import java.util.concurrent.TimeoutException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.nio.client.DefaultHttpAsyncClient;
 import org.apache.http.nio.client.HttpAsyncClient;
-import org.apache.http.nio.concurrent.FutureCallback;
 import org.apache.http.nio.reactor.IOReactorStatus;
 import org.granite.messaging.amf.AMF0Message;
 
@@ -101,7 +101,7 @@ public class ApacheAsyncEngine extends AbstractEngine {
 				}
             	catch (Exception e) {
             		handler.failed(e);
-            		exceptionHandler.handle(new EngineException("Could not serialize AMF0 message", e));
+            		exceptionHandler.handle(new EngineException("Could not deserialize AMF0 message", e));
             		return;
 				}
             	handler.completed(responseMessage);
