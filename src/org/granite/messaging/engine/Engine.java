@@ -29,8 +29,8 @@ import org.granite.messaging.amf.AMF0Message;
  */
 public interface Engine {
 
-	EngineExceptionHandler getExceptionHandler();
-	void setExceptionHandler(EngineExceptionHandler exceptionHandler);
+	EngineStatusHandler getStatusHandler();
+	void setStatusHandler(EngineStatusHandler statusHandler);
 	
 	void start();
 

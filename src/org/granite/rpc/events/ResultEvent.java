@@ -29,27 +29,19 @@ import flex.messaging.messages.Message;
 /**
  * @author Franck WOLFF
  */
-public class ResultEvent extends AbstractEvent {
+public class ResultEvent extends MessageEvent {
 
-	private final Message response;
-	
-	public ResultEvent(AsyncToken token, Message response) {
-		super(token);
-		
-		if (response == null)
-			throw new NullPointerException("Response cannot be null");
-		this.response = response;
-	}
-
-	public Message getResponse() {
-		return response;
+	public ResultEvent(AsyncToken token, Message message) {
+		super(token, message);
+        if (message == null)
+            throw new NullPointerException("Message cannot be null");
 	}
 
 	public Map<String, Object> getHeaders() {
-		return response.getHeaders();
+		return getMessage().getHeaders();
 	}
 	
 	public Object getResult() {
-		return response.getBody();
+		return getMessage().getBody();
 	}
 }

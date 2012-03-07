@@ -39,10 +39,18 @@ public class RemoteObject {
 	
 	private Channel channel;
 	private String destination;
+    
+    public RemoteObject(String destination) {
+        this.destination = destination;
+    }
 	
 	public RemoteObject(Channel channel, String destination) {
 		this.channel = channel;
 		this.destination = destination;
+	}
+	
+	public void setChannel(Channel channel) {
+	    this.channel = channel;
 	}
 
 	public Channel getChannel() {
@@ -70,11 +78,11 @@ public class RemoteObject {
 		channel.logout(responder);
 	}
 	
-	public void call(String method, Object[] params, AsyncResponder responder) {
-		call(method, params, (responder != null ? new AsyncResponder[]{responder} : null));
+	public AsyncToken call(String method, Object[] params, AsyncResponder responder) {
+		return call(method, params, (responder != null ? new AsyncResponder[]{responder} : null));
 	}
 	
-	public void call(String method, Object[] params, AsyncResponder[] responders) {
+	public AsyncToken call(String method, Object[] params, AsyncResponder[] responders) {
 		RemotingMessage message = new RemotingMessage();
 		message.setBody(params != null ? params : new Object[0]);
 		message.setOperation(method);
@@ -89,6 +97,7 @@ public class RemoteObject {
         		token.addResponder(responder);
         }
 		channel.send(token);
+		return token;
 	}
 	
 	@SuppressWarnings("unchecked")

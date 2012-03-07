@@ -81,7 +81,7 @@ public class CallGranitedsEjb3 {
 			
 			@Override
 			public void fault(FaultEvent event) {
-				System.out.println("findAllPersons fault: " + event.getResponse());
+				System.out.println("findAllPersons fault: " + event.getMessage());
 				sem.release();
 			}
 		});
@@ -110,7 +110,7 @@ public class CallGranitedsEjb3 {
 			
 			@Override
 			public void fault(FaultEvent event) {
-				System.out.println("createPerson fault: " + event.getResponse());
+				System.out.println("createPerson fault: " + event.getMessage());
 				sem.release();
 			}
 		});
@@ -129,7 +129,7 @@ public class CallGranitedsEjb3 {
 			
 			@Override
 			public void fault(FaultEvent event) {
-				System.out.println("findAllPersons fault: " + event.getResponse());
+				System.out.println("findAllPersons fault: " + event.getMessage());
 				sem.release();
 			}
 		});
@@ -145,7 +145,7 @@ public class CallGranitedsEjb3 {
 			}
 			@Override
 			public void fault(FaultEvent event) {
-				System.out.println("Logout failed: " + event.getResponse());
+				System.out.println("Logout failed: " + event.getMessage());
 				sem.release();
 			}
 		});

@@ -43,23 +43,24 @@ public abstract class AbstractEngine implements Engine {
 	protected boolean started = false;
 	protected GraniteConfig graniteConfig = null;
 	protected ServicesConfig servicesConfig = null;
-	protected EngineExceptionHandler exceptionHandler = new LogEngineExceptionHandler();
+	protected EngineStatusHandler statusHandler = new DefaultEngineStatusHandler();
 	
-	public EngineExceptionHandler getExceptionHandler() {
-		return exceptionHandler;
+
+	public EngineStatusHandler getStatusHandler() {
+		return statusHandler;
 	}
 
-	public void setExceptionHandler(EngineExceptionHandler exceptionHandler) {
-		if (exceptionHandler == null)
-			throw new NullPointerException("ExceptionHandler cannot be null");
-		this.exceptionHandler = exceptionHandler;
+	public void setStatusHandler(EngineStatusHandler statusHandler) {
+		if (statusHandler == null)
+			throw new NullPointerException("statusHandler cannot be null");
+		this.statusHandler = statusHandler;
 	}
-
+	
 	@Override
 	public void start() {
 
 		if (started) {
-			exceptionHandler.handle(new EngineException("Engine already started"));
+			statusHandler.handleException(new EngineException("Engine already started"));
 			return;
 		}
 
@@ -73,7 +74,7 @@ public abstract class AbstractEngine implements Engine {
 		catch (Exception e) {
 			graniteConfig = null;
 			servicesConfig = null;
-			exceptionHandler.handle(new EngineException("Could not load default configuration", e));
+			statusHandler.handleException(new EngineException("Could not load default configuration", e));
 		}
 		finally {
 			if (is != null) try {
@@ -113,7 +114,7 @@ public abstract class AbstractEngine implements Engine {
 	@Override
 	public void stop() {
 		if (!started)
-			exceptionHandler.handle(new EngineException("Engine not started"));
+			statusHandler.handleException(new EngineException("Engine not started"));
 		else {
 			graniteConfig = null;
 			servicesConfig = null;

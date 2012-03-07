@@ -18,24 +18,14 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.rpc.events;
-
-import org.granite.rpc.AsyncToken;
+package org.granite.messaging.engine;
 
 /**
  * @author Franck WOLFF
  */
-public abstract class AbstractEvent {
-
-	private final AsyncToken token;
+public interface EngineStatusHandler {
 	
-	public AbstractEvent(AsyncToken token) {
-		if (token == null)
-			throw new NullPointerException("Token cannot be null");
-		this.token = token;
-	}
+	void handleIO(boolean active);
 
-	public AsyncToken getToken() {
-		return token;
-	}
+	void handleException(EngineException e);
 }

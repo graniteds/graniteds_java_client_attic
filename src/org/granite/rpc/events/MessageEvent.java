@@ -18,12 +18,32 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.messaging.engine;
+package org.granite.rpc.events;
+
+import org.granite.rpc.AsyncToken;
+
+import flex.messaging.messages.Message;
 
 /**
  * @author Franck WOLFF
  */
-public interface EngineExceptionHandler {
+public abstract class MessageEvent {
 
-	void handle(EngineException e);
+	private final AsyncToken token;
+	private final Message message;
+	
+	public MessageEvent(AsyncToken token, Message message) {
+		if (token == null)
+			throw new NullPointerException("Token cannot be null");
+		this.token = token;
+		this.message = message;
+	}
+
+	public AsyncToken getToken() {
+		return token;
+	}
+	
+	public Message getMessage() {
+	    return message;
+	}
 }

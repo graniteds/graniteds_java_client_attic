@@ -23,7 +23,7 @@ package org.granite.rpc;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.granite.rpc.events.AbstractEvent;
+import org.granite.rpc.events.MessageEvent;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.ResultEvent;
 
@@ -36,7 +36,7 @@ public class AsyncToken {
 
 	private final Message message;
 	private final List<AsyncResponder> responders = new ArrayList<AsyncResponder>();
-	private AbstractEvent responseEvent;
+	private MessageEvent responseEvent;
 	
 	public AsyncToken(Message message) {
 		this.message = message;
@@ -59,11 +59,11 @@ public class AsyncToken {
 		return responders;
 	}
 
-	public AbstractEvent getResponseEvent() {
+	public MessageEvent getResponseEvent() {
 		return responseEvent;
 	}
 	
-	public void callResponders(AbstractEvent event) {
+	public void callResponders(MessageEvent event) {
 		this.responseEvent = event;
 		
 		if (responseEvent instanceof ResultEvent) {
@@ -77,6 +77,6 @@ public class AsyncToken {
 				responder.fault(faultEvent);
 		}
 		else
-			throw new RuntimeException("Unknown event: " + responseEvent);
+			throw new IllegalArgumentException("Unknown event: " + responseEvent);
 	}
 }

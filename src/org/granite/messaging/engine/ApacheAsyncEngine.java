@@ -31,12 +31,15 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.nio.client.DefaultHttpAsyncClient;
 import org.apache.http.nio.client.HttpAsyncClient;
 import org.apache.http.nio.reactor.IOReactorStatus;
+import org.granite.logging.Logger;
 import org.granite.messaging.amf.AMF0Message;
 
 /**
  * @author Franck WOLFF
  */
 public class ApacheAsyncEngine extends AbstractEngine {
+	
+	private static final Logger log = Logger.getLogger(ApacheAsyncEngine.class);
 
 	protected HttpAsyncClient httpClient = null;
 
@@ -51,7 +54,7 @@ public class ApacheAsyncEngine extends AbstractEngine {
 			final long timeout = System.currentTimeMillis() + 10000L; // 10sec.
 			while (httpClient.getStatus() != IOReactorStatus.ACTIVE) {
 				if (System.currentTimeMillis() > timeout)
-					throw new TimeoutException("HttpAsyncClient start process two long");
+					throw new TimeoutException("HttpAsyncClient start process too long");
 				Thread.sleep(100);
 			}
 		}
@@ -60,7 +63,7 @@ public class ApacheAsyncEngine extends AbstractEngine {
 			
 			httpClient = null;
 			
-			exceptionHandler.handle(new EngineException("Could not start Apache HttpAsyncClient", e));
+			statusHandler.handleException(new EngineException("Could not start Apache HttpAsyncClient", e));
 		}
 	}
 
@@ -71,9 +74,9 @@ public class ApacheAsyncEngine extends AbstractEngine {
 
 	@Override
 	public synchronized void send(final URI uri, final AMF0Message message, final EngineResponseHandler handler) {
-		
-		if (!isStarted()) {
-			exceptionHandler.handle(new EngineException("Apache HttpAsyncClient not started"));
+	    
+	    if (!isStarted()) {
+			statusHandler.handleException(new EngineException("Apache HttpAsyncClient not started"));
 			return;
 		}
 		
@@ -83,13 +86,16 @@ public class ApacheAsyncEngine extends AbstractEngine {
 			serialize(message, os);
 		}
 		catch (Exception e) {
-			exceptionHandler.handle(new EngineException("Could not serialize AMF0 message", e));
+			log.error(e, "Could not serialize AMF0 message");
+			statusHandler.handleException(new EngineException("Could not serialize AMF0 message", e));
 			return;
 		}
 		
 		final HttpPost request = new HttpPost(uri);
 		request.setHeader("Content-Type", CONTENT_TYPE);
 		request.setEntity(new ByteArrayEntity(os.getBytes()));
+		
+		statusHandler.handleIO(true);
 		
 		httpClient.execute(request, new FutureCallback<HttpResponse>() {
 
@@ -101,21 +107,25 @@ public class ApacheAsyncEngine extends AbstractEngine {
 				}
             	catch (Exception e) {
             		handler.failed(e);
-            		exceptionHandler.handle(new EngineException("Could not deserialize AMF0 message", e));
+            		statusHandler.handleException(new EngineException("Could not deserialize AMF0 message", e));
             		return;
 				}
             	handler.completed(responseMessage);
+        		statusHandler.handleIO(false);
             }
 
             public void failed(final Exception e) {
             	handler.failed(e);
-        		exceptionHandler.handle(new EngineException("Request failed", e));
+        		statusHandler.handleIO(false);
+            	statusHandler.handleException(new EngineException("Request failed", e));
             }
 
             public void cancelled() {
             	handler.cancelled();
+        		statusHandler.handleIO(false);
             }
         });
+		
 	}
 
 	@Override
@@ -126,7 +136,7 @@ public class ApacheAsyncEngine extends AbstractEngine {
 			httpClient.shutdown();
 		}
 		catch (InterruptedException e) {
-			exceptionHandler.handle(new EngineException("Could not stop Apache HttpAsyncClient", e));
+			statusHandler.handleException(new EngineException("Could not stop Apache HttpAsyncClient", e));
 		}
 		finally {
 			httpClient = null;

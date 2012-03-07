@@ -29,25 +29,23 @@ import flex.messaging.messages.ErrorMessage;
 /**
  * @author Franck WOLFF
  */
-public class FaultEvent extends AbstractEvent {
+public class FaultEvent extends MessageEvent {
 
-	private final ErrorMessage response;
 	private final Exception exception;
 	
-	public FaultEvent(AsyncToken token, ErrorMessage response) {
-		this(token, response, null);
+	public FaultEvent(AsyncToken token, ErrorMessage message) {
+		this(token, message, null);
 	}
 	
 	public FaultEvent(AsyncToken token, Exception exception) {
 		this(token, null, exception);
 	}
 
-	protected FaultEvent(AsyncToken token, ErrorMessage response, Exception exception) {
-		super(token);
+	protected FaultEvent(AsyncToken token, ErrorMessage message, Exception exception) {
+		super(token, message);
 		
-		if (response == null && exception == null)
+		if (message == null && exception == null)
 			throw new NullPointerException("Response and exception cannot be both null");
-		this.response = response;
 		this.exception = exception;
 	}
 	
@@ -55,8 +53,8 @@ public class FaultEvent extends AbstractEvent {
 		return exception != null;
 	}
 
-	public ErrorMessage getResponse() {
-		return response;
+	public ErrorMessage getMessage() {
+		return (ErrorMessage)super.getMessage();
 	}
 
 	public Exception getException() {
@@ -64,22 +62,22 @@ public class FaultEvent extends AbstractEvent {
 	}
 
     public String getFaultCode() {
-        return (isException() ? exception.getClass().getName() : response.getFaultCode());
+        return (isException() ? exception.getClass().getName() : getMessage().getFaultCode());
     }
 
     public String getFaultDetail() {
-        return (isException() ? exception.getMessage() : response.getFaultDetail());
+        return (isException() ? exception.getMessage() : getMessage().getFaultDetail());
     }
 
     public String getFaultString() {
-        return (isException() ? exception.getMessage() : response.getFaultString());
+        return (isException() ? exception.getMessage() : getMessage().getFaultString());
     }
 
     public Map<String, Object> getExtendedData() {
-        return (isException() ? null : response.getExtendedData());
+        return (isException() ? null : getMessage().getExtendedData());
     }
 
     public Object getRootCause() {
-        return (isException() ? exception.getCause() : response.getRootCause());
+        return (isException() ? exception.getCause() : getMessage().getRootCause());
     }
 }

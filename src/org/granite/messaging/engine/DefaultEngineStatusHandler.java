@@ -25,12 +25,17 @@ import org.granite.logging.Logger;
 /**
  * @author Franck WOLFF
  */
-public class LogEngineExceptionHandler implements EngineExceptionHandler {
+public class DefaultEngineStatusHandler implements EngineStatusHandler {
 
-	private static final Logger log = Logger.getLogger(LogEngineExceptionHandler.class);
+	private static final Logger log = Logger.getLogger(DefaultEngineStatusHandler.class);
 	
 	@Override
-	public void handle(EngineException e) {
+	public void handleIO(boolean active) {
+		log.debug(active ? "I/O busy" : "I/O idle");
+	}
+	
+	@Override
+	public void handleException(EngineException e) {
 		log.error(e, "Engine failed");
 	}
 }

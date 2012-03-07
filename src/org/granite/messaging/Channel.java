@@ -37,7 +37,7 @@ import org.granite.messaging.engine.EngineException;
 import org.granite.messaging.engine.EngineResponseHandler;
 import org.granite.rpc.AsyncResponder;
 import org.granite.rpc.AsyncToken;
-import org.granite.rpc.events.AbstractEvent;
+import org.granite.rpc.events.MessageEvent;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.util.Base64;
@@ -205,7 +205,7 @@ public class Channel {
 								
 								AsyncToken token = activeTokens.remove(id);
 								if (token != null) {
-									AbstractEvent event = null;
+									MessageEvent event = null;
 									if (response instanceof ErrorMessage)
 										event = new FaultEvent(token, (ErrorMessage)response);
 									else
@@ -217,38 +217,46 @@ public class Channel {
 						
 						@Override
 						public void failed(Exception e) {
-							removeActiveTokens(messages);
+							callFaultActiveTokens(messages, "Connection.Failed", e);
 						}
 						
 						@Override
 						public void cancelled() {
-							removeActiveTokens(messages);
+							callFaultActiveTokens(messages, "Connection.Cancelled", null);
 						}
 					});
 				}
 				catch (Exception e) {
-					removeActiveTokens(messages);
+					callFaultActiveTokens(messages, "Client.Error", e);
 					throw e;
 				}
 			}
 		}
 		catch (Exception e) {
-			engine.getExceptionHandler().handle(new EngineException("Channel failed", e));
+			callPendingTokens("Channel.Failed", e);
+			engine.getStatusHandler().handleException(new EngineException("Channel failed", e));
 		}
 		finally {
 			connectionLock.unlock();
 		}
 	}
 	
-	protected void removeActiveTokens(Message[] messages) {
+	private void callFaultActiveTokens(Message[] messages, String faultCode, Exception e) {
 		for (Message message : messages) {
-			if (message != null && message.getMessageId() != null)
-				activeTokens.remove(message.getMessageId());
+			if (message != null && message.getMessageId() != null) {
+				AsyncToken token = activeTokens.remove(message.getMessageId());
+				if (token != null) {
+					ErrorMessage errorMessage = new ErrorMessage(message, e);
+					errorMessage.setFaultCode(faultCode);
+					errorMessage.setFaultString(e != null ? e.getMessage() : "");
+					FaultEvent event = new FaultEvent(token, errorMessage);
+					token.callResponders(event);
+				}
+			}
 		}
 	}
 	
-	protected void connect(final URI uri) {
-		
+	protected void connect(final URI uri) {		
 		if (connecting)
 			return;
 		
@@ -276,14 +284,28 @@ public class Channel {
 			
 			@Override
 			public void failed(Exception e) {
+				callPendingTokens("Connection.Failed", e);
 				connecting = false;
 			}
 			
 			@Override
 			public void cancelled() {
+				callPendingTokens("Connection.Cancelled", null);
 				connecting = false;
 			}
 		});
+	}
+	
+	private void callPendingTokens(String faultCode, Exception e) {
+		for (AsyncToken token : pendingTokens) {
+			ErrorMessage errorMessage = new ErrorMessage(token.getMessage(), e);
+			errorMessage.setFaultCode(faultCode);
+			errorMessage.setFaultString(e != null ? e.getMessage() : "");
+			FaultEvent event = new FaultEvent(token, errorMessage);
+			token.callResponders(event);
+		}
+		
+		pendingTokens.clear();
 	}
 	
 	protected AMF0Message createAMF0Message(Message message) {
