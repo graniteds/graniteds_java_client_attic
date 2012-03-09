@@ -22,6 +22,7 @@ package org.granite.messaging.engine;
 
 import java.net.URI;
 
+import org.granite.config.GraniteConfig;
 import org.granite.messaging.amf.AMF0Message;
 
 /**
@@ -29,6 +30,16 @@ import org.granite.messaging.amf.AMF0Message;
  */
 public interface Engine {
 
+	void setGraniteStdConfigPath(String graniteConfigPath);
+	
+	void setGraniteConfigPath(String graniteConfigPath);
+	
+	void setGraniteConfigurator(Configurator configurator);
+	
+	static interface Configurator {		
+		void configure(GraniteConfig graniteConfig);
+	}
+	
 	EngineStatusHandler getStatusHandler();
 	void setStatusHandler(EngineStatusHandler statusHandler);
 	

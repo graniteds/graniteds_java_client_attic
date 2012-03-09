@@ -24,29 +24,21 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.granite.messaging.amf.RemoteClass;
 import org.granite.messaging.amf.io.util.DefaultActionScriptClassDescriptor;
 import org.granite.util.ClassUtil;
 
 /**
  * @author Franck WOLFF
  */
-public class ClientActionScriptClassDescriptor extends DefaultActionScriptClassDescriptor {
+public class ClientJavaClassDescriptor extends DefaultActionScriptClassDescriptor {
 
 	private static final SunConstructorFactory factory = new SunConstructorFactory();
     private static final ConcurrentHashMap<String, Constructor<?>> constructors =
         new ConcurrentHashMap<String, Constructor<?>>();
     
-    private static final ConcurrentHashMap<String, String> aliases = new ConcurrentHashMap<String, String>();
     
-    public static void registerClass(Class<?> clazz) {
-    	RemoteClass remoteClass = clazz.getAnnotation(RemoteClass.class);
-    	if (remoteClass != null)
-    		aliases.put(remoteClass.value(), clazz.getName());
-    }
-	
-	public ClientActionScriptClassDescriptor(String type, byte encoding) {
-		super(aliases.containsKey(type) ? aliases.get(type) : type, encoding);
+	public ClientJavaClassDescriptor(String type, byte encoding) {
+		super(type, encoding);
 	}
 	
 	@Override
