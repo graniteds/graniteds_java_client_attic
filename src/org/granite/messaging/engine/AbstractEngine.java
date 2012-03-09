@@ -42,8 +42,11 @@ public abstract class AbstractEngine implements Engine {
 
 	protected boolean started = false;
 	protected GraniteConfig graniteConfig = null;
+	protected Configurator configurator = null;
 	protected ServicesConfig servicesConfig = null;
 	protected EngineStatusHandler statusHandler = new DefaultEngineStatusHandler();
+	protected String graniteStdConfigPath = "org/granite/messaging/engine/granite-config.xml";
+	protected String graniteConfigPath = null;
 	
 
 	public EngineStatusHandler getStatusHandler() {
@@ -56,6 +59,18 @@ public abstract class AbstractEngine implements Engine {
 		this.statusHandler = statusHandler;
 	}
 	
+	public void setGraniteStdConfigPath(String graniteConfigPath) {
+		this.graniteStdConfigPath = graniteConfigPath;
+	}
+	
+	public void setGraniteConfigPath(String graniteConfigPath) {
+		this.graniteConfigPath = graniteConfigPath;
+	}
+	
+	public void setGraniteConfigurator(Configurator configurator) {
+		this.configurator = configurator;
+	}
+	
 	@Override
 	public void start() {
 
@@ -66,8 +81,11 @@ public abstract class AbstractEngine implements Engine {
 
 		InputStream is = null;
 		try {
-			is = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/granite/messaging/engine/granite-config.xml");
-			graniteConfig = new GraniteConfig(null, is, null, null);
+			if (graniteConfigPath != null)
+				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(graniteConfigPath);
+			graniteConfig = new GraniteConfig(graniteStdConfigPath, null, null, null);
+			if (configurator != null)
+				configurator.configure(graniteConfig);
 			servicesConfig = new ServicesConfig(null, null, false);
 			started = true;
 		}

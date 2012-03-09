@@ -25,11 +25,14 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.nio.client.DefaultHttpAsyncClient;
-import org.apache.http.nio.client.HttpAsyncClient;
 import org.apache.http.nio.reactor.IOReactorStatus;
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.AMF0Message;
@@ -41,7 +44,8 @@ public class ApacheAsyncEngine extends AbstractEngine {
 	
 	private static final Logger log = Logger.getLogger(ApacheAsyncEngine.class);
 
-	protected HttpAsyncClient httpClient = null;
+	protected DefaultHttpAsyncClient httpClient = null;
+	protected CookieStore cookieStore = new BasicCookieStore();
 
 	@Override
 	public synchronized void start() {
@@ -49,6 +53,7 @@ public class ApacheAsyncEngine extends AbstractEngine {
 		
 		try {
 			httpClient = new DefaultHttpAsyncClient();
+			httpClient.setCookieStore(cookieStore);
 			httpClient.start();
 			
 			final long timeout = System.currentTimeMillis() + 10000L; // 10sec.
@@ -92,6 +97,7 @@ public class ApacheAsyncEngine extends AbstractEngine {
 		}
 		
 		final HttpPost request = new HttpPost(uri);
+		request.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
 		request.setHeader("Content-Type", CONTENT_TYPE);
 		request.setEntity(new ByteArrayEntity(os.getBytes()));
 		
@@ -107,6 +113,7 @@ public class ApacheAsyncEngine extends AbstractEngine {
 				}
             	catch (Exception e) {
             		handler.failed(e);
+            		statusHandler.handleIO(false);
             		statusHandler.handleException(new EngineException("Could not deserialize AMF0 message", e));
             		return;
 				}
