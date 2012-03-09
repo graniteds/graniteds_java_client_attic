@@ -42,4 +42,26 @@ public class TestManagedEntity2 {
         Assert.assertEquals("Result count", 100, map.get("resultCount"));
         Assert.assertEquals("Result list", 2, ((List<?>)map.get("resultList")).size());
     }
+    
+    @Test
+    public void testMergeEntityEmbedded() {
+        PersonEmbed person = new PersonEmbed(1L, 0L, "P1", null, null);
+        person.setAddress(new EmbeddedAddress("toto"));
+        
+        person = (PersonEmbed)entityManager.mergeExternalData(person);
+        
+        person.getAddress().setAddress("tutu");
+        
+        Assert.assertTrue("Context dirty", entityManager.isDirty());
+        Assert.assertTrue("Person dirty", person.isDirty());
+        
+        PersonEmbed person2 = new PersonEmbed(1L, 1L, "P1", null, null);
+        person2.setAddress(new EmbeddedAddress("tutu"));
+        
+        person = (PersonEmbed)entityManager.mergeExternalData(person2);
+        
+        Assert.assertEquals("Address reset", "tutu", person.getAddress().getAddress());
+        Assert.assertFalse("Person not dirty", person.isDirty());
+        Assert.assertFalse("Context dirty", entityManager.isDirty());
+    }
 }

@@ -13,8 +13,9 @@ import java.util.WeakHashMap;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WritableValue;
@@ -24,7 +25,6 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
 import org.granite.logging.Logger;
-import org.granite.messaging.engine.ClientActionScriptClassDescriptor;
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.collections.ManagedPersistentMap;
@@ -45,22 +45,14 @@ public class JavaFXDataManager implements DataManager {
         this.trackingHandler = trackingHandler;
     }
     
-    public BooleanProperty dirty = new SimpleBooleanProperty(false);
+    public BooleanProperty dirty = new ReadOnlyBooleanWrapper(this, "dirty", false);
     
-    public BooleanProperty dirtyProperty() {
+    public ReadOnlyBooleanProperty dirtyProperty() {
         return dirty;
     }
     
     public boolean isDirty() {
-        return dirty.get();
-    }
-    
-    
-    public JavaFXDataManager() {
-		ClientActionScriptClassDescriptor.registerClass(PersistentSet.class);
-		ClientActionScriptClassDescriptor.registerClass(PersistentList.class);
-		ClientActionScriptClassDescriptor.registerClass(PersistentBag.class);
-		ClientActionScriptClassDescriptor.registerClass(PersistentMap.class);
+    	return dirty.get();
     }
     
     

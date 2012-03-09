@@ -41,6 +41,8 @@ public interface EntityManager {
      */
     public void clear();
     
+    public DataManager getDataManager();
+    
     /**
      *  Allow uninitialize of persistent collections
      *

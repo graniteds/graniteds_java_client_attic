@@ -22,7 +22,6 @@ public class TideFXMLLoader {
 					return context.byType(type);
 				}
             });
-            loader.getNamespace().put("context", context);
             for (String name : context.allNames())
             	loader.getNamespace().put(name, context.byName(name));
             return loader.load(fxmlStream);

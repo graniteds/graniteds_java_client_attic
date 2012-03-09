@@ -6,6 +6,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,12 +15,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 
+import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
 import org.granite.persistence.LazyableCollection;
 
 
 @RemoteClass("org.granite.messaging.persistence.ExternalizablePersistentMap")
 public class PersistentMap<K, V> implements ObservableMap<K, V>, LazyableCollection, Externalizable {
+	
+	private static final Logger log = Logger.getLogger(PersistentMap.class);
 
     @SuppressWarnings("unused")
 	private boolean initializing = false;
@@ -106,7 +110,7 @@ public class PersistentMap<K, V> implements ObservableMap<K, V>, LazyableCollect
     }
     
     private Map<MapChangeListener<? super K, ? super V>, MapChangeListener<? super K, ? super V>> listenerWrappers = 
-        new HashMap<MapChangeListener<? super K, ? super V>, MapChangeListener<? super K, ? super V>>();
+        new IdentityHashMap<MapChangeListener<? super K, ? super V>, MapChangeListener<? super K, ? super V>>();
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
 	public void addListener(MapChangeListener<? super K, ? super V> listener) {
@@ -117,7 +121,8 @@ public class PersistentMap<K, V> implements ObservableMap<K, V>, LazyableCollect
 
     public void removeListener(MapChangeListener<? super K, ? super V> listener) {
         MapChangeListener<? super K, ? super V> listenerWrapper = listenerWrappers.remove(listener);
-        omap.removeListener(listenerWrapper);
+        if (listenerWrapper != null)
+        	omap.removeListener(listenerWrapper);
     }
     
 

@@ -104,23 +104,11 @@ public class EntityManagerImpl implements EntityManager {
        // _mergeContext.clear();
     }
 
-//    /**
-//     *  Setter for the remote initializer implementation
-//     * 
-//     *  @param remoteInitializer instance of IRemoteInitializer
-//     */
-//    public void remoteInitializer(RemoteInitializer remoteInitializer) {
-//        this.remoteInitializer = remoteInitializer;
-//    }
-//    
-//    /**
-//     *  Setter for the remote validator implementation
-//     * 
-//     *  @param remoteValidator instance of IRemoteValidator
-//     */
-//    public void setRemoteValidator(RemoteValidator remoteValidator) {
-//        this.remoteValidator = remoteValidator;
-//    }
+    
+    public DataManager getDataManager() {
+    	return dataManager;
+    }
+
     
     /**
      *  Setter for the array of custom mergers
@@ -450,6 +438,7 @@ public class EntityManagerImpl implements EntityManager {
         return refs;
     }
     
+
     /**
      *  Registers a reference to the provided object with either a parent or res
      * 
@@ -685,7 +674,7 @@ public class EntityManagerImpl implements EntityManager {
             
             mergeContext.setMergeUpdate(saveMergeUpdate);
             
-            if ((mergeContext.isMergeUpdate() || forceUpdate) && setter != null && parent != null && propertyName != null && parent instanceof Identifiable) {
+            if ((mergeContext.isMergeUpdate() || forceUpdate) && setter != null && parent != null && propertyName != null && parent instanceof Identifiable && next != previous) {
                 if (!mergeContext.isResolvingConflict() || !propertyName.equals(PersistenceManager.getEntityDescriptor(parent).getVersionPropertyName())) {
                     // dataManager.setInternalProperty(parent, propertyName, next);
                     dataManager.setProperty(parent, propertyName, previous, next);
@@ -707,7 +696,7 @@ public class EntityManagerImpl implements EntityManager {
             return next;
         }
         catch (Exception e) {
-        	e.printStackTrace();
+        	log.error(e, "Merge error");
         	return null;
         }
         finally {
@@ -885,8 +874,9 @@ public class EntityManagerImpl implements EntityManager {
 
         if (dest != null && !ignore && !mergeContext.isResolvingConflict()) {
             // Force or check non-dirty state of local entity that has just been merged
-            if (mergeContext.isMergeUpdate() && mergeContext.hasVersionChanged(dest))
-                dirtyCheckContext.markNotDirty(dest, null);
+            if (mergeContext.isMergeUpdate() && ((dest instanceof Identifiable && mergeContext.hasVersionChanged(dest)) 
+            		|| (!(dest instanceof Identifiable) && parent instanceof Identifiable && mergeContext.hasVersionChanged(parent))))
+                dirtyCheckContext.markNotDirty(dest, dest instanceof Identifiable ? null : (Identifiable)parent);
             else if (dest instanceof Identifiable && obj instanceof Identifiable)
                 dirtyCheckContext.checkAndMarkNotDirty((Identifiable)dest, (Identifiable)obj);
         }

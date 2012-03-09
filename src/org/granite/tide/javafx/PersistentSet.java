@@ -7,7 +7,7 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -19,12 +19,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
+import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
 import org.granite.persistence.LazyableCollection;
 
 
 @RemoteClass("org.granite.messaging.persistence.ExternalizablePersistentSet")
 public class PersistentSet<T> implements Set<T>, ObservableList<T>, LazyableCollection, Externalizable {
+	
+	private static final Logger log = Logger.getLogger(PersistentSet.class);
 
     @SuppressWarnings("unused")
 	private boolean initializing = false;
@@ -112,7 +115,7 @@ public class PersistentSet<T> implements Set<T>, ObservableList<T>, LazyableColl
         oset.removeListener(listener);
     }
     
-    private Map<ListChangeListener<? super T>, ListChangeListener<? super T>> listenerWrappers = new HashMap<ListChangeListener<? super T>, ListChangeListener<? super T>>();
+    private Map<ListChangeListener<? super T>, ListChangeListener<? super T>> listenerWrappers = new IdentityHashMap<ListChangeListener<? super T>, ListChangeListener<? super T>>();
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
 	public void addListener(ListChangeListener<? super T> listener) {
@@ -123,7 +126,8 @@ public class PersistentSet<T> implements Set<T>, ObservableList<T>, LazyableColl
 
     public void removeListener(ListChangeListener<? super T> listener) {
         ListChangeListener<? super T> listenerWrapper = listenerWrappers.remove(listener);
-        oset.removeListener(listenerWrapper);
+        if (listenerWrapper != null)
+        	oset.removeListener(listenerWrapper);
     }
     
     public boolean isEmpty() {

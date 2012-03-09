@@ -96,6 +96,10 @@ public class ServerSession implements ContextAware {
 		this.engine = engine;
     	confChanged = true;
 	}
+    
+    public Engine getEngine() {
+    	return engine;
+    }
 	
     public void setContextRoot(String contextRoot) {
     	this.contextRoot = contextRoot;

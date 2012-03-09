@@ -42,7 +42,8 @@ public class SpringContextManager extends ContextManagerImpl implements Applicat
 
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		// Register default beans
+		beanFactory.registerSingleton("context", getContext(null));
+		beanFactory.registerSingleton("entityManager", getContext(null).getEntityManager());
+		beanFactory.registerSingleton("dataManager", getContext(null).getDataManager());
 	}
-
 }

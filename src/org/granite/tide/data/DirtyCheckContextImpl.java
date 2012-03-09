@@ -805,7 +805,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             }
             else if (val instanceof Identifiable)
                 resetEntity(mergeContext, val, (Identifiable)val, cache);
-            else if (val != null && parent != null)
+            else if (val != null && parent != null && !ObjectUtil.isSimple(val))
                 resetEntity(mergeContext, val, parent, cache);
         }
         
