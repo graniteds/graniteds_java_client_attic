@@ -18,5 +18,10 @@
 	<classpathentry kind="lib" path="libs/jetty-http-8.1.1.v20120215.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/graniteds"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="libs/jfxrt.jar"/>
+	<classpathentry kind="lib" path="libs/spring-beans.jar"/>
+	<classpathentry kind="lib" path="libs/spring-context.jar"/>
+	<classpathentry kind="lib" path="libs/spring-core.jar"/>
+	<classpathentry kind="lib" path="libs/validation-api.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

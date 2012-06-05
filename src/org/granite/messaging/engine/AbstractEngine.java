@@ -38,7 +38,6 @@ public abstract class AbstractEngine implements Engine {
 	protected Configurator configurator = null;
 	protected ServicesConfig servicesConfig = null;
 
-	protected EngineExceptionHandler exceptionHandler = new LogEngineExceptionHandler();
 	protected EngineStatusHandler statusHandler = new DefaultEngineStatusHandler();
 	protected String graniteStdConfigPath = "org/granite/messaging/engine/granite-config.xml";
 	protected String graniteConfigPath = null;

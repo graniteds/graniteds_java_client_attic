@@ -82,6 +82,6 @@
             as3="org.granite.messaging.engine.ClientJavaClassDescriptor" />
     </descriptors>
     
-    <distributed-data-factory type="org.granite.config.ClientDistributedDataFactory"/>
+    <!--distributed-data-factory type="org.granite.config.ClientDistributedDataFactory"/-->
 
 </granite-config>

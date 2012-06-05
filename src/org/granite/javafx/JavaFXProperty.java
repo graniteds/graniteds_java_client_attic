@@ -10,6 +10,8 @@ import javafx.beans.value.WritableValue;
 
 import org.granite.messaging.amf.io.convert.Converters;
 import org.granite.messaging.amf.io.util.Property;
+import org.granite.util.ClassUtil;
+import org.granite.util.ClassUtil.DeclaredAnnotation;
 
 public class JavaFXProperty extends Property {
 	
@@ -60,28 +62,55 @@ public class JavaFXProperty extends Property {
 	}
 
 	@Override
-	public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+	public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass, boolean recursive) {
 		if (property != null) {
             if (property.isAnnotationPresent(annotationClass))
                 return true;
+            if (recursive && ClassUtil.isAnnotationPresent(property, annotationClass))
+            	return true;
 		}
         if (getter != null) {
             if (getter.isAnnotationPresent(annotationClass))
                 return true;
+            if (recursive && ClassUtil.isAnnotationPresent(getter, annotationClass))
+            	return true;
         }
-        if (setter != null)
-            return setter.isAnnotationPresent(annotationClass);
+        if (setter != null) {
+            if (setter.isAnnotationPresent(annotationClass))
+            	return true;
+            if (recursive && ClassUtil.isAnnotationPresent(setter, annotationClass))
+            	return true;
+        }
         return false;
 	}
 
 	@Override
-	public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-		if (property != null && property.isAnnotationPresent(annotationClass))
-			return property.getAnnotation(annotationClass);
-    	if (getter != null && getter.isAnnotationPresent(annotationClass))
-    		return getter.getAnnotation(annotationClass);
-    	if (setter != null)
-    		return setter.getAnnotation(annotationClass);
+	public <T extends Annotation> T getAnnotation(Class<T> annotationClass, boolean recursive) {
+    	T annotation = null;
+    	if (property != null) {
+    		annotation = property.getAnnotation(annotationClass);
+    		if (annotation == null && recursive) {
+    			DeclaredAnnotation<T> declaredAnnotation = ClassUtil.getAnnotation(property, annotationClass);
+    			if (declaredAnnotation != null)
+    				annotation = declaredAnnotation.annotation;
+    		}
+    	}
+    	if (getter != null) {
+    		annotation = getter.getAnnotation(annotationClass);
+    		if (annotation == null && recursive) {
+    			DeclaredAnnotation<T> declaredAnnotation = ClassUtil.getAnnotation(getter, annotationClass);
+    			if (declaredAnnotation != null)
+    				annotation = declaredAnnotation.annotation;
+    		}
+    	}
+    	if (annotation == null && setter != null) {
+    		annotation = setter.getAnnotation(annotationClass);
+    		if (annotation == null && recursive) {
+    			DeclaredAnnotation<T> declaredAnnotation = ClassUtil.getAnnotation(setter, annotationClass);
+    			if (declaredAnnotation != null)
+    				annotation = declaredAnnotation.annotation;
+    		}
+    	}
 		return null;
 	}
 
