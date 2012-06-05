@@ -39,6 +39,13 @@ import org.granite.messaging.engine.EngineResponseHandler;
 import org.granite.messaging.engine.HttpClientEngine;
 import org.granite.rpc.AsyncResponder;
 import org.granite.rpc.AsyncToken;
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+import org.granite.rpc.events.AbstractEvent;
+=======
+>>>>>>> 6e5c8c0... Tide implementation for Java client
+>>>>>>> master
 import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.MessageEvent;
 import org.granite.rpc.events.ResultEvent;
