@@ -36,7 +36,13 @@ import org.granite.messaging.amf.AMF0Message;
 /**
  * @author Franck WOLFF
  */
+<<<<<<< HEAD
 public class ApacheAsyncEngine extends AbstractEngine {
+=======
+public class ApacheAsyncEngine extends AbstractHttpClientEngine {
+	
+	private static final Logger log = Logger.getLogger(ApacheAsyncEngine.class);
+>>>>>>> 6e5c8c0... Tide implementation for Java client
 
 	protected HttpAsyncClient httpClient = null;
 

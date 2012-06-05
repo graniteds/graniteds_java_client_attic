@@ -20,18 +20,14 @@
 
 package org.granite.messaging.engine;
 
+import java.net.URI;
+
+import org.granite.messaging.amf.AMF0Message;
 
 /**
  * @author Franck WOLFF
  */
-public interface Engine {
+public interface HttpClientEngine extends Engine {
 
-	EngineExceptionHandler getExceptionHandler();
-	void setExceptionHandler(EngineExceptionHandler exceptionHandler);
-	
-	void start();
-
-	boolean isStarted();
-	
-	void stop();
+	void send(final URI uri, AMF0Message message, EngineResponseHandler handler);
 }

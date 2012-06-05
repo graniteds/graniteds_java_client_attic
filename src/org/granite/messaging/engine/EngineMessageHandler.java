@@ -20,18 +20,18 @@
 
 package org.granite.messaging.engine;
 
+import flex.messaging.messages.Message;
+
+
 
 /**
  * @author Franck WOLFF
  */
-public interface Engine {
+public interface EngineMessageHandler {
 
-	EngineExceptionHandler getExceptionHandler();
-	void setExceptionHandler(EngineExceptionHandler exceptionHandler);
-	
-	void start();
+	void onConnect(WebSocketEngine.Connection connection);
 
-	boolean isStarted();
-	
-	void stop();
+	void onMessage(Message message);
+
+	void onDisconnect(int closeCode, String message);
 }

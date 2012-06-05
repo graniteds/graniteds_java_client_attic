@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="examples"/>
+	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="libs/commons-codec-1.4.jar"/>
 	<classpathentry kind="lib" path="libs/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/granite.jar" sourcepath="/graniteds"/>
 	<classpathentry kind="lib" path="examples-libs/ejb3-persistence.jar"/>
-	<classpathentry kind="lib" path="examples-libs/granite-hibernate.jar"/>
-	<classpathentry kind="lib" path="examples-libs/graniteds-ejb3.jar"/>
 	<classpathentry kind="lib" path="examples-libs/hibernate3.jar"/>
 	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-alpha3.jar"/>
 	<classpathentry kind="lib" path="libs/httpclient-4.1.2.jar"/>
 	<classpathentry kind="lib" path="libs/httpcore-4.2-alpha2.jar"/>
 	<classpathentry kind="lib" path="libs/httpcore-nio-4.2-alpha2.jar"/>
+	<classpathentry kind="lib" path="libs/jetty-client-8.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/jetty-websocket-8.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/jetty-util-8.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/jetty-io-8.1.1.v20120215.jar"/>
+	<classpathentry kind="lib" path="libs/jetty-http-8.1.1.v20120215.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/graniteds"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

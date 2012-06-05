@@ -20,18 +20,22 @@
 
 package org.granite.messaging.engine;
 
+import java.net.URI;
+
+import flex.messaging.messages.Message;
+
 
 /**
  * @author Franck WOLFF
  */
-public interface Engine {
+public interface WebSocketEngine extends Engine {
 
-	EngineExceptionHandler getExceptionHandler();
-	void setExceptionHandler(EngineExceptionHandler exceptionHandler);
+	public static interface Connection {
+		
+		public void send(Message[] message);
+	}
 	
-	void start();
-
-	boolean isStarted();
+	public void setMaxIdleTime(int maxIdleTime);
 	
-	void stop();
+	public void connect(final URI uri, EngineMessageHandler handler, String clientId, String sessionId);
 }

@@ -22,16 +22,9 @@ package org.granite.messaging.engine;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.HashMap;
 
 import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
-import org.granite.context.GraniteContext;
-import org.granite.context.SimpleGraniteContext;
-import org.granite.messaging.amf.AMF0Message;
-import org.granite.messaging.amf.io.AMF0Deserializer;
-import org.granite.messaging.amf.io.AMF0Serializer;
 
 /**
  * @author Franck WOLFF
@@ -43,7 +36,14 @@ public abstract class AbstractEngine implements Engine {
 	protected boolean started = false;
 	protected GraniteConfig graniteConfig = null;
 	protected ServicesConfig servicesConfig = null;
+<<<<<<< HEAD
 	protected EngineExceptionHandler exceptionHandler = new LogEngineExceptionHandler();
+=======
+	protected EngineStatusHandler statusHandler = new DefaultEngineStatusHandler();
+	protected String graniteStdConfigPath = "org/granite/messaging/engine/granite-config.xml";
+	protected String graniteConfigPath = null;
+	protected int maxIdleTime = 30000;
+>>>>>>> 6e5c8c0... Tide implementation for Java client
 	
 	public EngineExceptionHandler getExceptionHandler() {
 		return exceptionHandler;
@@ -54,7 +54,19 @@ public abstract class AbstractEngine implements Engine {
 			throw new NullPointerException("ExceptionHandler cannot be null");
 		this.exceptionHandler = exceptionHandler;
 	}
+<<<<<<< HEAD
 
+=======
+	
+	public void setGraniteConfigurator(Configurator configurator) {
+		this.configurator = configurator;
+	}
+	
+	public void setMaxIdleTime(int maxIdleTime) {
+		this.maxIdleTime = maxIdleTime;
+	}
+	
+>>>>>>> 6e5c8c0... Tide implementation for Java client
 	@Override
 	public void start() {
 
@@ -65,8 +77,16 @@ public abstract class AbstractEngine implements Engine {
 
 		InputStream is = null;
 		try {
+<<<<<<< HEAD
 			is = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/granite/messaging/engine/granite-config.xml");
 			graniteConfig = new GraniteConfig(null, is, null, null);
+=======
+			if (graniteConfigPath != null)
+				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(graniteConfigPath);
+			graniteConfig = new GraniteConfig(graniteStdConfigPath, is, null, null);
+			if (configurator != null)
+				configurator.configure(graniteConfig);
+>>>>>>> 6e5c8c0... Tide implementation for Java client
 			servicesConfig = new ServicesConfig(null, null, false);
 			started = true;
 		}
@@ -86,28 +106,6 @@ public abstract class AbstractEngine implements Engine {
 	
 	public boolean isStarted() {
 		return started;
-	}
-	
-	protected void serialize(AMF0Message message, OutputStream os) throws IOException {
-		AMF0Serializer serializer = new AMF0Serializer(os);
-		SimpleGraniteContext.createThreadIntance(graniteConfig, servicesConfig, new HashMap<String, Object>(0));
-		try {
-			serializer.serializeMessage(message);
-		}
-		finally {
-			GraniteContext.release();
-		}
-	}
-	
-	protected AMF0Message deserialize(InputStream is) throws IOException {
-		SimpleGraniteContext.createThreadIntance(graniteConfig, servicesConfig, new HashMap<String, Object>(0));
-		try {
-			AMF0Deserializer deserializer = new AMF0Deserializer(is);
-			return deserializer.getAMFMessage();
-		}
-		finally {
-			GraniteContext.release();
-		}
 	}
 
 	@Override
