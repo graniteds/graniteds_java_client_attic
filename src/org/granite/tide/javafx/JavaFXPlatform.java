@@ -3,10 +3,12 @@ package org.granite.tide.javafx;
 import javafx.application.Platform;
 
 import org.granite.config.GraniteConfig;
+import org.granite.messaging.engine.ApacheAsyncEngine;
 import org.granite.messaging.engine.Engine;
+import org.granite.messaging.engine.JettyWebSocketEngine;
 import org.granite.tide.EventBus;
 import org.granite.tide.data.DataManager;
-import org.granite.tide.impl.DummyEventBus;
+import org.granite.tide.impl.SimpleEventBus;
 import org.granite.tide.rpc.ServerSession;
 
 
@@ -14,15 +16,15 @@ public class JavaFXPlatform implements org.granite.tide.Platform {
 	
 	private DataManager dataManager = new JavaFXDataManager();
 	private ServerSession.Status serverSessionStatus = new JavaFXServerSessionStatus();
-	private EventBus eventBus = new DummyEventBus();
+	private EventBus eventBus = new SimpleEventBus();
 	
 	
 	public void configure(Object instance) {
 		if (instance instanceof ServerSession) {
 			ServerSession serverSession = (ServerSession)instance;
-
-			serverSession.getEngine().setGraniteStdConfigPath("org/granite/tide/javafx/granite-config-javafx.xml");
-			serverSession.getEngine().setGraniteConfigurator(new Engine.Configurator() {
+			
+			String graniteStdConfigPath = "org/granite/tide/javafx/granite-config-javafx.xml";
+			Engine.Configurator graniteConfigurator = new Engine.Configurator() {
 				@Override
 				public void configure(GraniteConfig graniteConfig) {
 					graniteConfig.registerClassAlias(PersistentSet.class);
@@ -30,7 +32,17 @@ public class JavaFXPlatform implements org.granite.tide.Platform {
 					graniteConfig.registerClassAlias(PersistentList.class);
 					graniteConfig.registerClassAlias(PersistentMap.class);
 				}
-			});
+			};
+
+			if (serverSession.getHttpClientEngine() == null)
+				serverSession.setHttpClientEngine(new ApacheAsyncEngine());
+			serverSession.getHttpClientEngine().setGraniteStdConfigPath(graniteStdConfigPath);
+			serverSession.getHttpClientEngine().setGraniteConfigurator(graniteConfigurator);
+
+			if (serverSession.getWebSocketEngine() == null)
+				serverSession.setWebSocketEngine(new JettyWebSocketEngine());
+			serverSession.getWebSocketEngine().setGraniteStdConfigPath(graniteStdConfigPath);
+			serverSession.getWebSocketEngine().setGraniteConfigurator(graniteConfigurator);
 			
 			serverSession.setStatus(serverSessionStatus);
 		}

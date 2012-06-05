@@ -13,11 +13,4 @@
     	</externalizer>
     </externalizers>
 
-    <descriptors>
-    	<descriptor
-            instance-of="java.lang.Object"
-            java="org.granite.messaging.amf.io.util.DefaultJavaClassDescriptor"
-            as3="org.granite.messaging.engine.ClientJavaClassDescriptor" />
-    </descriptors>
-
 </granite-config>

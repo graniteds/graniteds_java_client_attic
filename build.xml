@@ -31,6 +31,13 @@
 			<fileset dir="bin">
 				<include name="**"/>
 				<exclude name="**/examples/**"/>
+				<exclude name="**/javafx/**"/>
+			</fileset>
+		</jar>
+		<jar destfile="build/granite-javafx-client.jar">
+			<fileset dir="bin">
+				<include name="**/javafx/**"/>
+				<exclude name="**/examples/**"/>
 			</fileset>
 		</jar>
 	</target>

@@ -2,6 +2,8 @@ package org.granite.tide.javafx.spring;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.Future;
 
 import javafx.beans.property.BooleanProperty;
@@ -13,24 +15,26 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
 import org.granite.messaging.amf.RemoteClass;
-import org.granite.rpc.AsyncResponder;
-import org.granite.rpc.events.FaultEvent;
-import org.granite.rpc.events.ResultEvent;
+import org.granite.tide.Context;
 import org.granite.tide.TideResponder;
 import org.granite.tide.impl.ComponentImpl;
+import org.granite.tide.rpc.ExceptionHandler;
 import org.granite.tide.rpc.ServerSession;
 import org.granite.tide.rpc.SimpleTideResponder;
 import org.granite.tide.rpc.TideFaultEvent;
 import org.granite.tide.rpc.TideResultEvent;
 import org.granite.util.WeakIdentityHashMap;
 
+import flex.messaging.messages.ErrorMessage;
+
 
 @RemoteClass("org.granite.tide.spring.security.Identity")
-public class Identity extends ComponentImpl {
+public class Identity extends ComponentImpl implements ExceptionHandler {
 	
 	private BooleanProperty loggedIn = new SimpleBooleanProperty(this, "loggedIn");
 	private StringProperty username = new ReadOnlyStringWrapper(this, "username", null);
 	
+
 	public BooleanProperty loggedInProperty() {
 		return loggedIn;
 	}
@@ -52,18 +56,21 @@ public class Identity extends ComponentImpl {
 	}
 	
 	
-    public Identity(ServerSession serverSession) {
+    public Identity(final ServerSession serverSession) {
     	super(serverSession);
+    	
         this.loggedIn.set(false);
         this.loggedIn.addListener(new ChangeListener<Boolean>() {
 			@Override
 			public void changed(ObservableValue<? extends Boolean> property, Boolean oldValue, Boolean newValue) {
-				if (Boolean.TRUE.equals(newValue))
+				if (Boolean.TRUE.equals(newValue)) {
 					initSecurityCache();
+					serverSession.afterLogin();
+				}
 			}        	
         });
     }
-        
+    
     /**
      * 	Triggers a remote call to check is user is currently logged in
      *  Can be used at application startup to handle browser refresh cases
@@ -95,37 +102,32 @@ public class Identity extends ComponentImpl {
     
     
     public void login(final String username, String password, final TideResponder<String> tideResponder) {
-    	getServerSession().getRemoteObject().setCredentials(username, password);
+    	getServerSession().login(username, password);
     	
     	checkLoggedIn(tideResponder);
     }
     
     
-    public void logout(TideResponder<Void> tideResponder) {
-    	getServerSession().getRemoteObject().logout(new AsyncResponder() {
+    public void logout(final TideResponder<Void> tideResponder) {
+    	final Observer observer = new Observer() {
+			@SuppressWarnings("unchecked")
 			@Override
-			public void result(ResultEvent event) {
-				getContext().callLater(new Runnable() {
-					public void run() {
-						getContext().internalResult(null, null, "logout", null, null, null);
-						
-				        Identity.this.loggedIn.set(false);
-				        Identity.this.username.set(null);
-				        
-				        clearSecurityCache();
-					}
-				});
+			public void update(Observable logout, Object event) {
+		        Identity.this.loggedIn.set(false);
+		        Identity.this.username.set(null);
+		        
+		        clearSecurityCache();
+		        
+		        if (tideResponder != null) {
+					if (event instanceof TideResultEvent)
+				        tideResponder.result((TideResultEvent<Void>)event);
+					else if (event instanceof TideFaultEvent)
+				        tideResponder.fault((TideFaultEvent)event);
+		        }
 			}
-
-			@Override
-			public void fault(final FaultEvent event) {
-				getContext().callLater(new Runnable() {
-					public void run() {
-						getContext().internalFault(null, "logout", event.getMessage());
-					}
-				});
-			}
-    	});
+    	};
+    	
+    	getServerSession().logout(observer);
     }
         
     
@@ -355,5 +357,20 @@ public class Identity extends ComponentImpl {
     	}
     	permissionsCache.clear();
     }
+
+	@Override
+	public boolean accepts(ErrorMessage emsg) {
+		return "Server.Security.NotLoggedIn".equals(emsg.getFaultCode());
+	}
+
+	@Override
+	public void handle(Context context, ErrorMessage emsg, TideFaultEvent faultEvent) {
+		if (isLoggedIn()) {
+			// Session expired, directly mark the channel as logged out
+			getServerSession().sessionExpired();
+			setLoggedIn(false);
+		}
+	}
+	
 }
 

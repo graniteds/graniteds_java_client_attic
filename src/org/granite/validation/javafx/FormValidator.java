@@ -93,7 +93,7 @@ public class FormValidator {
 		for (ConstraintViolation<Object> violation : allViolations) {
 			Object rootBean = violation.getRootBean();
 			Object leafBean = violation.getLeafBean();
-			Object bean = leafBean != null ? leafBean : rootBean;
+			Object bean = leafBean != null && leafBean instanceof DataNotifier ? leafBean : rootBean;
 			
 			Set<ConstraintViolation<Object>> violations = violationsMap.get(bean);
 			if (violations == null) {
@@ -253,7 +253,7 @@ public class FormValidator {
 			((Parent)node).getChildrenUnmodifiable().removeListener(childChangeListener);
 			trackedParents.remove(node);
 			
-			log.debug("Unsetup children tracking for parent %s", node.toString());
+			log.debug("Unset children tracking for parent %s", node.toString());
 			
 			for (Node child : ((Parent)node).getChildrenUnmodifiable())
 				untrackNode(child);
@@ -278,7 +278,7 @@ public class FormValidator {
 			node.focusedProperty().removeListener(inputFocusChangeListener);
 			
 			inputs.remove(node);
-			log.info("Cleanup old tracking for fantom node %s input %s entity %s", node, inputProperty.getName(), entityProperty);
+			log.debug("Cleanup old tracking for fantom node %s input %s entity %s", node, inputProperty.getName(), entityProperty);
 		}
 		
 		Property<?> inputProperty = null;
@@ -300,7 +300,7 @@ public class FormValidator {
 				
 				inputs.add(node);
 				
-				log.info("Setup tracking for node %s input %s entity %s", node, inputProperty.getName(), entityProperty);
+				log.debug("Setup tracking for node %s input %s entity %s", node, inputProperty.getName(), entityProperty);
 			}
 		}
 	}
@@ -321,7 +321,7 @@ public class FormValidator {
 			Property<?> inputProperty = inputProperties.remove(node);			
 			inputs.remove(idx);
 			
-			log.info("Unsetup tracking for node %s input %s entity %s", node, inputProperty.getName(), entityProperty);
+			log.debug("Unsetup tracking for node %s input %s entity %s", node, inputProperty.getName(), entityProperty);
 		}
 	}
 	
@@ -369,6 +369,7 @@ public class FormValidator {
 	}
 
 	private class ValueChangeListener implements ChangeListener<Object> {
+		@SuppressWarnings("unchecked")
 		@Override
 		public void changed(ObservableValue<?> change, Object oldValue, Object newValue) {
 			if (validateOnChangeProperty.get())				
@@ -415,7 +416,7 @@ public class FormValidator {
 		Property<?> entityProperty = entityProperties.get(input);
 		Property<?> inputProperty = inputProperties.get(input);
 		if (entityProperty == null || inputProperty == null) {
-			log.info("ValidateValue called for untracked input " + input);
+			log.warn("validateValue called for untracked input " + input);
 			return true;
 		}
 		
@@ -429,6 +430,7 @@ public class FormValidator {
 			nulled = true;
 		}
 		
+		@SuppressWarnings("unchecked")
 		Class<Object> entityClass = (Class<Object>)entityProperty.getBean().getClass();
 		Set<ConstraintViolation<Object>> violations = validatorFactory.getValidator().validateValue(entityClass, entityProperty.getName(), value, groups);
 		if (violations == null)

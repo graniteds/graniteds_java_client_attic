@@ -23,7 +23,6 @@ import org.granite.tide.javafx.PersistentSet;
 import org.granite.tide.javafx.test.PersonEmbedColl.ContactList;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 

@@ -48,7 +48,7 @@ import org.granite.messaging.amf.io.util.externalizer.annotation.IgnoredProperty
 import org.granite.messaging.service.annotations.IgnoredMethod;
 import org.granite.tide.PropertyHolder;
 import org.granite.tide.data.Id;
-import org.granite.util.ClassUtil;
+import org.granite.util.BeanUtil;
 
 /**
  * @author William DRAI
@@ -62,7 +62,7 @@ public class JavaFXExternalizer extends DefaultExternalizer {
         List<Property> fields = orderedFields.get(clazz);
 
         if (fields == null) {
-            PropertyDescriptor[] propertyDescriptors = ClassUtil.getProperties(clazz);
+            PropertyDescriptor[] propertyDescriptors = BeanUtil.getProperties(clazz);
             Converters converters = GraniteContext.getCurrentInstance().getGraniteConfig().getConverters();
 
             fields = new ArrayList<Property>();
