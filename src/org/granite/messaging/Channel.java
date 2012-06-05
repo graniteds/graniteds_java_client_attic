@@ -20,6 +20,7 @@
 
 package org.granite.messaging;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -29,16 +30,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.granite.logging.Logger;
 import org.granite.messaging.amf.AMF0Body;
 import org.granite.messaging.amf.AMF0Message;
 import org.granite.messaging.amf.AMF3Object;
-import org.granite.messaging.engine.Engine;
 import org.granite.messaging.engine.EngineException;
 import org.granite.messaging.engine.EngineResponseHandler;
+import org.granite.messaging.engine.HttpClientEngine;
 import org.granite.rpc.AsyncResponder;
 import org.granite.rpc.AsyncToken;
-import org.granite.rpc.events.MessageEvent;
 import org.granite.rpc.events.FaultEvent;
+import org.granite.rpc.events.MessageEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.util.Base64;
 import org.granite.util.UUIDUtil;
@@ -53,8 +55,10 @@ import flex.messaging.messages.Message;
  * @author Franck WOLFF
  */
 public class Channel {
+	
+	private static final Logger log = Logger.getLogger(Channel.class);
 
-	private final Engine engine;
+	private final HttpClientEngine engine;
 	private final String id;
 	private final URI uri;
 	
@@ -73,7 +77,7 @@ public class Channel {
 	
 	private final ConcurrentHashMap<String, AsyncToken> activeTokens = new ConcurrentHashMap<String, AsyncToken>();
 	
-	public Channel(Engine engine, String id, URI uri) {
+	public Channel(HttpClientEngine engine, String id, URI uri) {
 		if (engine == null)
 			throw new NullPointerException("Engine cannot be null");
 		if (uri == null)
@@ -91,9 +95,14 @@ public class Channel {
 	public void setCredentials(String credentials, Charset charset) {
 		if (charset == null)
 			charset = Charset.defaultCharset();
-		this.credentials = Base64.encodeToString(credentials.getBytes(charset), false);
+		try {
+			this.credentials = Base64.encodeToString(credentials.getBytes(charset.name()), false);
+		}
+		catch (UnsupportedEncodingException e) {
+			log.error(e, "Unsupported credentials encoding");
+		}
 	}
-
+	
 	public boolean isAuthenticated() {
 		return authenticated;
 	}

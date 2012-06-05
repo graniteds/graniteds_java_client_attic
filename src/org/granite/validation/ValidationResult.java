@@ -17,4 +17,20 @@ public class ValidationResult {
 		this.code = code;
 		this.message = message;
 	}
+	
+	public boolean isError() {
+		return error;
+	}
+
+	public Property<?> getProperty() {
+		return property;
+	}
+
+	public String getCode() {
+		return code;
+	}
+
+	public String getMessage() {
+		return message;
+	}
 }

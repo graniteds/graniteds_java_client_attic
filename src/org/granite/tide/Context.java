@@ -16,7 +16,7 @@ import org.granite.tide.data.EntityManager.Update;
 import org.granite.tide.data.EntityManagerImpl;
 import org.granite.tide.data.MergeContext;
 import org.granite.tide.data.RemoteInitializerImpl;
-import org.granite.tide.impl.DummyEventBus;
+import org.granite.tide.impl.SimpleEventBus;
 import org.granite.tide.impl.SimpleInstanceStore;
 import org.granite.tide.invocation.ContextResult;
 import org.granite.tide.invocation.ContextUpdate;
@@ -41,8 +41,7 @@ public class Context {
     
     private BeanManager beanManager = new SimpleBeanManager();
     private Platform platform = new DefaultPlatform();
-    @SuppressWarnings("unused")
-	private EventBus eventBus = new DummyEventBus();
+	private EventBus eventBus = new SimpleEventBus();
     
     private EntityManager entityManager;
     
@@ -75,8 +74,8 @@ public class Context {
         this.beanManager = beanPropertyAccessor;
     }
     
-    public void setEventBus(EventBus eventBus) {
-        this.eventBus = eventBus;
+    public EventBus getEventBus() {
+    	return eventBus;
     }
     
     public void setPlatform(Platform platform) {
@@ -172,7 +171,10 @@ public class Context {
         TideResponder<?> responder = null;
         if (args != null && args.length > 0 && args[args.length-1] instanceof TideResponder) {
             responder = (TideResponder<?>)args[args.length-1];
-            args = Arrays.copyOfRange(args, 0, args.length-1);
+            Object[] newArgs = new Object[args.length-1];
+            for (int i = 0; i < args.length-1; i++)
+            	newArgs[i] = args[i];
+            args = newArgs;
         }
         
 		// Force generation of uids by merging all arguments in the current context
@@ -247,6 +249,7 @@ public class Context {
         log.debug("result {0}", result);
         
         List<ContextUpdate> resultMap = null;
+        List<Update> updates = null;
         
         try {
             trackingContext.setEnabled(false);
@@ -262,7 +265,7 @@ public class Context {
                 mergeExternal = invocationResult.getMerge();
                 
                 if (invocationResult.getUpdates() != null && invocationResult.getUpdates().length > 0) {
-                    List<Update> updates = new ArrayList<Update>(invocationResult.getUpdates().length);
+                    updates = new ArrayList<Update>(invocationResult.getUpdates().length);
                     for (Object[] u : invocationResult.getUpdates())
                         updates.add(Update.forUpdate((String)u[0], u[1]));
                     entityManager.handleUpdates(mergeContext, null, updates);
@@ -391,9 +394,8 @@ public class Context {
             trackingContext.removeResults(resultMap);
             
             // Dispatch received data update events
-            // TODO
-//            if (invocationResult.getUpdates() != null && invocationResult.getUpdates().length > 0)
-//                raiseUpdateEvents(invocationResult.getUpdates());
+            if (updates != null)
+                entityManager.raiseUpdateEvents(this, updates);
             
             // Dispatch received context events
             // TODO
@@ -428,7 +430,7 @@ public class Context {
 //        if (emsg != null && emsg.getExtendedData() != null && componentRegistry.isComponent("statusMessages"))
 //            get("statusMessages").setFromServer(emsg.getExtendedData());
     }
-    
+	
     
     public void markAsFinished() {
         this.finished = true;

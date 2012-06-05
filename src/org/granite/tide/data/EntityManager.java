@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.granite.tide.Context;
 import org.granite.tide.Expression;
 import org.granite.tide.rpc.ServerSession;
 
@@ -312,6 +313,8 @@ public interface EntityManager {
      */
     public void handleUpdates(MergeContext mergeContext, String sourceSessionId, List<Update> updates);
     
+	public void raiseUpdateEvents(Context context, List<EntityManager.Update> updates);
+	
     
     public void addListener(DataConflictListener listener);
     

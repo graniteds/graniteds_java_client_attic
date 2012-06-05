@@ -40,7 +40,7 @@ import org.granite.messaging.amf.AMF0Message;
 /**
  * @author Franck WOLFF
  */
-public class ApacheAsyncEngine extends AbstractEngine {
+public class ApacheAsyncEngine extends AbstractHttpClientEngine {
 	
 	private static final Logger log = Logger.getLogger(ApacheAsyncEngine.class);
 

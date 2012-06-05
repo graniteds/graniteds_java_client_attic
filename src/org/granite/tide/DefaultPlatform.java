@@ -2,12 +2,12 @@ package org.granite.tide;
 
 import org.granite.tide.data.DataManager;
 import org.granite.tide.data.DefaultDataManager;
-import org.granite.tide.impl.DummyEventBus;
+import org.granite.tide.impl.SimpleEventBus;
 
 public class DefaultPlatform implements Platform {
 	
 	private DataManager dataManager = new DefaultDataManager();
-	private EventBus eventBus = new DummyEventBus();
+	private EventBus eventBus = new SimpleEventBus();
 	
 	public void configure(Object instance) {		
 	}

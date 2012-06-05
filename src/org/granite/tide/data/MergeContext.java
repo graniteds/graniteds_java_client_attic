@@ -19,7 +19,8 @@ public class MergeContext {
     };
     
     private final EntityManager entityManager;
-    private final DirtyCheckContext dirtyCheckContext;
+    @SuppressWarnings("unused")
+	private final DirtyCheckContext dirtyCheckContext;
     
     private String externalDataSessionId = null;
     private EntityManager sourceEntityManager = null;

@@ -20,29 +20,18 @@
 
 package org.granite.messaging.engine;
 
-import org.granite.config.GraniteConfig;
+import flex.messaging.messages.Message;
+
+
 
 /**
  * @author Franck WOLFF
  */
-public interface Engine {
+public interface EngineMessageHandler {
 
-	void setGraniteStdConfigPath(String graniteConfigPath);
-	
-	void setGraniteConfigPath(String graniteConfigPath);
-	
-	void setGraniteConfigurator(Configurator configurator);
-	
-	static interface Configurator {		
-		void configure(GraniteConfig graniteConfig);
-	}
-	
-	EngineStatusHandler getStatusHandler();
-	void setStatusHandler(EngineStatusHandler statusHandler);
-	
-	void start();
+	void onConnect(WebSocketEngine.Connection connection);
 
-	boolean isStarted();
-	
-	void stop();
+	void onMessage(Message message);
+
+	void onDisconnect(int closeCode, String message);
 }

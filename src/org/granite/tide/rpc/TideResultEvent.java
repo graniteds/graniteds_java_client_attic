@@ -9,7 +9,7 @@ import org.granite.tide.Context;
  * 
  *  @author William DRAI
  */
-public class TideResultEvent<T> extends TideEvent {
+public class TideResultEvent<T> extends TideRpcEvent {
     
     private T result;
 

@@ -4,5 +4,5 @@ package org.granite.tide;
 
 public interface EventBus {
 
-    public void raiseEvent(String name, Object... args);
+    public void raiseEvent(Context context, String type, Object... args);
 }

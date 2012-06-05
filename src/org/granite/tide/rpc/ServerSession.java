@@ -3,13 +3,22 @@ package org.granite.tide.rpc;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.granite.logging.Logger;
 import org.granite.messaging.Channel;
-import org.granite.messaging.engine.ApacheAsyncEngine;
+import org.granite.messaging.Consumer;
+import org.granite.messaging.MessageAgent;
+import org.granite.messaging.Producer;
+import org.granite.messaging.WebSocketChannel;
 import org.granite.messaging.engine.Engine;
 import org.granite.messaging.engine.EngineException;
 import org.granite.messaging.engine.EngineStatusHandler;
+import org.granite.messaging.engine.HttpClientEngine;
+import org.granite.messaging.engine.WebSocketEngine;
 import org.granite.rpc.AsyncResponder;
 import org.granite.rpc.AsyncToken;
 import org.granite.rpc.InvocationInterceptor;
@@ -39,11 +48,17 @@ public class ServerSession implements ContextAware {
     public static final String WAS_LONG_RUNNING_CONVERSATION_CREATED_TAG = "wasLongRunningConversationCreated";
     public static final String IS_FIRST_CALL_TAG = "org.granite.tide.isFirstCall";
     public static final String IS_FIRST_CONVERSATION_CALL_TAG = "org.granite.tide.isFirstConversationCall";
+	
+	public static final String LOGIN = "org.granite.tide.login";
+	public static final String LOGOUT = "org.granite.tide.logout";
+	public static final String SESSION_EXPIRED = "org.granite.tide.sessionExpired";
     
     
 	@SuppressWarnings("unused")
 	private boolean confChanged = false;
-    private Engine engine = new ApacheAsyncEngine();
+    private HttpClientEngine httpClientEngine = null;
+    private WebSocketEngine webSocketEngine = null;
+    private String protocol = "http";
     private String contextRoot = "";
     private String serverName = "{server.name}";
     private String serverPort = "{server.port}";
@@ -51,7 +66,6 @@ public class ServerSession implements ContextAware {
     private String gravityUrlMapping = "/gravityamf/amf.txt";
     
     private URI graniteURI;
-    @SuppressWarnings("unused")
 	private URI gravityURI;
     
 	private String destination = null;
@@ -62,14 +76,13 @@ public class ServerSession implements ContextAware {
 	private String sessionId = null;
 	private boolean isFirstCall = true;
 	
-	private boolean logoutInProgress = false;
-	private int waitForLogout = 0;
+	private LogoutState logoutState = new LogoutState();
 	
-	// Remoting engine
     private Channel graniteChannel;
-    @SuppressWarnings("unused")
-	private Channel gravityChannel;
+	private WebSocketChannel gravityChannel;
+	
 	protected Map<String, RemoteObject> remoteObjects = new HashMap<String, RemoteObject>();
+	protected Map<String, MessageAgent> messageAgents = new HashMap<String, MessageAgent>();
 	
 	
     public ServerSession() throws Exception {    	
@@ -80,8 +93,13 @@ public class ServerSession implements ContextAware {
     }
 
     public ServerSession(String destination, String contextRoot, String serverName, String serverPort, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
+    	this(destination, "http", contextRoot, serverName, serverPort, graniteUrlMapping, gravityUrlMapping);
+    }
+    
+    public ServerSession(String destination, String protocol, String contextRoot, String serverName, String serverPort, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
         super();
         this.destination = destination;
+        this.protocol = protocol;
         this.contextRoot = contextRoot;
         this.serverName = serverName;
         this.serverPort = serverPort;
@@ -92,17 +110,31 @@ public class ServerSession implements ContextAware {
     }
 
     
-    public void setEngine(Engine engine) {
-		this.engine = engine;
+    public void setHttpClientEngine(HttpClientEngine engine) {
+		this.httpClientEngine = engine;
     	confChanged = true;
 	}
+
+    public void setWebSocketEngine(WebSocketEngine engine) {
+		this.webSocketEngine = engine;
+    	confChanged = true;
+	}
+
+    public Engine getHttpClientEngine() {
+    	return httpClientEngine;
+    }
     
-    public Engine getEngine() {
-    	return engine;
+    public WebSocketEngine getWebSocketEngine() {
+    	return webSocketEngine;
     }
 	
     public void setContextRoot(String contextRoot) {
     	this.contextRoot = contextRoot;
+    	confChanged = true;
+    }
+    
+    public void setProtocol(String protocol) {
+    	this.protocol = protocol;
     	confChanged = true;
     }
     
@@ -143,27 +175,40 @@ public class ServerSession implements ContextAware {
 	}
 	
 	public void start() throws Exception {
-		if (engine == null)
-			throw new IllegalStateException("No engine define for server session");
+		if (httpClientEngine == null)
+			log.warn("No http client engine defined for server session, remoting disabled");
+		else {
+			httpClientEngine.setStatusHandler(new ServerSessionStatusHandler());
+			httpClientEngine.start();
+			graniteURI = new URI(protocol + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.graniteUrlMapping);
+			graniteChannel = new Channel(httpClientEngine, "graniteamf", graniteURI);
+		}		
 		
-		engine.setStatusHandler(new ServerSessionStatusHandler());
-		engine.start();
-		graniteURI = new URI("http" + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.graniteUrlMapping);
-		gravityURI = new URI("http" + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.gravityUrlMapping);
-		graniteChannel = new Channel(engine, "graniteamf", graniteURI);
+		if (webSocketEngine == null)
+			log.warn("No websocket engine defined for server session, messaging disabled");
+		else {
+			webSocketEngine.setStatusHandler(new ServerSessionStatusHandler());
+			webSocketEngine.start();
+			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.gravityUrlMapping);
+			gravityChannel = new WebSocketChannel(webSocketEngine, "gravityamf", gravityURI);
+		}
 	}
 	
 	public void stop()throws Exception {
-		if (engine == null)
-			throw new IllegalStateException("No engine define for server session");
-		graniteChannel = null;
-		engine.stop();
+		if (httpClientEngine != null) {
+			graniteChannel = null;
+			httpClientEngine.stop();
+		}
+		if (webSocketEngine != null) {
+			gravityChannel = null;
+			webSocketEngine.stop();
+		}
 	}
 	
 	public RemoteObject getRemoteObject() {
 		return getRemoteObject(destination);
 	}
-	public RemoteObject getRemoteObject(String destination) {
+	public synchronized RemoteObject getRemoteObject(String destination) {
 		if (graniteChannel == null)
 			throw new IllegalStateException("Engine not started for server session");
 		
@@ -175,6 +220,32 @@ public class ServerSession implements ContextAware {
 		}
 		return remoteObject;
 	}
+
+	public Consumer getConsumer(String destination) {
+		if (gravityChannel == null)
+			throw new IllegalStateException("Engine not started for server session");
+		
+		MessageAgent consumer = messageAgents.get(destination);
+		if (consumer == null) {
+			consumer = new Consumer(destination);
+			consumer.setChannel(gravityChannel);
+			messageAgents.put(destination, consumer);
+		}
+		return consumer instanceof Consumer ? (Consumer)consumer : null;
+	}
+
+	public Producer getProducer(String destination) {
+		if (gravityChannel == null)
+			throw new IllegalStateException("Engine not started for server session");
+		
+		MessageAgent producer = messageAgents.get(destination);
+		if (producer == null) {
+			producer = new Producer(destination);
+			producer.setChannel(gravityChannel);
+			messageAgents.put(destination, producer);
+		}
+		return producer instanceof Producer ? (Producer)producer : null;
+	}
 	
 	public boolean isFirstCall() {
 		return isFirstCall;
@@ -184,18 +255,35 @@ public class ServerSession implements ContextAware {
 		return sessionId;
 	}
 	
+	public AsyncToken remoteCall(String method, Object[] params, AsyncResponder responder) {
+        RemoteObject ro = getRemoteObject();
+        if (ro == null)
+        	throw new RuntimeException("Cannot call remote server, internal RemoteObject not created");
+        
+        AsyncToken token = ro.call(method, params, responder);
+        
+        checkWaitForLogout();
+        
+        return token;
+	}
+	
 	public void call() {
 		isFirstCall = false;
 	}
 	
 	public void result(MessageEvent event) {
 		sessionId = (String)event.getMessage().getHeader(SESSION_ID_TAG);
+		if (gravityChannel != null && sessionId != null)
+			gravityChannel.setSessionId(sessionId);
 		isFirstCall = false;
 		status.setConnected(true);
 	}
 	
 	public void fault(FaultEvent event, ErrorMessage emsg) {
 		sessionId = (String)event.getMessage().getHeader(SESSION_ID_TAG);
+		if (gravityChannel != null && sessionId != null)
+			gravityChannel.setSessionId(sessionId);
+		
         if (emsg != null && emsg.getFaultCode().equals("Connection.Failed"))
         	status.setConnected(false);            
 	}
@@ -270,10 +358,53 @@ public class ServerSession implements ContextAware {
         return component.invoke(componentResponder);
     }
 	
-	
-	public boolean isLogoutInProgress() {
-		return logoutInProgress;
-	}
+    
+    public void login(String username, String password) {
+    	getRemoteObject().setCredentials(username, password);
+    }
+    
+    public void afterLogin() {
+		log.info("Application login");
+		
+		context.getEventBus().raiseEvent(context, LOGIN);
+    }
+    
+    public void sessionExpired() {
+		log.info("Application session expired");
+		
+		logoutState.sessionExpired(new TimerTask() {
+			@Override
+			public void run() {
+				logoutState.sessionExpired();
+				tryLogout();
+			}
+		});
+		
+		context.getEventBus().raiseEvent(context, SESSION_EXPIRED);
+		
+        tryLogout();
+    }
+    
+	/**
+	 * 	@private
+	 * 	Implementation of logout
+	 * 	
+	 * 	@param ctx current context
+	 *  @param componentName component name of identity
+	 */
+	public void logout(final Observer logoutObserver) {
+		logoutState.logout(logoutObserver, new TimerTask() {
+			@Override
+			public void run() {
+				logoutState.logout(logoutObserver);
+				tryLogout();
+			}
+		});
+		
+		context.getEventBus().raiseEvent(context, LOGOUT);
+		
+        tryLogout();
+    }
 	
 	/**
 	 * 	Notify the framework that it should wait for a async operation before effectively logging out.
@@ -282,8 +413,7 @@ public class ServerSession implements ContextAware {
 	public void checkWaitForLogout() {
 		isFirstCall = false;
 		
-		if (logoutInProgress)
-			waitForLogout++;
+		logoutState.checkWait();
 	}
 	
 	/**
@@ -291,31 +421,101 @@ public class ServerSession implements ContextAware {
 	 *  The effective logout is done when all remote operations on all components have been notified as finished.
 	 */
 	public void tryLogout() {
-		if (!logoutInProgress)
-			return;
-		
-		waitForLogout--;
-		if (waitForLogout > 0)
+		if (logoutState.stillWaiting())
 			return;
 		
 		graniteChannel.logout(new AsyncResponder() {
 			@Override
-			public void result(ResultEvent event) {
-				log.info("Application logout");
-				
-				context.getContextManager().destroyContexts(false);
-				
-				logoutInProgress = false;
-				waitForLogout = 0;
-				
-				// context.raiseEvent("LOGGED_OUT");
+			public void result(final ResultEvent event) {
+				context.callLater(new Runnable() {
+					public void run() {
+						log.info("Application logout");
+						
+						context.internalResult(null, null, "logout", null, null, null);
+						context.getContextManager().destroyContexts(false);
+						
+						logoutState.loggedOut(new TideResultEvent<Object>(context, event.getToken(), null, event.getResult()));
+					}
+				});
 			}
 
 			@Override
-			public void fault(FaultEvent event) {
-				log.error("Could not logout %s", event.getFaultString());
+			public void fault(final FaultEvent event) {
+				context.callLater(new Runnable() {
+					public void run() {
+						log.error("Could not logout %s", event.getFaultString());
+						
+						context.internalFault(null, "logout", event.getMessage());
+						
+				        Fault fault = new Fault(event.getFaultCode(), event.getFaultString(), event.getFaultDetail());
+				        fault.setContent(event.getMessage());
+				        fault.setRootCause(event.getRootCause());				        
+						logoutState.loggedOut(new TideFaultEvent(context, event.getToken(), null, fault, event.getExtendedData()));
+					}
+				});
 			}
 		});
+	}
+	
+	
+	private static class LogoutState extends Observable {
+		
+		private boolean logoutInProgress = false;
+		private int waitForLogout = 0;
+		private Timer logoutTimeout = null;
+		
+		public void logout(Observer logoutObserver, TimerTask forceLogout) {
+			logout(logoutObserver);
+			logoutTimeout = new Timer(true);
+			logoutTimeout.schedule(forceLogout, 1000L);
+		}
+		
+		public void logout(Observer logoutObserver) {
+			addObserver(logoutObserver);
+	        logoutInProgress = true;
+		    waitForLogout = 1;
+		}
+		
+		public void checkWait() {
+			if (logoutInProgress)
+				waitForLogout++;
+		}
+		
+		public boolean stillWaiting() {
+			if (!logoutInProgress)
+				return true;
+			
+			waitForLogout--;
+			if (waitForLogout > 0)
+				return true;
+			
+			return false;
+		}
+		
+		public void loggedOut(TideRpcEvent event) {
+			if (logoutTimeout != null) {
+				logoutTimeout.cancel();
+				logoutTimeout = null;
+			}
+			
+			setChanged();
+			notifyObservers(event);
+			deleteObservers();
+			
+			logoutInProgress = false;
+			waitForLogout = 0;
+		}
+		
+		public void sessionExpired(TimerTask forceLogout) {
+			sessionExpired();
+			logoutTimeout = new Timer(true);
+			logoutTimeout.schedule(forceLogout, 1000L);
+		}
+		
+		public void sessionExpired() {
+			logoutInProgress = false;
+			waitForLogout = 0;
+		}
 	}
 	
 	

@@ -18,8 +18,6 @@ import org.granite.tide.TrackingContext;
 import org.granite.tide.collections.ManagedPersistentAssociation;
 import org.granite.tide.data.DataManager.ChangeKind;
 import org.granite.tide.data.ExpressionEvaluator.Value;
-import org.granite.tide.javafx.PersistentBag;
-import org.granite.tide.javafx.PersistentSet;
 import org.granite.util.WeakIdentityHashMap;
 
 
@@ -219,7 +217,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             }
             return true;
         }
-        else if ((val1 instanceof PersistentSet && val2 instanceof PersistentSet) || (val1 instanceof PersistentBag && val2 instanceof PersistentBag)) {
+        else if (val1 instanceof Set<?> && val2 instanceof Set<?>) {
             Collection<?> coll1 = (Collection<?>)val1;
             Collection<?> coll2 = (Collection<?>)val2;
             if (coll1.size() != coll2.size())

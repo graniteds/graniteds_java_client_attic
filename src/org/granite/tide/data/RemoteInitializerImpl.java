@@ -65,7 +65,9 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 		
 		entityManager.addReference(entity, null, null, null);
 		
-		objectsInitializing.add(new Object[] { context, path != null ? path.getPath() : entity, ((ManagedPersistentAssociation)object).getPropertyName() });
+		synchronized (objectsInitializing) {
+			objectsInitializing.add(new Object[] { context, path != null ? path.getPath() : entity, ((ManagedPersistentAssociation)object).getPropertyName() });
+		}
 		
 		context.callLater(new DoInitializeObjects(serverSession));
 		return true;
@@ -82,26 +84,26 @@ public class RemoteInitializerImpl implements RemoteInitializer {
     	public void run() {
 	    	Map<Object, List<String>> initMap = new HashMap<Object, List<String>>();
 			
-			for (int i = 0; i < objectsInitializing.size(); i++) {
-				if (objectsInitializing.get(i)[0] != context)
-					continue;
-				
-				List<String> propertyNames = initMap.get(objectsInitializing.get(i)[1]);
-				if (propertyNames == null) {
-					propertyNames = Arrays.asList((String)objectsInitializing.get(i)[2]);
-					initMap.put(objectsInitializing.get(i)[1], propertyNames);
+	    	synchronized (objectsInitializing) {
+				for (int i = 0; i < objectsInitializing.size(); i++) {
+					if (objectsInitializing.get(i)[0] != context)
+						continue;
+					
+					List<String> propertyNames = initMap.get(objectsInitializing.get(i)[1]);
+					if (propertyNames == null) {
+						propertyNames = Arrays.asList((String)objectsInitializing.get(i)[2]);
+						initMap.put(objectsInitializing.get(i)[1], propertyNames);
+					}
+					else
+						propertyNames.add((String)objectsInitializing.get(i)[2]);
+					
+					objectsInitializing.remove(i--);
 				}
-				else
-					propertyNames.add((String)objectsInitializing.get(i)[2]);
-				
-				objectsInitializing.remove(i--);
-			}
+	    	}
 			
 			for (Object entity : initMap.keySet()) {
-				serverSession.getRemoteObject().call("initializeObject", new Object[] { entity, initMap.get(entity).toArray(), new InvocationCall() },
+				serverSession.remoteCall("initializeObject", new Object[] { entity, initMap.get(entity).toArray(), new InvocationCall() },
 						new InitializerResponder(serverSession, entity));
-				
-				serverSession.checkWaitForLogout();
 			}
     	}
 	}

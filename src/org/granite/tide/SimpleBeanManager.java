@@ -1,10 +1,6 @@
 package org.granite.tide;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.concurrent.Future;
 
 import org.granite.logging.Logger;
@@ -14,32 +10,25 @@ import org.granite.tide.impl.FutureResult;
 
 public class SimpleBeanManager implements BeanManager {
     
-    private static final Logger log = Logger.getLogger(SimpleBeanManager.class);
+    @SuppressWarnings("unused")
+	private static final Logger log = Logger.getLogger(SimpleBeanManager.class);
 
     @Override
     public void setProperty(Object bean, String propertyName, Object value) {
         try {
-            BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
-            PropertyDescriptor[] pds = beanInfo.getPropertyDescriptors();
-            for (PropertyDescriptor pd : pds) {
-                if (pd.getName().equals(propertyName)) {
-                    if (pd.getWriteMethod() == null)
-                        log.warn("Bean method " + propertyName + " is not writable ");
-                    else
-                        pd.getWriteMethod().invoke(bean, value);
-                }
-            }
+        	boolean found = false;
+        	for (Method m : bean.getClass().getMethods()) {
+        		if (m.getName().equals("set" + propertyName.substring(0, 1).toString() + propertyName.substring(1))
+        				&& m.getParameterTypes().length == 1 && m.getParameterTypes()[0].isInstance(value)) {
+        			m.invoke(bean, value);
+        			found = true;
+        			break;
+        		}
+        	}
+        	if (!found)
+        		throw new RuntimeException("Could not find setter for bean property " + bean + "." + propertyName);
         }
-        catch (IntrospectionException e) {
-            throw new RuntimeException("Could not introspect bean " + bean, e);
-        }
-        catch (IllegalArgumentException e) {
-            throw new RuntimeException("Could not write bean property " + bean + "." + propertyName, e);
-        }
-        catch (IllegalAccessException e) {
-            throw new RuntimeException("Could not write bean property " + bean + "." + propertyName, e);
-        }
-        catch (InvocationTargetException e) {
+        catch (Exception e) {
             throw new RuntimeException("Could not write bean property " + bean + "." + propertyName, e);
         }
     }
@@ -47,29 +36,17 @@ public class SimpleBeanManager implements BeanManager {
     @Override
     public Object getProperty(Object bean, String propertyName) {
         try {
-            BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
-            PropertyDescriptor[] pds = beanInfo.getPropertyDescriptors();
-            for (PropertyDescriptor pd : pds) {
-                if (pd.getName().equals(propertyName)) {
-                    if (pd.getReadMethod() == null)
-                        log.warn("Bean method " + propertyName + " is not readable ");
-                    else
-                        return pd.getReadMethod().invoke(bean);
-                }
-            }
-            return null;
+        	for (Method m : bean.getClass().getMethods()) {
+        		if ((m.getName().equals("get" + propertyName.substring(0, 1).toString() + propertyName.substring(1))
+        				|| m.getName().equals("is" + propertyName.substring(0, 1).toString() + propertyName.substring(1)))
+        				&& m.getParameterTypes().length == 0) {
+        			return m.invoke(bean);
+        		}
+        	}
+        	throw new RuntimeException("Could not find getter for bean property " + bean + "." + propertyName);
         }
-        catch (IntrospectionException e) {
-            throw new RuntimeException("Could not introspect bean " + bean, e);
-        }
-        catch (IllegalArgumentException e) {
-            throw new RuntimeException("Could not write bean property " + bean + "." + propertyName, e);
-        }
-        catch (IllegalAccessException e) {
-            throw new RuntimeException("Could not write bean property " + bean + "." + propertyName, e);
-        }
-        catch (InvocationTargetException e) {
-            throw new RuntimeException("Could not write bean property " + bean + "." + propertyName, e);
+        catch (Exception e) {
+            throw new RuntimeException("Could not read bean property " + bean + "." + propertyName, e);
         }
     }
 

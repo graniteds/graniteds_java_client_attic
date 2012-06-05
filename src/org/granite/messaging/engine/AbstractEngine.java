@@ -22,16 +22,9 @@ package org.granite.messaging.engine;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.HashMap;
 
 import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
-import org.granite.context.GraniteContext;
-import org.granite.context.SimpleGraniteContext;
-import org.granite.messaging.amf.AMF0Message;
-import org.granite.messaging.amf.io.AMF0Deserializer;
-import org.granite.messaging.amf.io.AMF0Serializer;
 
 /**
  * @author Franck WOLFF
@@ -47,6 +40,7 @@ public abstract class AbstractEngine implements Engine {
 	protected EngineStatusHandler statusHandler = new DefaultEngineStatusHandler();
 	protected String graniteStdConfigPath = "org/granite/messaging/engine/granite-config.xml";
 	protected String graniteConfigPath = null;
+	protected int maxIdleTime = 30000;
 	
 
 	public EngineStatusHandler getStatusHandler() {
@@ -71,6 +65,10 @@ public abstract class AbstractEngine implements Engine {
 		this.configurator = configurator;
 	}
 	
+	public void setMaxIdleTime(int maxIdleTime) {
+		this.maxIdleTime = maxIdleTime;
+	}
+	
 	@Override
 	public void start() {
 
@@ -83,7 +81,7 @@ public abstract class AbstractEngine implements Engine {
 		try {
 			if (graniteConfigPath != null)
 				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(graniteConfigPath);
-			graniteConfig = new GraniteConfig(graniteStdConfigPath, null, null, null);
+			graniteConfig = new GraniteConfig(graniteStdConfigPath, is, null, null);
 			if (configurator != null)
 				configurator.configure(graniteConfig);
 			servicesConfig = new ServicesConfig(null, null, false);
@@ -105,28 +103,6 @@ public abstract class AbstractEngine implements Engine {
 	
 	public boolean isStarted() {
 		return started;
-	}
-	
-	protected void serialize(AMF0Message message, OutputStream os) throws IOException {
-		AMF0Serializer serializer = new AMF0Serializer(os);
-		SimpleGraniteContext.createThreadIntance(graniteConfig, servicesConfig, new HashMap<String, Object>(0));
-		try {
-			serializer.serializeMessage(message);
-		}
-		finally {
-			GraniteContext.release();
-		}
-	}
-	
-	protected AMF0Message deserialize(InputStream is) throws IOException {
-		SimpleGraniteContext.createThreadIntance(graniteConfig, servicesConfig, new HashMap<String, Object>(0));
-		try {
-			AMF0Deserializer deserializer = new AMF0Deserializer(is);
-			return deserializer.getAMFMessage();
-		}
-		finally {
-			GraniteContext.release();
-		}
 	}
 
 	@Override

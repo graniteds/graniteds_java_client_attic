@@ -20,29 +20,14 @@
 
 package org.granite.messaging.engine;
 
-import org.granite.config.GraniteConfig;
+import java.net.URI;
+
+import org.granite.messaging.amf.AMF0Message;
 
 /**
  * @author Franck WOLFF
  */
-public interface Engine {
+public interface HttpClientEngine extends Engine {
 
-	void setGraniteStdConfigPath(String graniteConfigPath);
-	
-	void setGraniteConfigPath(String graniteConfigPath);
-	
-	void setGraniteConfigurator(Configurator configurator);
-	
-	static interface Configurator {		
-		void configure(GraniteConfig graniteConfig);
-	}
-	
-	EngineStatusHandler getStatusHandler();
-	void setStatusHandler(EngineStatusHandler statusHandler);
-	
-	void start();
-
-	boolean isStarted();
-	
-	void stop();
+	void send(final URI uri, AMF0Message message, EngineResponseHandler handler);
 }

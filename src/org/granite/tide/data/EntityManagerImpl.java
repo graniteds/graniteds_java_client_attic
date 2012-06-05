@@ -14,6 +14,7 @@ import java.util.Set;
 import org.granite.logging.Logger;
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.Component;
+import org.granite.tide.Context;
 import org.granite.tide.Expression;
 import org.granite.tide.ObjectUtil;
 import org.granite.tide.SyncMode;
@@ -27,8 +28,6 @@ import org.granite.tide.data.UIDWeakSet.Matcher;
 import org.granite.tide.rpc.ServerSession;
 import org.granite.util.ClassUtil;
 import org.granite.util.WeakIdentityHashMap;
-import org.hibernate.collection.PersistentCollection;
-import org.hibernate.collection.PersistentMap;
 
 
 public class EntityManagerImpl implements EntityManager {
@@ -828,7 +827,7 @@ public class EntityManagerImpl implements EntityManager {
                         
                         if (mergeContext.getExternalDataSessionId() != null && dirtyCheckContext.isEntityChanged((Identifiable)dest)) {
                             // Conflict between externally received data and local modifications
-                            log.error("conflict with external data detected on %d (current: %d, received: %d)",
+                            log.error("conflict with external data detected on %s (current: %d, received: %d)",
                                 dest.toString(), oldVersion, newVersion);
                             
                             // Check incoming values and local values
@@ -1259,7 +1258,7 @@ public class EntityManagerImpl implements EntityManager {
      *  @return the wrapped persistent collection
      */ 
     protected Object mergePersistentCollection(MergeContext mergeContext, LazyableCollection coll, Object previous, Expression expr, Identifiable parent, String propertyName) {
-        if (previous instanceof PersistentCollection) {
+        if (previous instanceof ManagedPersistentCollection<?>) {
             mergeContext.putInCache(coll, previous);
             if (((LazyableCollection)previous).isInitialized()) {
                 if (mergeContext.isUninitializeAllowed() && mergeContext.hasVersionChanged(parent)) {
@@ -1272,7 +1271,7 @@ public class EntityManagerImpl implements EntityManager {
             dataManager.startTracking(previous, parent);
             return previous;
         }
-        else if (previous instanceof PersistentMap) {
+        else if (previous instanceof ManagedPersistentMap<?, ?>) {
             mergeContext.putInCache(coll, previous);
             if (((LazyableCollection)previous).isInitialized()) {
                 if (mergeContext.isUninitializeAllowed() && mergeContext.hasVersionChanged(parent)) {
@@ -1822,7 +1821,7 @@ public class EntityManagerImpl implements EntityManager {
      *  @return value
      */ 
     public Object getEntityProperty(Identifiable entity, String propName, Object value) {
-        if (value instanceof Identifiable || value instanceof List<?> || value instanceof Map<?, ?> || value instanceof PersistentCollection)
+        if (value instanceof Identifiable || value instanceof List<?> || value instanceof Map<?, ?> || value instanceof ManagedPersistentAssociation)
             addResults(entity, propName);
         
         EntityDescriptor desc = PersistenceManager.getEntityDescriptor(entity);
@@ -2133,6 +2132,33 @@ public class EntityManagerImpl implements EntityManager {
         for (Update update : updates)
             update.setEntity(getCachedObject(update.getEntity(), true));
     }
+    
+	public void raiseUpdateEvents(Context context, List<EntityManager.Update> updates) {
+		List<String> refreshes = new ArrayList<String>();
+		
+		for (EntityManager.Update update : updates) {
+			Object entity = update.getEntity();
+			
+			if (entity != null) {
+				String entityName = entity instanceof EntityRef ? getUnqualifiedClassName(((EntityRef)entity).getClassName()) : entity.getClass().getSimpleName();
+				String eventType = "org.granite.tide.data." + update.getKind().name().toLowerCase() + "." + entityName;
+				context.getEventBus().raiseEvent(context, eventType, entity);
+				
+				if (UpdateKind.PERSIST.equals(update.getKind()) || UpdateKind.REMOVE.equals(update.getKind())) {
+					if (!refreshes.contains(entityName))
+						refreshes.add(entityName);
+				} 
+			}
+		}
+		
+		for (String refresh : refreshes)
+			context.getEventBus().raiseEvent(context, "org.granite.tide.data.refresh." + refresh);
+	}
+    
+	private static String getUnqualifiedClassName(String className) {
+		int idx = className.lastIndexOf(".");
+		return idx >= 0 ? className.substring(idx+1) : className;
+	}
 
 
     @Override

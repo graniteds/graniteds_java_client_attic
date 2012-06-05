@@ -11,7 +11,7 @@ import org.granite.tide.Context;
  * 
  *  @author William DRAI
  */
-public class TideFaultEvent extends TideEvent {
+public class TideFaultEvent extends TideRpcEvent {
     
     private Fault fault;
     private Map<String, Object> extendedData;
