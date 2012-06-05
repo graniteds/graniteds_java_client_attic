@@ -26,6 +26,7 @@ import org.granite.persistence.LazyableCollection;
 @RemoteClass("org.granite.messaging.persistence.ExternalizablePersistentList")
 public class PersistentList<T> implements ObservableList<T>, LazyableCollection, Externalizable {
 	
+	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(PersistentList.class);
 
     @SuppressWarnings("unused")

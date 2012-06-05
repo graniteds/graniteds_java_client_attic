@@ -5,13 +5,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 
 import org.granite.tide.Context;
 import org.granite.tide.ContextManager;
-import org.granite.tide.client.test.TestInstanceStore;
 import org.granite.tide.client.test.TestInstanceStoreFactory;
 import org.granite.tide.data.DataManager;
 import org.granite.tide.data.EntityManager;
@@ -30,7 +27,8 @@ public class TestResetEntity {
 
     private ContextManager contextManager;
     private Context ctx;
-    private DataManager dataManager;
+    @SuppressWarnings("unused")
+	private DataManager dataManager;
     private EntityManager entityManager;
     
     @Before

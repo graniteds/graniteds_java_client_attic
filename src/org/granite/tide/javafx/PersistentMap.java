@@ -23,6 +23,7 @@ import org.granite.persistence.LazyableCollection;
 @RemoteClass("org.granite.messaging.persistence.ExternalizablePersistentMap")
 public class PersistentMap<K, V> implements ObservableMap<K, V>, LazyableCollection, Externalizable {
 	
+	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(PersistentMap.class);
 
     @SuppressWarnings("unused")

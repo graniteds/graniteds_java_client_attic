@@ -13,7 +13,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.Context;
 import org.granite.tide.ContextManager;
-import org.granite.tide.client.test.TestInstanceStore;
 import org.granite.tide.client.test.TestInstanceStoreFactory;
 import org.granite.tide.data.DataManager.ChangeKind;
 import org.granite.tide.data.DirtyCheckContextImpl.Change;

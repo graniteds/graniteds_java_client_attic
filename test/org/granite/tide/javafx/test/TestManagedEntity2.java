@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 
-@SuppressWarnings("unchecked")
 public class TestManagedEntity2 {
     
     private EntityManager entityManager;

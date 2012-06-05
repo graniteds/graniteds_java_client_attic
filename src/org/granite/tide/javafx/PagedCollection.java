@@ -6,15 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javafx.collections.ObservableList;
+import javafx.event.Event;
+
 import org.granite.logging.Logger;
 import org.granite.tide.Context;
 import org.granite.tide.rpc.ServerSession;
 import org.granite.tide.rpc.TideFaultEvent;
 import org.granite.tide.rpc.TideResultEvent;
-import org.granite.util.javafx.DataNotifier;
-
-import javafx.collections.ObservableList;
-import javafx.event.Event;
 
 
 public abstract class PagedCollection<T> implements ObservableList<T> {
@@ -66,6 +65,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	private List<Object[]> ipes;		// Array of ItemPendingErrors
 	
 	// GDS-523
+	@SuppressWarnings("unused")
 	private String uidProperty = "uid";
 	
 	public void setUidProperty(String uidProperty) {
@@ -73,6 +73,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	}
 	
 	// GDS-712
+	@SuppressWarnings("unused")
 	private boolean multipleSort = true;
 	
 	public void setMultipleSort(boolean multipleSort) {
@@ -238,6 +239,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	}
 
 	
+	@SuppressWarnings("unused")
 	private void refreshHandler(Event event) {
 		fullRefresh();
 	}
@@ -308,6 +310,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	 *  @param result the result object
 	 *  @param event the result event
 	 */
+	@SuppressWarnings("unchecked")
 	protected void handleResult(Map<String, Object> result, TideResultEvent<?> event) {
 		list = (List<T>)result.get("resultList");
 		
@@ -332,9 +335,11 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 		    expectedFirst = nextFirst;
 		    expectedLast = nextLast;
 		}
+		@SuppressWarnings("unused")
 		int page = nextFirst / max;
 		// log.debug("findResult page {0} ({1} - {2})", page, nextFirst, nextLast);
 		
+		@SuppressWarnings("unused")
 		int newCount = (Integer)result.get("resultCount");
 //		if (newCount != count) {
 //		    var pce:PropertyChangeEvent = PropertyChangeEvent.createUpdateEvent(this, "length", _count, newCount); 
@@ -537,6 +542,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	 *	@param prefetch not used
 	 *  @return object at specified index
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public T get(int index) {
 		if (index < 0)
@@ -604,6 +610,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 		// Trigger a results query for requested page
 		int nfi = 0;
 		int nla = 0;
+		@SuppressWarnings("unused")
 		int idx = page * max;
 		if (index >= last && index < last + max) {
 			nfi = first;

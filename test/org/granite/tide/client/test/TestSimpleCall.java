@@ -1,25 +1,5 @@
 package org.granite.tide.client.test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Future;
-
-//import org.granite.example.addressbook.entity.Person;
-//import org.granite.example.addressbook.entity.embed.Document;
-import org.granite.rpc.AsyncToken;
-import org.granite.rpc.events.FaultEvent;
-import org.granite.rpc.events.MessageEvent;
-import org.granite.rpc.events.ResultEvent;
-import org.granite.tide.Component;
-import org.granite.tide.Context;
-import org.granite.tide.ContextManager;
-import org.granite.tide.data.EntityManagerImpl;
-import org.granite.tide.impl.ContextManagerImpl;
-import org.granite.tide.javafx.JavaFXDataManager;
-import org.junit.Assert;
-import org.junit.Test;
-
-import flex.messaging.messages.AcknowledgeMessage;
 
 
 public class TestSimpleCall {

@@ -12,12 +12,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 
-@SuppressWarnings("unchecked")
 public class TestResetEntity2 {
 
     private ContextManager contextManager;
     private Context ctx;
-    private DataManager dataManager;
+    @SuppressWarnings("unused")
+	private DataManager dataManager;
     private EntityManager entityManager;
     
     @Before

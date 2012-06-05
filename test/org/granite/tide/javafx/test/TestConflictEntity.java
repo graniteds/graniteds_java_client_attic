@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import org.granite.tide.Context;
 import org.granite.tide.ContextManager;
-import org.granite.tide.client.test.TestInstanceStore;
 import org.granite.tide.client.test.TestInstanceStoreFactory;
 import org.granite.tide.data.Conflicts;
 import org.granite.tide.data.DataConflictListener;
@@ -25,7 +24,8 @@ public class TestConflictEntity {
 
     private ContextManager contextManager;
     private Context ctx;
-    private DataManager dataManager;
+    @SuppressWarnings("unused")
+	private DataManager dataManager;
     private EntityManager entityManager;
     
     @Before
