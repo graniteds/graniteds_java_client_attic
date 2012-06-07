@@ -81,7 +81,6 @@ public abstract class AbstractEngine implements Engine {
 		InputStream is = null;
 		try {
 			is = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/granite/messaging/engine/granite-config.xml");
-			graniteConfig = new GraniteConfig(null, is, null, null);
 			if (graniteConfigPath != null)
 				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(graniteConfigPath);
 			graniteConfig = new GraniteConfig(graniteStdConfigPath, is, null, null);
