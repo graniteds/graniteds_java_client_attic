@@ -49,7 +49,6 @@ public class JettyWebSocketEngine extends AbstractEngine implements WebSocketEng
 	private static final Logger log = Logger.getLogger(JettyWebSocketEngine.class);
 
 	private WebSocketClientFactory webSocketClientFactory = null;
-	protected WebSocketClient webSocketClient = null;
 	protected CookieStore cookieStore = new BasicCookieStore();
 	
 	
