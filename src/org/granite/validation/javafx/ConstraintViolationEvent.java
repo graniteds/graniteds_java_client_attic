@@ -15,14 +15,14 @@ public class ConstraintViolationEvent extends Event {
 	public static EventType<ConstraintViolationEvent> ANY = new EventType<ConstraintViolationEvent>(EventType.ROOT);
 	public static EventType<ConstraintViolationEvent> CONSTRAINT_VIOLATION = new EventType<ConstraintViolationEvent>(ANY, "constraintViolation");
 
-	private final Set<ConstraintViolation<Object>> violations;
+	private final Set<ConstraintViolation<?>> violations;
 	
-	public ConstraintViolationEvent(EventType<? extends ConstraintViolationEvent> type, Set<ConstraintViolation<Object>> violations) {
+	public ConstraintViolationEvent(EventType<? extends ConstraintViolationEvent> type, Set<ConstraintViolation<?>> violations) {
 		super(type);
 		this.violations = violations;
 	}
 
-	public Set<ConstraintViolation<Object>> getViolations() {
+	public Set<ConstraintViolation<?>> getViolations() {
 		return violations;
 	}
 }

@@ -89,15 +89,15 @@ public class FormValidator {
 	public boolean validate(EventTarget entity) {
 		Set<ConstraintViolation<Object>> allViolations = validatorFactory.getValidator().validate((Object)entity, groups);
 		
-		Map<Object, Set<ConstraintViolation<Object>>> violationsMap = new HashMap<Object, Set<ConstraintViolation<Object>>>();
+		Map<Object, Set<ConstraintViolation<?>>> violationsMap = new HashMap<Object, Set<ConstraintViolation<?>>>();
 		for (ConstraintViolation<Object> violation : allViolations) {
 			Object rootBean = violation.getRootBean();
 			Object leafBean = violation.getLeafBean();
 			Object bean = leafBean != null && leafBean instanceof DataNotifier ? leafBean : rootBean;
 			
-			Set<ConstraintViolation<Object>> violations = violationsMap.get(bean);
+			Set<ConstraintViolation<?>> violations = violationsMap.get(bean);
 			if (violations == null) {
-				violations = new HashSet<ConstraintViolation<Object>>();
+				violations = new HashSet<ConstraintViolation<?>>();
 				violationsMap.put(bean, violations);
 			}			
 			violations.add(violation);
@@ -383,7 +383,7 @@ public class FormValidator {
 	private class ConstraintViolationHandler implements EventHandler<ConstraintViolationEvent> {
 		@Override
 		public void handle(ConstraintViolationEvent event) {
-			for (ConstraintViolation<Object> violation : event.getViolations()) {
+			for (ConstraintViolation<?> violation : event.getViolations()) {
 				Object leafBean = violation.getLeafBean();
 				String property = null;
 				Iterator<javax.validation.Path.Node> in = violation.getPropertyPath().iterator();

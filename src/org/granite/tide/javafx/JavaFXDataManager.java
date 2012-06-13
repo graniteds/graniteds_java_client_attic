@@ -9,7 +9,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
+
+import javax.validation.ConstraintViolation;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
@@ -23,6 +26,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.event.Event;
 
 import org.granite.logging.Logger;
 import org.granite.persistence.LazyableCollection;
@@ -32,6 +36,8 @@ import org.granite.tide.data.Identifiable;
 import org.granite.tide.data.Transient;
 import org.granite.tide.data.spi.DataManager;
 import org.granite.tide.data.spi.EntityDescriptor;
+import org.granite.util.javafx.DataNotifier;
+import org.granite.validation.javafx.ConstraintViolationEvent;
 
 
 public class JavaFXDataManager implements DataManager {
@@ -401,6 +407,14 @@ public class JavaFXDataManager implements DataManager {
                 throw new RuntimeException("Could not get dirty property on entity " + entity, e);
             }
         }
+    }
+
+
+    public void notifyConstraintViolations(Object entity, Set<ConstraintViolation<?>> violations) {
+		if (!(entity instanceof DataNotifier))
+			return;
+		ConstraintViolationEvent event = new ConstraintViolationEvent(ConstraintViolationEvent.CONSTRAINT_VIOLATION, violations);
+		Event.fireEvent((DataNotifier)entity, event);
     }
 
 }

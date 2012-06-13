@@ -2,6 +2,9 @@ package org.granite.tide.data.spi;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import javax.validation.ConstraintViolation;
 
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.collections.ManagedPersistentCollection;
@@ -67,6 +70,9 @@ public interface DataManager {
     public void notifyDirtyChange(boolean oldDirty, boolean dirty);
 
     public void notifyEntityDirtyChange(Object entity, boolean oldDirtyEntity, boolean newDirtyEntity);
+    
+    
+    public void notifyConstraintViolations(Object entity, Set<ConstraintViolation<?>> violation);
     
     
     /**

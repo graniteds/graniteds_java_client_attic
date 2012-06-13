@@ -1,21 +1,17 @@
-package org.granite.tide.javafx;
+package org.granite.tide.data;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javafx.event.Event;
-
 import javax.validation.ConstraintViolation;
 
 import org.granite.tide.Context;
 import org.granite.tide.server.ExceptionHandler;
 import org.granite.tide.server.TideFaultEvent;
-import org.granite.util.javafx.DataNotifier;
 import org.granite.validation.InvalidValue;
 import org.granite.validation.ServerConstraintViolation;
-import org.granite.validation.javafx.ConstraintViolationEvent;
 
 import flex.messaging.messages.ErrorMessage;
 
@@ -31,16 +27,16 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 	public void handle(Context context, ErrorMessage emsg, TideFaultEvent faultEvent) {
 		Object[] invalidValues = (Object[])emsg.getExtendedData().get("invalidValues");
 		if (invalidValues != null) {
-			Map<Object, Set<ConstraintViolation<Object>>> violationsMap = new HashMap<Object, Set<ConstraintViolation<Object>>>();
+			Map<Object, Set<ConstraintViolation<?>>> violationsMap = new HashMap<Object, Set<ConstraintViolation<?>>>();
 			for (Object v : invalidValues) {
 				InvalidValue iv = (InvalidValue)v;
 				Object rootBean = context.getEntityManager().getCachedObject(iv.getRootBean(), true);
 				Object leafBean = iv.getBean() != null ? context.getEntityManager().getCachedObject(iv.getBean(), true) : null;
 				Object bean = leafBean != null ? leafBean : rootBean;
 				
-				Set<ConstraintViolation<Object>> violations = violationsMap.get(bean);
+				Set<ConstraintViolation<?>> violations = violationsMap.get(bean);
 				if (violations == null) {
-					violations = new HashSet<ConstraintViolation<Object>>();
+					violations = new HashSet<ConstraintViolation<?>>();
 					violationsMap.put(bean, violations);
 				}
 				
@@ -48,12 +44,8 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 				violations.add(violation);
 			}
 			
-			for (Object bean : violationsMap.keySet()) {
-				if (bean instanceof DataNotifier) {
-					ConstraintViolationEvent event = new ConstraintViolationEvent(ConstraintViolationEvent.CONSTRAINT_VIOLATION, violationsMap.get(bean));
-					Event.fireEvent((DataNotifier)bean, event);
-				}
-			}
+			for (Object bean : violationsMap.keySet())
+				context.getDataManager().notifyConstraintViolations(bean, violationsMap.get(bean));
 		}
 	}
 
