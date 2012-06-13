@@ -107,19 +107,21 @@ public class Channel {
 		return authenticated;
 	}
 	
-	public void logout(AsyncResponder responder) {
+	public void logout(AsyncResponder responder, boolean expired) {
 		this.credentials = null;
 		this.authenticated = false;
 		this.authenticating = false;
 		
-		CommandMessage message = new CommandMessage();
-		message.setOperation(CommandMessage.LOGOUT_OPERATION);
-		message.setMessageId(UUIDUtil.randomUUID());
-		
-		AsyncToken token = new AsyncToken(message);
-		if (responder != null)
-			token.addResponder(responder);
-		send(token);
+		if (!expired) {
+			CommandMessage message = new CommandMessage();
+			message.setOperation(CommandMessage.LOGOUT_OPERATION);
+			message.setMessageId(UUIDUtil.randomUUID());
+			
+			AsyncToken token = new AsyncToken(message);
+			if (responder != null)
+				token.addResponder(responder);
+			send(token);
+		}
 	}
 	
 	public void send(AsyncToken token) {

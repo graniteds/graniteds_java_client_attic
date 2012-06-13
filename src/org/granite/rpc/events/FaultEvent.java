@@ -80,4 +80,9 @@ public class FaultEvent extends MessageEvent {
     public Object getRootCause() {
         return (isException() ? exception.getCause() : getMessage().getRootCause());
     }
+    
+    @Override
+    public String toString() {
+    	return getClass().getSimpleName() + ": " + getMessage() + " fault: " + getFaultCode() + " " + getFaultString(); 
+    }
 }

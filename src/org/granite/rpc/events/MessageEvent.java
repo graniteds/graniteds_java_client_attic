@@ -46,4 +46,9 @@ public abstract class MessageEvent {
 	public Message getMessage() {
 	    return message;
 	}
+	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + ": " + message;
+	}
 }

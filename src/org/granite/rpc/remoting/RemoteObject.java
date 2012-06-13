@@ -75,7 +75,7 @@ public class RemoteObject {
 	}
 	
 	public void logout(AsyncResponder responder) {
-		channel.logout(responder);
+		channel.logout(responder, false);
 	}
 	
 	public AsyncToken call(String method, Object[] params, AsyncResponder responder) {
@@ -109,5 +109,10 @@ public class RemoteObject {
 				return null;
 			}
 		});
+	}
+	
+	public static interface Listener {
+		
+		public void onCall(RemoteObject ro, AsyncToken token);
 	}
 }

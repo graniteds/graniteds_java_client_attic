@@ -15,14 +15,15 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
 import org.granite.messaging.amf.RemoteClass;
+import org.granite.messaging.service.security.SecurityServiceException;
 import org.granite.tide.Context;
 import org.granite.tide.TideResponder;
 import org.granite.tide.impl.ComponentImpl;
-import org.granite.tide.rpc.ExceptionHandler;
-import org.granite.tide.rpc.ServerSession;
-import org.granite.tide.rpc.SimpleTideResponder;
-import org.granite.tide.rpc.TideFaultEvent;
-import org.granite.tide.rpc.TideResultEvent;
+import org.granite.tide.server.ExceptionHandler;
+import org.granite.tide.server.ServerSession;
+import org.granite.tide.server.SimpleTideResponder;
+import org.granite.tide.server.TideFaultEvent;
+import org.granite.tide.server.TideResultEvent;
 import org.granite.util.WeakIdentityHashMap;
 
 import flex.messaging.messages.ErrorMessage;
@@ -360,7 +361,7 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
 
 	@Override
 	public boolean accepts(ErrorMessage emsg) {
-		return "Server.Security.NotLoggedIn".equals(emsg.getFaultCode());
+		return SecurityServiceException.CODE_NOT_LOGGED_IN.equals(emsg.getFaultCode());
 	}
 
 	@Override

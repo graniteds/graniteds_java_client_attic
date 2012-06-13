@@ -44,4 +44,9 @@ public class ResultEvent extends MessageEvent {
 	public Object getResult() {
 		return getMessage().getBody();
 	}
+    
+    @Override
+    public String toString() {
+    	return getClass().getSimpleName() + ": " + getMessage() + " result: " + getResult(); 
+    }
 }
