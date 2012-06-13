@@ -8,7 +8,6 @@ import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.collections.ManagedPersistentMap;
 import org.granite.tide.data.Identifiable;
 import org.granite.tide.data.spi.DataManager;
-import org.granite.tide.data.spi.DataManager.TrackingHandler;
 
 
 public class DefaultDataManager implements DataManager {

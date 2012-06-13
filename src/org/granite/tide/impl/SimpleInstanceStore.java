@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.granite.tide.Component;
 import org.granite.tide.Context;
 import org.granite.tide.InstanceStore;
+import org.granite.tide.server.Component;
 
 
 public class SimpleInstanceStore implements InstanceStore {

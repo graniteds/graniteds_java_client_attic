@@ -29,13 +29,11 @@ import org.granite.rpc.events.MessageEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.rpc.remoting.RemoteObject;
 import org.granite.tide.BeanManager;
-import org.granite.tide.Component;
 import org.granite.tide.Context;
 import org.granite.tide.ContextAware;
 import org.granite.tide.Expression;
 import org.granite.tide.PlatformConfigurable;
 import org.granite.tide.PropertyHolder;
-import org.granite.tide.TrackingContext;
 import org.granite.tide.data.EntityManager;
 import org.granite.tide.data.EntityManager.Update;
 import org.granite.tide.data.spi.MergeContext;
@@ -270,7 +268,7 @@ public class ServerSession implements ContextAware {
 		return sessionId;
 	}
 	
-	public void call() {
+	public void trackCall() {
 		isFirstCall = false;
 	}
 	

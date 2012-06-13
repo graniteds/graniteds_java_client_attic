@@ -30,9 +30,8 @@ import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.collections.ManagedPersistentMap;
 import org.granite.tide.data.Identifiable;
 import org.granite.tide.data.Transient;
-import org.granite.tide.data.impl.EntityDescriptor;
 import org.granite.tide.data.spi.DataManager;
-import org.granite.tide.data.spi.PersistenceManager;
+import org.granite.tide.data.spi.EntityDescriptor;
 
 
 public class JavaFXDataManager implements DataManager {
@@ -138,7 +137,7 @@ public class JavaFXDataManager implements DataManager {
 
     @Override
     public Map<String, Object> getPropertyValues(Object object, List<String> excludedProperties, boolean includeReadOnly, boolean includeTransient) {
-        EntityDescriptor desc = PersistenceManager.getEntityDescriptor(object);
+        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(object);
         
         Map<String, Object> values = new LinkedHashMap<String, Object>();
         for (Method m : object.getClass().getMethods()) {
@@ -365,7 +364,7 @@ public class JavaFXDataManager implements DataManager {
     
     private List<ObservableValue<?>> instrospectProperties(Object obj) {
         List<ObservableValue<?>> properties = new ArrayList<ObservableValue<?>>();
-        EntityDescriptor desc = PersistenceManager.getEntityDescriptor(obj);
+        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(obj);
         for (Method m : obj.getClass().getMethods()) {
             if (m.getParameterTypes().length != 0 || !m.getName().endsWith("Property") || !ObservableValue.class.isAssignableFrom(m.getReturnType()))
                 continue;
@@ -390,7 +389,7 @@ public class JavaFXDataManager implements DataManager {
 
     @Override
     public void notifyEntityDirtyChange(Object entity, boolean oldDirtyEntity, boolean newDirtyEntity) {
-        EntityDescriptor desc = PersistenceManager.getEntityDescriptor(entity);
+        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(entity);
         if (desc.getDirtyPropertyName() != null) {
             Method m;
             try {

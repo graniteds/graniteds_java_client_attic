@@ -19,6 +19,7 @@ import org.granite.validation.javafx.ConstraintViolationEvent;
 
 import flex.messaging.messages.ErrorMessage;
 
+
 public class ValidationExceptionHandler implements ExceptionHandler {
 
 	@Override

@@ -1,4 +1,4 @@
-package org.granite.tide;
+package org.granite.tide.server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.granite.logging.Logger;
+import org.granite.tide.ScopeType;
+import org.granite.tide.SyncMode;
 import org.granite.tide.invocation.ContextResult;
 import org.granite.tide.invocation.ContextUpdate;
 

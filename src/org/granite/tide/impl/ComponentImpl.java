@@ -8,21 +8,21 @@ import java.util.concurrent.Future;
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
 import org.granite.rpc.AsyncToken;
-import org.granite.rpc.InvocationInterceptor;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.rpc.remoting.RemoteObject;
-import org.granite.tide.ArgumentPreprocessor;
-import org.granite.tide.Component;
 import org.granite.tide.Context;
 import org.granite.tide.ContextAware;
 import org.granite.tide.NameAware;
 import org.granite.tide.PropertyHolder;
 import org.granite.tide.TideResponder;
-import org.granite.tide.TrackingContext;
 import org.granite.tide.invocation.InvocationCall;
+import org.granite.tide.server.ArgumentPreprocessor;
+import org.granite.tide.server.Component;
 import org.granite.tide.server.ComponentResponder;
+import org.granite.tide.server.InvocationInterceptor;
 import org.granite.tide.server.ServerSession;
+import org.granite.tide.server.TrackingContext;
 
 
 public class ComponentImpl implements Component, ContextAware, NameAware {
@@ -144,7 +144,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
             trackingContext.clearUpdates(true);
         
         // TODO
-		serverSession.call();
+		serverSession.trackCall();
 //        if (remoteConversation != null)
 //            remoteConversation.call();
         

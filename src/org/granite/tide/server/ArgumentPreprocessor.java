@@ -1,4 +1,4 @@
-package org.granite.tide;
+package org.granite.tide.server;
 
 import java.lang.reflect.Method;
 

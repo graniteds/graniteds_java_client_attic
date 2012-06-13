@@ -1,4 +1,4 @@
-package org.granite.tide.data.impl;
+package org.granite.tide.data.spi;
 
 import java.beans.Introspector;
 import java.lang.reflect.Field;
@@ -18,6 +18,8 @@ public class EntityDescriptor {
     
     @SuppressWarnings("unused")
     private final static Logger log = Logger.getLogger("org.granite.tide.data.EntityDescriptor");
+    
+    private static Map<Class<?>, EntityDescriptor> entityDescriptors = new HashMap<Class<?>, EntityDescriptor>(50);
     
     private final String className;
     private final String idPropertyName;
@@ -84,6 +86,15 @@ public class EntityDescriptor {
             dsField.setAccessible(true);
         if (initField != null)
             initField.setAccessible(true);
+    }
+    
+    public static EntityDescriptor getEntityDescriptor(Object object) {
+        EntityDescriptor desc = entityDescriptors.get(object.getClass());
+        if (desc == null) {
+            desc = new EntityDescriptor(object);
+            entityDescriptors.put(object.getClass(), desc);
+        }
+        return desc;
     }
     
     public String getClassName() {

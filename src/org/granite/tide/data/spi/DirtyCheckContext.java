@@ -1,11 +1,11 @@
-package org.granite.tide.data;
+package org.granite.tide.data.spi;
 
 import java.util.Map;
 import java.util.Set;
 
-import org.granite.tide.TrackingContext;
-import org.granite.tide.data.spi.MergeContext;
+import org.granite.tide.data.Identifiable;
 import org.granite.tide.data.spi.DataManager.ChangeKind;
+import org.granite.tide.server.TrackingContext;
 
 
 public interface DirtyCheckContext {
