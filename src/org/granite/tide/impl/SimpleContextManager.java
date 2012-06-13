@@ -6,29 +6,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.granite.tide.InstanceStore;
+import org.granite.tide.BeanManager;
 import org.granite.tide.Context;
 import org.granite.tide.ContextManager;
+import org.granite.tide.InstanceStore;
 import org.granite.tide.InstanceStoreFactory;
 import org.granite.tide.Platform;
 
 
-public class ContextManagerImpl implements ContextManager {
+public class SimpleContextManager implements ContextManager {
     
     static final String DEFAULT_CONTEXT = "__DEFAULT__CONTEXT__";
     
     protected final Platform platform;
     private InstanceStoreFactory instanceStoreFactory = new DefaultInstanceStoreFactory();
+    private BeanManager beanManager = new SimpleBeanManager();
     private Map<String, Context> contextsById = new HashMap<String, Context>();
     private List<String> contextsToDestroy = new ArrayList<String>();
     
     
-    public ContextManagerImpl(Platform platform) {
+    public SimpleContextManager(Platform platform) {
     	this.platform = platform;
     }
     
     public void setInstanceStoreFactory(InstanceStoreFactory instanceStoreFactory) {
     	this.instanceStoreFactory = instanceStoreFactory;
+    }
+    
+    public void setBeanManager(BeanManager beanManager) {
+    	this.beanManager = beanManager;
     }
     
     public static class DefaultInstanceStoreFactory implements InstanceStoreFactory {
@@ -62,8 +68,7 @@ public class ContextManagerImpl implements ContextManager {
     
     protected Context createContext(Context parentCtx, String contextId) {
         Context ctx = new Context(this, parentCtx, contextId);
-        ctx.setPlatform(platform);
-        ctx.setInstanceStore(instanceStoreFactory.createStore(ctx));
+        ctx.initContext(platform, beanManager, instanceStoreFactory.createStore(ctx));
         return ctx;
     }
     

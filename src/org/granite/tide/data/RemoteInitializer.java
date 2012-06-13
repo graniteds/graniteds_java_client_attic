@@ -1,6 +1,6 @@
 package org.granite.tide.data;
 
-import org.granite.tide.rpc.ServerSession;
+import org.granite.tide.server.ServerSession;
 
 
 public interface RemoteInitializer {

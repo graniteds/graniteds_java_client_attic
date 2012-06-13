@@ -1,11 +1,11 @@
-package org.granite.tide;
+package org.granite.tide.impl;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.Future;
 
 import org.granite.logging.Logger;
 import org.granite.rpc.AsyncToken;
-import org.granite.tide.impl.FutureResult;
+import org.granite.tide.BeanManager;
 
 
 public class SimpleBeanManager implements BeanManager {

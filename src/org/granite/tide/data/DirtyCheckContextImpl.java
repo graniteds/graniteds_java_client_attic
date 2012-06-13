@@ -13,11 +13,11 @@ import java.util.Set;
 
 import org.granite.logging.Logger;
 import org.granite.persistence.LazyableCollection;
-import org.granite.tide.ObjectUtil;
 import org.granite.tide.TrackingContext;
 import org.granite.tide.collections.ManagedPersistentAssociation;
 import org.granite.tide.data.DataManager.ChangeKind;
 import org.granite.tide.data.ExpressionEvaluator.Value;
+import org.granite.tide.impl.ObjectUtil;
 import org.granite.util.WeakIdentityHashMap;
 
 

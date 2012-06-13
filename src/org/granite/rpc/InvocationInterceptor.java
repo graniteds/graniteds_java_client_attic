@@ -2,7 +2,7 @@ package org.granite.rpc;
 
 import org.granite.tide.Component;
 import org.granite.tide.Context;
-import org.granite.tide.rpc.ComponentResponder;
+import org.granite.tide.server.ComponentResponder;
 
 
 public interface InvocationInterceptor {

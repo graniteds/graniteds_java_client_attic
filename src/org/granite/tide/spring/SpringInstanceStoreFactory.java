@@ -75,6 +75,6 @@ public class SpringInstanceStoreFactory implements InstanceStoreFactory {
 			Map<String, T> instancesMap = applicationContext.getBeansOfType(type);
 			T[] all = (T[])Array.newInstance(type, instancesMap.size());
 			return instancesMap.values().toArray(all);
-		}		
+		}
 	}
 }

@@ -17,11 +17,12 @@ import org.granite.tide.client.test.TestInstanceStoreFactory;
 import org.granite.tide.data.DataManager.ChangeKind;
 import org.granite.tide.data.DirtyCheckContextImpl.Change;
 import org.granite.tide.data.EntityManager;
-import org.granite.tide.impl.ContextManagerImpl;
+import org.granite.tide.impl.SimpleContextManager;
 import org.granite.tide.javafx.JavaFXDataManager;
 import org.granite.tide.javafx.JavaFXPlatform;
 import org.granite.tide.javafx.PersistentMap;
 import org.granite.tide.javafx.PersistentSet;
+import org.granite.tide.server.ServerSession;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,14 +35,17 @@ public class TestDirtyCheckEntity {
     private Context ctx;
     private JavaFXDataManager dataManager;
     private EntityManager entityManager;
+    private ServerSession serverSession;
     
     @Before
     public void setup() throws Exception {
-        contextManager = new ContextManagerImpl(new JavaFXPlatform());
+        contextManager = new SimpleContextManager(new JavaFXPlatform());
         contextManager.setInstanceStoreFactory(new TestInstanceStoreFactory());
         ctx = contextManager.getContext("");
         entityManager = ctx.getEntityManager();
         dataManager = (JavaFXDataManager)ctx.getDataManager();
+        serverSession = new ServerSession();
+        ctx.set(serverSession);
     }
     
     @Test
@@ -116,7 +120,7 @@ public class TestDirtyCheckEntity {
         receivedPerson.setContacts(new PersistentSet<Contact>());
         receivedPerson.getContacts().add(receivedContact);
         
-        ctx.internalResult(null, null, null, null, receivedPerson, null);
+        serverSession.handleResult(ctx, null, null, null, receivedPerson, null);
         
         Assert.assertFalse("Contact not dirty", contact.isDirty());
         Assert.assertTrue("Person 2 dirty", person2.isDirty());
@@ -124,7 +128,7 @@ public class TestDirtyCheckEntity {
         
         receivedPerson = new Person(2L, 1L, person2.getUid(), null, null);
         
-        ctx.internalResult(null, null, null, null, receivedPerson, null);
+        serverSession.handleResult(ctx, null, null, null, receivedPerson, null);
         Assert.assertFalse("Person 2 dirty", person2.isDirty());
         Assert.assertFalse("Context dirty", entityManager.isDirty());
     }

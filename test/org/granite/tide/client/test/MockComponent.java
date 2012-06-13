@@ -6,8 +6,8 @@ import java.util.concurrent.Executors;
 import org.granite.logging.Logger;
 import org.granite.rpc.AsyncToken;
 import org.granite.tide.impl.ComponentImpl;
-import org.granite.tide.rpc.ComponentResponder;
-import org.granite.tide.rpc.ServerSession;
+import org.granite.tide.impl.ComponentResponderImpl;
+import org.granite.tide.server.ServerSession;
 
 
 public class MockComponent extends ComponentImpl {
@@ -26,7 +26,7 @@ public class MockComponent extends ComponentImpl {
         this.responseBuilder = responseBuilder;
     }
     
-    public AsyncToken invoke(final ComponentResponder componentResponder) {
+    public AsyncToken invoke(final ComponentResponderImpl componentResponder) {
         final AsyncToken token = new MockAsyncToken(null);
         token.addResponder(componentResponder);
         

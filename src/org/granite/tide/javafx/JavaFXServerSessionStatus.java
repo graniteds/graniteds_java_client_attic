@@ -9,7 +9,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.scene.Cursor;
 import javafx.stage.Stage;
 
-import org.granite.tide.rpc.ServerSession.Status;
+import org.granite.tide.server.ServerSession.Status;
 
 
 public class JavaFXServerSessionStatus implements Status {

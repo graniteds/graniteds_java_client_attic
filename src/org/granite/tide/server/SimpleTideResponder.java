@@ -1,4 +1,4 @@
-package org.granite.tide.rpc;
+package org.granite.tide.server;
 
 import org.granite.tide.TideMergeResponder;
 

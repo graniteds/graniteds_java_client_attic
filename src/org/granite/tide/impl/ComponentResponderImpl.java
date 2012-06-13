@@ -1,17 +1,17 @@
-package org.granite.tide.rpc;
+package org.granite.tide.impl;
 
-import org.granite.rpc.AsyncResponder;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.tide.Component;
 import org.granite.tide.Context;
 import org.granite.tide.TideResponder;
+import org.granite.tide.server.ComponentResponder;
 
 
 /**
  * @author William DRAI
  */
-public class ComponentResponder implements AsyncResponder {
+public class ComponentResponderImpl implements ComponentResponder {
     
     private Context sourceContext;
     private Component component;
@@ -23,7 +23,7 @@ public class ComponentResponder implements AsyncResponder {
     private Object info;
     
     
-    public ComponentResponder(Context sourceContext, Handler handler, Component component, String operation, Object[] args, Object info, TideResponder<?> tideResponder) {        
+    public ComponentResponderImpl(Context sourceContext, Handler handler, Component component, String operation, Object[] args, Object info, TideResponder<?> tideResponder) {        
         this.sourceContext = sourceContext;
         this.handler = handler;
         this.component = component;
@@ -61,11 +61,4 @@ public class ComponentResponder implements AsyncResponder {
     public void fault(FaultEvent event) {
         handler.fault(sourceContext, event, info, componentName, operation, tideResponder, this);
     }    
-    
-    public static interface Handler {
-        
-        public void result(Context context, ResultEvent event, Object info, String componentName, String operation, TideResponder<?> tideResponder, ComponentResponder componentResponder);
-        
-        public void fault(Context context, FaultEvent event, Object info, String componentName, String operation, TideResponder<?> tideResponder, ComponentResponder componentResponder);
-    }
 }

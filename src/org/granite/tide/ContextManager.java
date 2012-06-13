@@ -7,6 +7,8 @@ public interface ContextManager {
 	
     public void setInstanceStoreFactory(InstanceStoreFactory instanceStoreFactory);
     
+    public void setBeanManager(BeanManager beanManager);
+    
     public Context getContext(String contextId);
     
     public Context getContext(String contextId, String parentContextId, boolean create);

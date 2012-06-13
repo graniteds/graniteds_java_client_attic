@@ -1,4 +1,4 @@
-package org.granite.tide.rpc;
+package org.granite.tide.impl;
 
 import org.granite.rpc.events.MessageEvent;
 import org.granite.rpc.events.ResultEvent;
@@ -6,6 +6,9 @@ import org.granite.tide.Context;
 import org.granite.tide.TideMergeResponder;
 import org.granite.tide.TideResponder;
 import org.granite.tide.invocation.InvocationResult;
+import org.granite.tide.server.ComponentResponder;
+import org.granite.tide.server.ServerSession;
+import org.granite.tide.server.TideResultEvent;
 
 
 public class ResultHandler<T> implements Runnable {
@@ -45,8 +48,6 @@ public class ResultHandler<T> implements Runnable {
             result = invocationResult.getResult();
         }
         
-        serverSession.result(event);
-        
 //        var conversationId:String = null;
 //        if (event.message.headers[Tide.IS_LONG_RUNNING_CONVERSATION_TAG])
 //            conversationId = event.message.headers[Tide.CONVERSATION_TAG];
@@ -57,7 +58,9 @@ public class ResultHandler<T> implements Runnable {
         
         Context context = sourceContext.getContextManager().retrieveContext(sourceContext, null, false, false); // conversationId, wasConversationCreated, wasConversationEnded);
         
-        context.internalResult(serverSession, componentName, operation, invocationResult, result, 
+        serverSession.handleResultEvent(event);
+        
+        serverSession.handleResult(context, componentName, operation, invocationResult, result, 
             tideResponder instanceof TideMergeResponder<?> ? ((TideMergeResponder<T>)tideResponder).getMergeResultWith() : null);
         if (invocationResult != null)
             result = invocationResult.getResult();

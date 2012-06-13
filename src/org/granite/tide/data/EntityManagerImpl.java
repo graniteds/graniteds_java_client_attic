@@ -16,7 +16,6 @@ import org.granite.persistence.LazyableCollection;
 import org.granite.tide.Component;
 import org.granite.tide.Context;
 import org.granite.tide.Expression;
-import org.granite.tide.ObjectUtil;
 import org.granite.tide.SyncMode;
 import org.granite.tide.TrackingContext;
 import org.granite.tide.collections.ManagedPersistentAssociation;
@@ -25,7 +24,8 @@ import org.granite.tide.collections.ManagedPersistentMap;
 import org.granite.tide.data.DataManager.ChangeKind;
 import org.granite.tide.data.ExpressionEvaluator.Value;
 import org.granite.tide.data.UIDWeakSet.Matcher;
-import org.granite.tide.rpc.ServerSession;
+import org.granite.tide.impl.ObjectUtil;
+import org.granite.tide.server.ServerSession;
 import org.granite.util.ClassUtil;
 import org.granite.util.WeakIdentityHashMap;
 

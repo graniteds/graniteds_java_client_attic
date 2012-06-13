@@ -1,7 +1,7 @@
 package org.granite.tide.collections;
 
 import org.granite.persistence.LazyableCollection;
-import org.granite.tide.rpc.ServerSession;
+import org.granite.tide.server.ServerSession;
 
 
 public interface ManagedPersistentAssociation extends LazyableCollection {

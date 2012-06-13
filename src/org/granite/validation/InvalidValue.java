@@ -1,4 +1,4 @@
-package org.granite.tide.validators;
+package org.granite.validation;
 
 import java.io.Externalizable;
 import java.io.IOException;

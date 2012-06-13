@@ -7,10 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.granite.tide.Component;
-import org.granite.tide.InstanceStore;
 import org.granite.tide.Context;
-import org.granite.tide.ContextAware;
-import org.granite.tide.NameAware;
+import org.granite.tide.InstanceStore;
 
 
 public class SimpleInstanceStore implements InstanceStore {
@@ -23,13 +21,6 @@ public class SimpleInstanceStore implements InstanceStore {
     	this.context = context;
     }
     
-    private void initInstance(Object instance, String name, Context context) {
-    	if (name != null && instance instanceof NameAware)
-    		((NameAware)instance).setName(name);
-    	if (instance instanceof ContextAware)
-    		((ContextAware)instance).setContext(context);
-    }
-    
     @SuppressWarnings("unchecked")
     public <T> T getNoProxy(String name) {
         Object instance = instances.get(name);
@@ -39,14 +30,14 @@ public class SimpleInstanceStore implements InstanceStore {
     }
     
     public void set(String name, Object instance) {
-    	initInstance(instance, name, context);
+    	context.initInstance(instance, name);
         instances.put(name, instance);
     }
     
     private int NUM_TYPED_INSTANCE = 1;
     
     public void set(Object instance) {
-    	initInstance(instance, null, context);
+    	context.initInstance(instance, null);
     	if (!instances.containsValue(instance))
     		instances.put(TYPED + (NUM_TYPED_INSTANCE++), instance);
     }

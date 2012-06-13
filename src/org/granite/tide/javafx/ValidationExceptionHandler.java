@@ -10,10 +10,11 @@ import javafx.event.Event;
 import javax.validation.ConstraintViolation;
 
 import org.granite.tide.Context;
-import org.granite.tide.rpc.ExceptionHandler;
-import org.granite.tide.rpc.TideFaultEvent;
-import org.granite.tide.validators.InvalidValue;
+import org.granite.tide.server.ExceptionHandler;
+import org.granite.tide.server.TideFaultEvent;
 import org.granite.util.javafx.DataNotifier;
+import org.granite.validation.InvalidValue;
+import org.granite.validation.ServerConstraintViolation;
 import org.granite.validation.javafx.ConstraintViolationEvent;
 
 import flex.messaging.messages.ErrorMessage;

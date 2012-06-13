@@ -9,7 +9,7 @@ import org.granite.messaging.engine.JettyWebSocketEngine;
 import org.granite.tide.EventBus;
 import org.granite.tide.data.DataManager;
 import org.granite.tide.impl.SimpleEventBus;
-import org.granite.tide.rpc.ServerSession;
+import org.granite.tide.server.ServerSession;
 
 
 public class JavaFXPlatform implements org.granite.tide.Platform {

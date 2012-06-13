@@ -12,11 +12,12 @@ import org.granite.tide.ContextManager;
 import org.granite.tide.client.test.TestInstanceStoreFactory;
 import org.granite.tide.data.DataManager;
 import org.granite.tide.data.EntityManager;
-import org.granite.tide.impl.ContextManagerImpl;
+import org.granite.tide.impl.SimpleContextManager;
 import org.granite.tide.javafx.JavaFXPlatform;
 import org.granite.tide.javafx.PersistentList;
 import org.granite.tide.javafx.PersistentMap;
 import org.granite.tide.javafx.PersistentSet;
+import org.granite.tide.server.ServerSession;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,14 +31,17 @@ public class TestResetEntity {
     @SuppressWarnings("unused")
 	private DataManager dataManager;
     private EntityManager entityManager;
+    private ServerSession serverSession;
     
     @Before
     public void setup() throws Exception {
-        contextManager = new ContextManagerImpl(new JavaFXPlatform());
+        contextManager = new SimpleContextManager(new JavaFXPlatform());
         contextManager.setInstanceStoreFactory(new TestInstanceStoreFactory());
         ctx = contextManager.getContext("");
         entityManager = ctx.getEntityManager();
         dataManager = ctx.getDataManager();
+        serverSession = new ServerSession();
+        ctx.set(serverSession);
     }
     
     @Test
@@ -134,7 +138,7 @@ public class TestResetEntity {
         Contact contact = new Contact(1L, 0L, "C1", null);
         contact.setPerson(person);
         contact = (Contact)entityManager.mergeExternalData(contact);
-        ctx.internalResult(null, null, null, null, null, null);
+        serverSession.handleResult(ctx, null, null, null, null, null);
         
         contact.setPerson(new Person());
         entityManager.resetEntity(contact);
@@ -147,8 +151,8 @@ public class TestResetEntity {
         c.setPerson(p);
         p.getContacts().add(c);
         person = (Person)entityManager.mergeExternalData(p);
-        ctx.internalResult(null, null, null, null, null, null);
-         
+        serverSession.handleResult(ctx, null, null, null, null, null);
+        
         person.getContacts().remove(0);
         
         entityManager.resetEntity(person);

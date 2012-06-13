@@ -4,7 +4,7 @@ import org.granite.tide.ContextAware;
 import org.granite.tide.NameAware;
 import org.granite.tide.Platform;
 import org.granite.tide.PlatformConfigurable;
-import org.granite.tide.impl.ContextManagerImpl;
+import org.granite.tide.impl.SimpleContextManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -13,7 +13,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 
-public class SpringContextManager extends ContextManagerImpl implements ApplicationContextAware, BeanPostProcessor, BeanFactoryPostProcessor {
+public class SpringContextManager extends SimpleContextManager implements ApplicationContextAware, BeanPostProcessor, BeanFactoryPostProcessor {
 	
 	public SpringContextManager(Platform platform) {
 		super(platform);

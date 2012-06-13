@@ -11,13 +11,14 @@ import org.granite.logging.Logger;
 import org.granite.rpc.AsyncResponder;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.ResultEvent;
+import org.granite.rpc.remoting.RemoteObject;
 import org.granite.tide.Context;
 import org.granite.tide.Expression;
-import org.granite.tide.ObjectUtil;
 import org.granite.tide.collections.ManagedPersistentAssociation;
+import org.granite.tide.impl.ObjectUtil;
 import org.granite.tide.invocation.InvocationCall;
 import org.granite.tide.invocation.InvocationResult;
-import org.granite.tide.rpc.ServerSession;
+import org.granite.tide.server.ServerSession;
 
 
 public class RemoteInitializerImpl implements RemoteInitializer {
@@ -101,8 +102,9 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 				}
 	    	}
 			
+	    	RemoteObject ro = serverSession.getRemoteObject();
 			for (Object entity : initMap.keySet()) {
-				serverSession.remoteCall("initializeObject", new Object[] { entity, initMap.get(entity).toArray(), new InvocationCall() },
+				ro.call("initializeObject", new Object[] { entity, initMap.get(entity).toArray(), new InvocationCall() },
 						new InitializerResponder(serverSession, entity));
 			}
     	}
@@ -130,7 +132,7 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 						entityManager.setUninitializeAllowed(false);
 						
 						// Assumes objects is a PersistentCollection or PersistentMap
-						context.internalResult(serverSession, null, null, (InvocationResult)event.getResult(), ((InvocationResult)event.getResult()).getResult(), null);
+						serverSession.handleResult(context, null, null, (InvocationResult)event.getResult(), ((InvocationResult)event.getResult()).getResult(), null);
 					}
 					finally {
 						entityManager.setUninitializeAllowed(saveUninitializeAllowed);
@@ -145,7 +147,7 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 				public void run() {
 					log.error("Fault initializing collection " + ObjectUtil.toString(entity) + " " + event.toString());
 					
-					context.internalFault(null, null, event.getMessage());
+					serverSession.handleFault(context, null, null, event.getMessage());
 				}
 			});
 		}   	

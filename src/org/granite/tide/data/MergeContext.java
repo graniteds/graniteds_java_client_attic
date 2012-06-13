@@ -6,7 +6,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.granite.tide.rpc.ServerSession;
+import org.granite.tide.server.ServerSession;
 
 
 public class MergeContext {

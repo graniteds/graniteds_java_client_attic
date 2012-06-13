@@ -1,4 +1,4 @@
-package org.granite.tide.rpc;
+package org.granite.tide.impl;
 
 import java.util.Map;
 
@@ -6,6 +6,11 @@ import org.granite.logging.Logger;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.tide.Context;
 import org.granite.tide.TideResponder;
+import org.granite.tide.server.ComponentResponder;
+import org.granite.tide.server.ExceptionHandler;
+import org.granite.tide.server.Fault;
+import org.granite.tide.server.ServerSession;
+import org.granite.tide.server.TideFaultEvent;
 
 import flex.messaging.messages.ErrorMessage;
 
@@ -78,9 +83,9 @@ public class FaultHandler<T> implements Runnable {
         }
         while (m != null);
         
-        serverSession.fault(event, emsg);
+        serverSession.handleFaultEvent(event, emsg);
         
-        context.internalFault(componentName, operation, emsg);
+        serverSession.handleFault(context, componentName, operation, emsg);
         
         boolean handled = false;
         Fault fault = new Fault(emsg.getFaultCode(), emsg.getFaultString(), emsg.getFaultDetail());

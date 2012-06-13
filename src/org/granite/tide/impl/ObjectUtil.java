@@ -1,4 +1,4 @@
-package org.granite.tide;
+package org.granite.tide.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

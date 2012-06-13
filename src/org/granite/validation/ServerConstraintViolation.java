@@ -1,4 +1,4 @@
-package org.granite.tide.javafx;
+package org.granite.validation;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -8,7 +8,6 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.metadata.ConstraintDescriptor;
 
-import org.granite.tide.validators.InvalidValue;
 
 
 /**

@@ -6,7 +6,7 @@ import java.util.Set;
 
 import org.granite.tide.Context;
 import org.granite.tide.Expression;
-import org.granite.tide.rpc.ServerSession;
+import org.granite.tide.server.ServerSession;
 
 
 /**
