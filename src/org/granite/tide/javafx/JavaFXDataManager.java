@@ -28,11 +28,11 @@ import org.granite.logging.Logger;
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.collections.ManagedPersistentMap;
-import org.granite.tide.data.DataManager;
-import org.granite.tide.data.EntityDescriptor;
 import org.granite.tide.data.Identifiable;
-import org.granite.tide.data.PersistenceManager;
 import org.granite.tide.data.Transient;
+import org.granite.tide.data.impl.EntityDescriptor;
+import org.granite.tide.data.spi.DataManager;
+import org.granite.tide.data.spi.PersistenceManager;
 
 
 public class JavaFXDataManager implements DataManager {

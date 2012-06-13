@@ -6,6 +6,8 @@ import java.util.Set;
 
 import org.granite.tide.Context;
 import org.granite.tide.Expression;
+import org.granite.tide.data.spi.DataManager;
+import org.granite.tide.data.spi.MergeContext;
 import org.granite.tide.server.ServerSession;
 
 

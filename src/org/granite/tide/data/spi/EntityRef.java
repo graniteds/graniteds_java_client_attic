@@ -1,4 +1,4 @@
-package org.granite.tide.data;
+package org.granite.tide.data.spi;
 
 
 public interface EntityRef {

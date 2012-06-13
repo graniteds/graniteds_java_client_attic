@@ -1,6 +1,7 @@
 package org.granite.tide.data;
 
 import org.granite.tide.Expression;
+import org.granite.tide.data.spi.MergeContext;
 
 
 public interface DataMerger {

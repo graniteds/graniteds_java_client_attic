@@ -1,4 +1,4 @@
-package org.granite.tide.data;
+package org.granite.tide.data.spi;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -6,6 +6,10 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.granite.tide.data.Conflicts;
+import org.granite.tide.data.DirtyCheckContext;
+import org.granite.tide.data.EntityManager;
+import org.granite.tide.data.Identifiable;
 import org.granite.tide.server.ServerSession;
 
 

@@ -1,4 +1,4 @@
-package org.granite.tide.data;
+package org.granite.tide.data.impl;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -15,8 +15,16 @@ import org.granite.logging.Logger;
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.TrackingContext;
 import org.granite.tide.collections.ManagedPersistentAssociation;
-import org.granite.tide.data.DataManager.ChangeKind;
-import org.granite.tide.data.ExpressionEvaluator.Value;
+import org.granite.tide.data.DirtyCheckContext;
+import org.granite.tide.data.Identifiable;
+import org.granite.tide.data.Lazyable;
+import org.granite.tide.data.spi.DataManager;
+import org.granite.tide.data.spi.ExpressionEvaluator;
+import org.granite.tide.data.spi.MergeContext;
+import org.granite.tide.data.spi.PersistenceManager;
+import org.granite.tide.data.spi.Wrapper;
+import org.granite.tide.data.spi.DataManager.ChangeKind;
+import org.granite.tide.data.spi.ExpressionEvaluator.Value;
 import org.granite.tide.impl.ObjectUtil;
 import org.granite.util.WeakIdentityHashMap;
 

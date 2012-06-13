@@ -1,6 +1,6 @@
 package org.granite.tide;
 
-import org.granite.tide.data.DataManager;
+import org.granite.tide.data.spi.DataManager;
 
 
 public interface Platform {

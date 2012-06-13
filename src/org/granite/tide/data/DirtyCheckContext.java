@@ -4,7 +4,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.granite.tide.TrackingContext;
-import org.granite.tide.data.DataManager.ChangeKind;
+import org.granite.tide.data.spi.MergeContext;
+import org.granite.tide.data.spi.DataManager.ChangeKind;
 
 
 public interface DirtyCheckContext {

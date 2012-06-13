@@ -1,4 +1,4 @@
-package org.granite.tide.data;
+package org.granite.tide.data.spi;
 
 import org.granite.tide.Expression;
 import org.granite.tide.SyncMode;

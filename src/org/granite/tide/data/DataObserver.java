@@ -10,6 +10,7 @@ import org.granite.messaging.MessageListener;
 import org.granite.tide.Context;
 import org.granite.tide.ContextAware;
 import org.granite.tide.data.EntityManager.UpdateKind;
+import org.granite.tide.data.spi.MergeContext;
 import org.granite.tide.server.ServerSession;
 
 import flex.messaging.messages.AcknowledgeMessage;

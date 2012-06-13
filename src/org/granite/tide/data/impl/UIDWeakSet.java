@@ -1,10 +1,10 @@
-package org.granite.tide.data;
+package org.granite.tide.data.impl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
-
+import org.granite.tide.data.Identifiable;
 
 
 /**

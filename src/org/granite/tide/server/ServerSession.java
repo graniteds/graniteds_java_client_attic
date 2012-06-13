@@ -38,7 +38,7 @@ import org.granite.tide.PropertyHolder;
 import org.granite.tide.TrackingContext;
 import org.granite.tide.data.EntityManager;
 import org.granite.tide.data.EntityManager.Update;
-import org.granite.tide.data.MergeContext;
+import org.granite.tide.data.spi.MergeContext;
 import org.granite.tide.invocation.ContextResult;
 import org.granite.tide.invocation.ContextUpdate;
 import org.granite.tide.invocation.InvocationResult;

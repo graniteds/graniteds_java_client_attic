@@ -1,4 +1,4 @@
-package org.granite.tide.data;
+package org.granite.tide.data.spi;
 
 import java.util.List;
 import java.util.Map;
@@ -6,6 +6,7 @@ import java.util.Map;
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.collections.ManagedPersistentMap;
+import org.granite.tide.data.Identifiable;
 
 
 

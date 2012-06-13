@@ -1,4 +1,4 @@
-package org.granite.tide.data;
+package org.granite.tide.data.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +15,10 @@ import org.granite.rpc.remoting.RemoteObject;
 import org.granite.tide.Context;
 import org.granite.tide.Expression;
 import org.granite.tide.collections.ManagedPersistentAssociation;
+import org.granite.tide.data.EntityManager;
+import org.granite.tide.data.Identifiable;
+import org.granite.tide.data.RemoteInitializer;
+import org.granite.tide.data.spi.PersistenceManager;
 import org.granite.tide.impl.ObjectUtil;
 import org.granite.tide.invocation.InvocationCall;
 import org.granite.tide.invocation.InvocationResult;

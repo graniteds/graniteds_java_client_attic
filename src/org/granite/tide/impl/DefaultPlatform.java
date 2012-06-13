@@ -2,8 +2,8 @@ package org.granite.tide.impl;
 
 import org.granite.tide.EventBus;
 import org.granite.tide.Platform;
-import org.granite.tide.data.DataManager;
-import org.granite.tide.data.DefaultDataManager;
+import org.granite.tide.data.impl.DefaultDataManager;
+import org.granite.tide.data.spi.DataManager;
 
 public class DefaultPlatform implements Platform {
 	

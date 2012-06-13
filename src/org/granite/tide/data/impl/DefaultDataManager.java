@@ -1,4 +1,4 @@
-package org.granite.tide.data;
+package org.granite.tide.data.impl;
 
 import java.util.List;
 import java.util.Map;
@@ -6,6 +6,9 @@ import java.util.Map;
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.collections.ManagedPersistentMap;
+import org.granite.tide.data.Identifiable;
+import org.granite.tide.data.spi.DataManager;
+import org.granite.tide.data.spi.DataManager.TrackingHandler;
 
 
 public class DefaultDataManager implements DataManager {

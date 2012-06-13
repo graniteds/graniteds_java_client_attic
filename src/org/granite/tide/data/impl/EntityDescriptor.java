@@ -1,4 +1,4 @@
-package org.granite.tide.data;
+package org.granite.tide.data.impl;
 
 import java.beans.Introspector;
 import java.lang.reflect.Field;
@@ -8,6 +8,10 @@ import java.util.Map;
 
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
+import org.granite.tide.data.Dirty;
+import org.granite.tide.data.Id;
+import org.granite.tide.data.Lazy;
+import org.granite.tide.data.Version;
 
 
 public class EntityDescriptor {

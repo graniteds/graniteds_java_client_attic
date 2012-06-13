@@ -7,7 +7,7 @@ import java.util.Map;
 import javafx.collections.FXCollections;
 
 import org.granite.tide.data.EntityManager;
-import org.granite.tide.data.EntityManagerImpl;
+import org.granite.tide.data.impl.EntityManagerImpl;
 import org.granite.tide.javafx.JavaFXDataManager;
 import org.junit.Assert;
 import org.junit.Before;

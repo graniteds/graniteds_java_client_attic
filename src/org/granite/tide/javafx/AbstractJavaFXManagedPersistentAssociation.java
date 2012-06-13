@@ -10,8 +10,8 @@ import org.granite.tide.PropertyHolder;
 import org.granite.tide.collections.ManagedPersistentAssociation;
 import org.granite.tide.data.EntityManager;
 import org.granite.tide.data.Identifiable;
-import org.granite.tide.data.PersistenceManager;
-import org.granite.tide.data.Wrapper;
+import org.granite.tide.data.spi.PersistenceManager;
+import org.granite.tide.data.spi.Wrapper;
 import org.granite.tide.impl.ObjectUtil;
 import org.granite.tide.server.ServerSession;
 

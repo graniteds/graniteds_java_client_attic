@@ -1,10 +1,14 @@
-package org.granite.tide.data;
+package org.granite.tide.data.spi;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
 import org.granite.tide.PropertyHolder;
+import org.granite.tide.data.EntityManager;
+import org.granite.tide.data.Identifiable;
+import org.granite.tide.data.Lazyable;
+import org.granite.tide.data.impl.EntityDescriptor;
 
 
 public class PersistenceManager {

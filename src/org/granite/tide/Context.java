@@ -3,10 +3,10 @@ package org.granite.tide;
 import java.util.List;
 
 import org.granite.logging.Logger;
-import org.granite.tide.data.DataManager;
 import org.granite.tide.data.EntityManager;
-import org.granite.tide.data.EntityManagerImpl;
-import org.granite.tide.data.RemoteInitializerImpl;
+import org.granite.tide.data.impl.EntityManagerImpl;
+import org.granite.tide.data.impl.RemoteInitializerImpl;
+import org.granite.tide.data.spi.DataManager;
 import org.granite.tide.impl.DefaultPlatform;
 import org.granite.tide.impl.SimpleEventBus;
 import org.granite.tide.impl.SimpleInstanceStore;

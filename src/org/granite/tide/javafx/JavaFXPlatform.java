@@ -7,7 +7,7 @@ import org.granite.messaging.engine.ApacheAsyncEngine;
 import org.granite.messaging.engine.Engine;
 import org.granite.messaging.engine.JettyWebSocketEngine;
 import org.granite.tide.EventBus;
-import org.granite.tide.data.DataManager;
+import org.granite.tide.data.spi.DataManager;
 import org.granite.tide.impl.SimpleEventBus;
 import org.granite.tide.server.ServerSession;
 

@@ -17,7 +17,7 @@ import javafx.collections.ObservableMap;
 
 import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.data.EntityManager;
-import org.granite.tide.data.EntityManagerImpl;
+import org.granite.tide.data.impl.EntityManagerImpl;
 import org.granite.tide.javafx.JavaFXDataManager;
 import org.granite.tide.javafx.PersistentSet;
 import org.granite.tide.javafx.test.PersonEmbedColl.ContactList;
