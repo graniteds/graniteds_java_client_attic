@@ -13,8 +13,8 @@ public class TideApplicationEvent extends ApplicationEvent implements TideEvent 
 	private final Object[] args;
 
 	
-	public TideApplicationEvent(Object source, String type, Object... args) {
-		super(source);
+	public TideApplicationEvent(Context context, String type, Object... args) {
+		super(context);
 		this.type = type;
 		this.args = args;
 	}

@@ -32,4 +32,31 @@ public class TideFXMLLoader {
             }
         }
     }
+	
+    public static Object load(String url, final Object controller) throws IOException {
+        InputStream fxmlStream = null;
+        try {
+            fxmlStream = controller.getClass().getResourceAsStream(url);
+            FXMLLoader loader = new FXMLLoader();
+            loader.setControllerFactory(new Callback<Class<?>, Object>() {
+				@Override
+				public Object call(Class<?> type) {
+					if (type.isInstance(controller))
+						return controller;
+					try {
+						return type.newInstance();
+					}
+					catch (Exception e) {
+						throw new RuntimeException("Could not instantiate controller of class " + type);
+					}
+				}
+            });
+            return loader.load(fxmlStream);
+        }
+        finally {
+            if (fxmlStream != null) {
+                fxmlStream.close();
+            }
+        }
+    }
 }

@@ -145,6 +145,8 @@ public class Context {
     		((NameAware)instance).setName(name);
     	if (instance instanceof ContextAware)
     		((ContextAware)instance).setContext(this);
+    	if (instance instanceof Initializable)
+    		((Initializable)instance).init();
     }
     
     

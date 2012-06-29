@@ -6,6 +6,10 @@ import org.granite.config.GraniteConfig;
 import org.granite.messaging.engine.ApacheAsyncEngine;
 import org.granite.messaging.engine.Engine;
 import org.granite.messaging.engine.JettyWebSocketEngine;
+import org.granite.persistence.javafx.PersistentBag;
+import org.granite.persistence.javafx.PersistentList;
+import org.granite.persistence.javafx.PersistentMap;
+import org.granite.persistence.javafx.PersistentSet;
 import org.granite.tide.EventBus;
 import org.granite.tide.data.spi.DataManager;
 import org.granite.tide.impl.SimpleEventBus;
@@ -15,8 +19,17 @@ import org.granite.tide.server.ServerSession;
 public class JavaFXPlatform implements org.granite.tide.Platform {
 	
 	private DataManager dataManager = new JavaFXDataManager();
-	private ServerSession.Status serverSessionStatus = new JavaFXServerSessionStatus();
-	private EventBus eventBus = new SimpleEventBus();
+	private final ServerSession.Status serverSessionStatus = new JavaFXServerSessionStatus();
+	private final EventBus eventBus;
+	
+	
+	public JavaFXPlatform() {
+		eventBus = new SimpleEventBus();
+	}
+	
+	public JavaFXPlatform(EventBus eventBus) {
+		this.eventBus = eventBus;
+	}
 	
 	
 	public void configure(Object instance) {
