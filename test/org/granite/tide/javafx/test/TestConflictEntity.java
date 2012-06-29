@@ -2,6 +2,7 @@ package org.granite.tide.javafx.test;
 
 import java.util.Arrays;
 
+import org.granite.persistence.javafx.PersistentSet;
 import org.granite.tide.Context;
 import org.granite.tide.ContextManager;
 import org.granite.tide.client.test.TestInstanceStoreFactory;
@@ -14,7 +15,6 @@ import org.granite.tide.data.spi.DataManager;
 import org.granite.tide.data.spi.MergeContext;
 import org.granite.tide.impl.SimpleContextManager;
 import org.granite.tide.javafx.JavaFXPlatform;
-import org.granite.tide.javafx.PersistentSet;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

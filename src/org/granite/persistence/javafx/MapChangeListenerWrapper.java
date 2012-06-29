@@ -1,4 +1,4 @@
-package org.granite.tide.javafx;
+package org.granite.persistence.javafx;
 
 import org.granite.persistence.LazyableCollection;
 

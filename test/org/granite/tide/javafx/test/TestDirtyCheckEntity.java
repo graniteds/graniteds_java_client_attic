@@ -11,6 +11,8 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 
 import org.granite.persistence.LazyableCollection;
+import org.granite.persistence.javafx.PersistentMap;
+import org.granite.persistence.javafx.PersistentSet;
 import org.granite.tide.Context;
 import org.granite.tide.ContextManager;
 import org.granite.tide.client.test.TestInstanceStoreFactory;
@@ -20,8 +22,6 @@ import org.granite.tide.data.EntityManager;
 import org.granite.tide.impl.SimpleContextManager;
 import org.granite.tide.javafx.JavaFXDataManager;
 import org.granite.tide.javafx.JavaFXPlatform;
-import org.granite.tide.javafx.PersistentMap;
-import org.granite.tide.javafx.PersistentSet;
 import org.granite.tide.server.ServerSession;
 import org.junit.Assert;
 import org.junit.Before;
