@@ -10,10 +10,9 @@ import org.granite.persistence.LazyableCollection;
 import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.collections.ManagedPersistentMap;
 import org.granite.tide.data.Identifiable;
-import org.granite.tide.data.spi.DataManager;
 
 
-public class DefaultDataManager implements DataManager {
+public class DefaultDataManager extends AbstractDataManager {
 
     @Override
     public void setTrackingHandler(TrackingHandler trackingHandler) {

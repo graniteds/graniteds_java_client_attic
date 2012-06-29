@@ -133,7 +133,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             
             Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
             
-            EntityDescriptor desc = entity instanceof Identifiable ? EntityDescriptor.getEntityDescriptor(entity) : null;
+            EntityDescriptor desc = entity instanceof Identifiable ? dataManager.getEntityDescriptor(entity) : null;
             Map<String, Object> save = savedProperties.get(entity);
             String versionPropertyName = desc != null ? desc.getVersionPropertyName() : null;
             String dirtyPropertyName = desc != null ? desc.getDirtyPropertyName() : null;
@@ -322,7 +322,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         if (diff) {
             boolean oldDirtyEntity = isEntityChanged(object, propName, oldValue);
             
-            EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(entity);
+            EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
             Map<String, Object> save = savedProperties.get(object);
             boolean unsaved = save == null;
             
@@ -379,7 +379,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 	public void entityCollectionChangeHandler(Object owner, String propName, ChangeKind kind, int location, Object[] items) {
         boolean oldDirty = isDirty();
         
-        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(owner);
+        EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
         boolean oldDirtyEntity = isEntityChanged(owner);
         
         Map<String, Object> esave = savedProperties.get(owner);
@@ -498,7 +498,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 	public void entityMapChangeHandler(Object owner, String propName, ChangeKind kind, int location, Object[] items) {
         boolean oldDirty = isDirty();
         
-        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(owner);
+        EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
         boolean oldDirtyEntity = isEntityChanged(owner);
         
         Map<String, Object> esave = savedProperties.get(owner);
@@ -634,7 +634,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         boolean oldDirty = isDirty();
         boolean oldDirtyEntity = isEntityChanged(entity);
         
-        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(entity);
+        EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
         List<String> merged = new ArrayList<String>();
         
         for (String propName : save.keySet()) {
@@ -685,7 +685,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         cache.add(entity);
         
         Map<String, Object> save = savedProperties.get(entity);
-        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(entity);
+        EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
         
         Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
         

@@ -12,7 +12,10 @@ public class PersistenceManager {
     }
     
     public static void setEntityManager(Object object, EntityManager entityManager) {
-        entityManagersByEntity.put(object, entityManager);
+    	if (entityManager == null)
+            entityManagersByEntity.remove(object);
+    	else
+    		entityManagersByEntity.put(object, entityManager);
     }
 
 }

@@ -1,9 +1,5 @@
 package org.granite.tide.data.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Date;
 
 import org.granite.tide.PropertyHolder;
@@ -22,20 +18,6 @@ public class ObjectUtil {
     public static String toString(Object obj) {
         return obj != null ? obj.toString() : "null";
     }
-
-    public static Object copy(Object obj) {
-        try {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream(500);
-            ObjectOutputStream oos = new ObjectOutputStream(buf);
-            oos.writeObject(obj);
-            ByteArrayInputStream bis = new ByteArrayInputStream(buf.toByteArray());
-            ObjectInputStream ois = new ObjectInputStream(bis);
-            return ois.readObject();
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Could not copy object " + obj, e);
-        }
-    }
     
     /**
      *  Equality for objects, using uid property when possible
@@ -52,7 +34,7 @@ public class ObjectUtil {
         if (obj1 instanceof Identifiable && obj2 instanceof Identifiable && obj1.getClass() == obj2.getClass()) {
             if (obj1 instanceof Lazyable && (!((Lazyable)obj1).isInitialized() || !((Lazyable)obj2).isInitialized())) {
                 // Compare with identifier for uninitialized entities
-                EntityDescriptor edesc = EntityDescriptor.getEntityDescriptor(obj1);
+                EntityDescriptor edesc = dataManager.getEntityDescriptor(obj1);
                 if (edesc.getIdPropertyName() != null)
                     return dataManager.getProperty(obj1, edesc.getIdPropertyName()).equals(dataManager.getProperty(obj2, edesc.getIdPropertyName()));
             }

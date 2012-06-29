@@ -95,7 +95,7 @@ public class UIDWeakSet {
 
     public static interface Operation {
         
-        public boolean apply(Object o);
+        public void apply(Object o);
     }
     
     public void apply(Operation operation) {

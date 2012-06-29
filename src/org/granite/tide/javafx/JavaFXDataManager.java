@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import javax.validation.ConstraintViolation;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -28,19 +26,23 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.event.Event;
 
+import javax.validation.ConstraintViolation;
+
 import org.granite.logging.Logger;
 import org.granite.persistence.LazyableCollection;
 import org.granite.tide.collections.ManagedPersistentCollection;
 import org.granite.tide.collections.ManagedPersistentMap;
+import org.granite.tide.collections.javafx.JavaFXManagedPersistentCollection;
+import org.granite.tide.collections.javafx.JavaFXManagedPersistentMap;
 import org.granite.tide.data.Identifiable;
 import org.granite.tide.data.Transient;
-import org.granite.tide.data.spi.DataManager;
+import org.granite.tide.data.impl.AbstractDataManager;
 import org.granite.tide.data.spi.EntityDescriptor;
 import org.granite.util.javafx.DataNotifier;
 import org.granite.validation.javafx.ConstraintViolationEvent;
 
 
-public class JavaFXDataManager implements DataManager {
+public class JavaFXDataManager extends AbstractDataManager {
 	
 	private static final Logger log = Logger.getLogger(JavaFXDataManager.class);
     
@@ -143,7 +145,7 @@ public class JavaFXDataManager implements DataManager {
 
     @Override
     public Map<String, Object> getPropertyValues(Object object, List<String> excludedProperties, boolean includeReadOnly, boolean includeTransient) {
-        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(object);
+        EntityDescriptor desc = getEntityDescriptor(object);
         
         Map<String, Object> values = new LinkedHashMap<String, Object>();
         for (Method m : object.getClass().getMethods()) {
@@ -370,7 +372,7 @@ public class JavaFXDataManager implements DataManager {
     
     private List<ObservableValue<?>> instrospectProperties(Object obj) {
         List<ObservableValue<?>> properties = new ArrayList<ObservableValue<?>>();
-        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(obj);
+        EntityDescriptor desc = getEntityDescriptor(obj);
         for (Method m : obj.getClass().getMethods()) {
             if (m.getParameterTypes().length != 0 || !m.getName().endsWith("Property") || !ObservableValue.class.isAssignableFrom(m.getReturnType()))
                 continue;
@@ -395,7 +397,7 @@ public class JavaFXDataManager implements DataManager {
 
     @Override
     public void notifyEntityDirtyChange(Object entity, boolean oldDirtyEntity, boolean newDirtyEntity) {
-        EntityDescriptor desc = EntityDescriptor.getEntityDescriptor(entity);
+        EntityDescriptor desc = getEntityDescriptor(entity);
         if (desc.getDirtyPropertyName() != null) {
             Method m;
             try {

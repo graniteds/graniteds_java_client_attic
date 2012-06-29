@@ -19,6 +19,8 @@ public interface DataManager {
 
     public boolean isDirty();
     
+    public EntityDescriptor getEntityDescriptor(Object entity);
+    
     public Object getProperty(Object object, String propertyName);
 
     public void setProperty(Object object, String propertyName, Object oldValue, Object newValue);
