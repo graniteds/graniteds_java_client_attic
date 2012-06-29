@@ -1,4 +1,4 @@
-package org.granite.tide.javafx;
+package org.granite.tide.collections.javafx;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,22 +1,33 @@
-package org.granite.tide.javafx;
+package org.granite.tide.collections.javafx;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
+import javafx.beans.InvalidationListener;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
 
 import org.granite.logging.Logger;
-import org.granite.tide.Context;
-import org.granite.tide.rpc.ServerSession;
-import org.granite.tide.rpc.TideFaultEvent;
-import org.granite.tide.rpc.TideResultEvent;
+import org.granite.tide.data.EntityManager;
+import org.granite.tide.events.TideEvent;
+import org.granite.tide.events.TideEventObserver;
+import org.granite.tide.server.ServerSession;
+import org.granite.tide.server.TideFaultEvent;
+import org.granite.tide.server.TideMergeResponder;
+import org.granite.tide.server.TideResultEvent;
+import org.granite.util.javafx.ListListenerHelper;
 
 
-public abstract class PagedCollection<T> implements ObservableList<T> {
+public abstract class PagedCollection<E> implements ObservableList<E>, TideEventObserver {
 	
     private static final Logger log = Logger.getLogger(PagedCollection.class);
     
@@ -29,9 +40,6 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	/**
 	 * 	@private
 	 */
-    protected ServerSession serverSession = null;
-	protected String componentName = null;
-	protected Context context = null;
     protected boolean initializing = false;
     private boolean initSent = false;
     
@@ -51,8 +59,10 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	 * 	@private
 	 */
     protected int count;         // Result count
-    private List<T> list = null;
-    private T[] localIndex = null;
+    private E[] localIndex = null;
+    
+    private List<E> internalWrappedList = new ArrayList<E>();
+    protected ObservableList<E> wrappedList;
     
 	/**
 	 * 	@private
@@ -81,22 +91,17 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	}
 	
 	
-	public PagedCollection(ServerSession serverSession) {
+	public PagedCollection() {
 		super();
 	    log.debug("create collection");
-		this.serverSession = serverSession;
 		ipes = null;
 		first = 0;
 		last = 0;
 		count = 0;
-		list = null;
 		initializing = true;
-	}
-	
-	
-	public void init(String componentName, Context context) {
-		this.componentName = componentName;
-		this.context = context;
+		
+		wrappedList = FXCollections.observableList(internalWrappedList);
+		wrappedList.addListener(new WrappedListListChangeListener());
 	}
 	
 	
@@ -131,23 +136,30 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	}
 	
 	
-	private Class<? extends T> elementClass;
-	private String elementName;
+	private Class<? extends E> elementClass;
+	private String elementName;	
+	private Set<String> entityNames = new HashSet<String>();
 	
-	public void setElementClass(Class<? extends T> elementClass) {
+	public void setElementClass(Class<? extends E> elementClass) {
 		this.elementClass = elementClass;
 		
-		// TODO
-//		if (this.elementName != null)
-//        	context.removeEventListener("org.granite.tide.data.refresh." + elementName, refreshHandler);
+		if (this.elementName != null)
+			entityNames.remove(elementName);
 		
 		elementName = elementClass != null ? elementClass.getSimpleName() : null;
 		
-		// TODO
-//		if (this.elementName != null)
-//        	context.addEventListener("org.granite.tide.data.refresh." + elementName, refreshHandler, false, 0, true);
+		if (this.elementName != null)
+			entityNames.add(this.elementName);
 	}
-	
+
+	@Override
+	public void handleEvent(TideEvent event) {
+		if (event.getType().startsWith("org.granite.tide.data.refresh.")) {
+			String entityName = event.getType().substring("org.granite.tide.data.refresh.".length());
+			if (entityNames.contains(entityName))
+				fullRefresh();
+		}
+	}	
 	
 	
 	/**
@@ -155,11 +167,11 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	 */
 	public void clear() {
 		Map<String, Object> result = new HashMap<String, Object>();
-		result.put("resultList", new ArrayList<T>());
+		result.put("resultList", new ArrayList<E>());
 		result.put("resultCount", 0);
 		result.put("firstResult", 0);
 		result.put("maxResults", max);
-		handleResult(result, null);
+		handleResult(result, null, 0, 0);
 		initializing = true;
 		initSent = false;
 		clearLocalIndex();
@@ -167,6 +179,8 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 		last = first+max;
 	}
 	
+	
+	private List<Integer[]> pendingRanges = new ArrayList<Integer[]>();
 	
 	/**
 	 *	Abstract method: trigger a results query for the current filter
@@ -176,8 +190,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	protected void find(int first, int last) {
 		log.debug("find from %d to %d", first, last);
 		
-//		if (beforeFindCall != null)
-//			beforeFindCall(first, last);
+		pendingRanges.add(new Integer[] { first, last });
 	}
 	
 	
@@ -198,23 +211,13 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	 */
 	public boolean refresh() {
 		// Recheck sort fields to listen for asc/desc change events
-		// (AdvancedDataGrid does not dispatch sortChanged when only asc/desc is changed)
-//		if (sort != null) {
-//			sort.compareFunction = nullCompare;
-//			if (sort.fields != null && sort.fields.length != _sortFieldListenersSet) {
-//				for each (var field:SortField in sort.fields)
-//					field.addEventListener("descendingChanged", sortFieldChangeHandler, false, 0, true);
-//				_sortFieldListenersSet = sort.fields.length;
-//			}
-//		}
-		
-		// _ipes = null;
+		pendingRanges.clear();
 		
 		if (fullRefresh) {
 			log.debug("full refresh");
 			
 			clearLocalIndex();
-
+			
 			fullRefresh = false;
 			if (filterRefresh) {
 			    first = 0;
@@ -237,34 +240,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 		}
 		localIndex = null;
 	}
-
 	
-	@SuppressWarnings("unused")
-	private void refreshHandler(Event event) {
-		fullRefresh();
-	}
-	
-	
-	/**
-	 * 	Internal handler for sort events
-	 * 
-	 * 	@param event sort event
-	 */
-//	private function sortChangedHandler(event:Event):void {
-//		if (this.sort != null)
-//			this.sort.compareFunction = nullCompare;	// Force compare function to do nothing as we use server-side sorting
-//	    _fullRefresh = true;
-//	}
-	
-    /**
-		 * Internal handler for sort field descending events
-	 * 
-	 * @param event descendingChange event
-	 */
-//	private function sortFieldChangeHandler(event:Event):void {
-//		_fullRefresh = true;
-//	}
-			
 	/**
 	 *  Build a result object from the result event
 	 *  
@@ -300,7 +276,7 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	protected void findResult(TideResultEvent<?> event, int first, int max) {
 	    Map<String, Object> result = getResult(event, first, max);
 	    
-	    handleResult(result, event);
+	    handleResult(result, event, first, max);
 	}
 	
 	/**
@@ -311,16 +287,17 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	 *  @param event the result event
 	 */
 	@SuppressWarnings("unchecked")
-	protected void handleResult(Map<String, Object> result, TideResultEvent<?> event) {
-		list = (List<T>)result.get("resultList");
+	protected void handleResult(Map<String, Object> result, TideResultEvent<?> event, int first, int max) {
+		List<E> list = (List<E>)result.get("resultList");
+
+		for (Iterator<Integer[]> ipr = pendingRanges.iterator(); ipr.hasNext(); ) {
+			Integer[] pr = ipr.next();
+			if (pr[0] == first && pr[1] == first+max) {
+				ipr.remove();
+				break;
+			}
+		}
 		
-//		if (this.sort != null)
-//			this.sort.compareFunction = nullCompare;	// Avoid automatic sorting
-		
-		int expectedFirst = 0;
-		int expectedLast = 0;
-		
-//		var dispatchReset:Boolean = _initializing && this.dispatchResetOnInit;
 		if (initializing && event != null) {
 			if (max == 0 && result.containsKey("maxResults"))
 		    	max = (Integer)result.get("maxResults");
@@ -329,165 +306,47 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 		
 		int nextFirst = (Integer)result.get("firstResult");
 		int nextLast = nextFirst + (Integer)result.get("maxResults");
-		log.debug("handle result %d - %d", nextFirst, nextLast);
 		
-		if (!initializing) {
-		    expectedFirst = nextFirst;
-		    expectedLast = nextLast;
-		}
 		@SuppressWarnings("unused")
 		int page = nextFirst / max;
-		// log.debug("findResult page {0} ({1} - {2})", page, nextFirst, nextLast);
+		log.debug("handle result page %d (%d - %d)", page, nextFirst, nextLast);
 		
-		@SuppressWarnings("unused")
-		int newCount = (Integer)result.get("resultCount");
-//		if (newCount != count) {
-//		    var pce:PropertyChangeEvent = PropertyChangeEvent.createUpdateEvent(this, "length", _count, newCount); 
-//			_count = newCount;
-//			dispatchEvent(pce);
-//		}
-	
+		count = ((Number)result.get("resultCount")).intValue();
+		
 	    initializing = false;
 		
-        boolean dispatchRefresh = (localIndex == null);
-	    
 	    if (localIndex != null) {
 	    	List<String> entityNames = new ArrayList<String>();
 	        for (int i = 0; i < localIndex.length; i++) {
 				String entityName = localIndex[i].getClass().getSimpleName();
-				if (!entityName.equals(elementName) && !entityNames.contains(entityName))
-					entityNames.add(entityName);
+				if (!entityName.equals(elementName))
+					entityNames.remove(entityName);
 
 	            stopTrackUpdates(localIndex[i]);
 	        }
-	     // TODO
-//	        for (String entityName : entityNames)
-//	        	context.removeEventListener("org.granite.tide.data.refresh." + entityName, refreshHandler);
 	    }
 	    for (Object o : list) {
 	    	if (elementClass == null || (o != null && o.getClass().isAssignableFrom(elementClass)))
-	    		elementClass = (Class<? extends T>)o.getClass();
+	    		elementClass = (Class<? extends E>)o.getClass();
 	    }
-	    localIndex = (T[])Array.newInstance(elementClass, list.size());
+	    localIndex = (E[])Array.newInstance(elementClass, list.size());
 		localIndex = list.toArray(localIndex);
 	    if (localIndex != null) {
-	    	List<String> entityNames = new ArrayList<String>();
 	        for (int i = 0; i < localIndex.length; i++) {
 				String entityName = localIndex[i].getClass().getSimpleName();
-				if (!entityName.equals(elementName) && !entityNames.contains(entityName))
+				if (!entityName.equals(elementName))
 					entityNames.add(entityName);
 					
 	            startTrackUpdates(localIndex[i]);
 	        }
-// TODO
-//	        for (String entityName : entityNames)
-//	        	context.addEventListener("org.granite.tide.data.refresh." + entityName, refreshHandler, false, 0, true);
 	    }
 	    
 		// Must be before collection event dispatch because it can trigger a new getItemAt
 		this.first = nextFirst;
 		this.last = nextLast;
 	    
-	    if (ipes != null) {
-	        List<Object[]> nextIpes = new ArrayList<Object[]>();
-	        
-		    while (!ipes.isEmpty()) {
-		        // Must pop the ipe before calling result
-		        Object[] a0 = ipes.remove(ipes.size()-1);
-		        if ((Integer)a0[1] == expectedFirst && (Integer)a0[2] == expectedLast) {
-		        	ItemPendingException ipe = (ItemPendingException)a0[0];
-		        	ipe.callRespondersResult(event);
-		        }
-		        else
-		            nextIpes.add(a0);
-		    }
-		    
-		    ipes = nextIpes;
-		}
-		
-//	    _ipes = null;
-	    
-//	    if (event != null)
-//	    	dispatchEvent(new CollectionEvent(COLLECTION_PAGE_CHANGE, false, false, RESULT, -1, -1, [ event ]));
-	    
-	    if (dispatchRefresh) {
-//	        _tempSort = new NullSort();
-//        	saveThrowIpe = _throwIpe;
-//            _throwIpe = false;
-	        refresh();
-//	        _throwIpe = saveThrowIpe;
-//	        _tempSort = null;
-	    }
-	    
-	    maxGetAfterHandle = -1;
-	    firstGetNext = -1;
-	    
-//	    if (dispatchReset)
-//	    	dispatchEvent(new CollectionEvent(CollectionEvent.COLLECTION_CHANGE, false, false, CollectionEventKind.RESET));
+		pendingRanges.clear();
 	}
-	
-	
-//	public override function dispatchEvent(event:Event):Boolean {
-//		if (_tempSort is NullSort && event is CollectionEvent && CollectionEvent(event).kind == CollectionEventKind.REFRESH)
-//			CollectionEvent(event).kind = CollectionEventKind.RESET;
-//		return super.dispatchEvent(event);
-//	} 
-	
-	
-//	private var _tempSort:NullSort = null;
-	
-	// All this ugly hack because ListCollectionView.revision is private
-//    mx_internal override function getBookmarkIndex(bookmark:CursorBookmark):int {
-//    	var saveThrowIpe:Boolean = _throwIpe;
-//        _throwIpe = false;
-//        var index:int = super.getBookmarkIndex(bookmark);
-//        _throwIpe = saveThrowIpe;
-//        return index;
-//    }
-
-
-//    [Bindable("listChanged")]
-//	public override function get list():IList {
-//	    return _list;
-//	}
-//
-//    CONFIG::flex40 {
-//        [Bindable("sortChanged")]
-//        public override function get sort():Sort {
-//            if (_tempSort && !_tempSort.sorted)
-//                return _tempSort;
-//            return super.sort;
-//        }
-//
-//        public override function set sort(newSort:Sort):void {
-//            // Track changes on sort fields
-//            if (sort != null && sort.fields != null) {
-//                for each (var field:SortField in sort.fields)
-//                    field.removeEventListener("descendingChanged", sortFieldChangeHandler);
-//            }
-//            _sortFieldListenersSet = 0;
-//            super.sort = newSort;
-//        }
-//    }
-//
-//    CONFIG::flex45 {
-//        [Bindable("sortChanged")]
-//        public override function get sort():ISort {
-//            if (_tempSort && !_tempSort.sorted)
-//                return _tempSort;
-//            return super.sort;
-//        }
-//
-//        public override function set sort(newSort:ISort):void {
-//            // Track changes on sort fields
-//            if (sort != null && sort.fields != null) {
-//                for each (var field:SortField in sort.fields)
-//                    field.removeEventListener("descendingChanged", sortFieldChangeHandler);
-//            }
-//            _sortFieldListenersSet = 0;
-//            super.sort = newSort;
-//        }
-//    }
 	
 	/**
 	 *  @private
@@ -510,29 +369,16 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	protected void handleFault(TideFaultEvent event) {
 		log.debug("findFault: %s", event);
 		
-		List<Object[]> nextIpes = new ArrayList<Object[]>();
-		if (ipes != null) {
-			while (ipes.size() > 0) {
-				Object[] a = (Object[])ipes.remove(ipes.size()-1);
-				ItemPendingException ipe = (ItemPendingException)a[0];
-				
-				if ((max == 0 && (Integer)a[1] == 0 && (Integer)a[2] == 0) || ((Integer)a[1] == first && (Integer)a[2] == last))
-					ipe.callRespondersFault(event);
-				else
-					nextIpes.add(a);
+		for (Iterator<Integer[]> ipr = pendingRanges.iterator(); ipr.hasNext(); ) {
+			Integer[] pr = ipr.next();
+			if (pr[0] == first && pr[1] == first+max) {
+				ipr.remove();
+				break;
 			}
-			ipes = nextIpes;
 		}
 	    
 //    	dispatchEvent(new CollectionEvent(COLLECTION_PAGE_CHANGE, false, false, FAULT, -1, -1, [ event ]));
-	    
-	    maxGetAfterHandle = -1;
-	    firstGetNext = -1;
 	}
-	
-	
-	private int maxGetAfterHandle = -1;
-	private int firstGetNext = -1;
 	
 	
 	/**
@@ -542,13 +388,12 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 	 *	@param prefetch not used
 	 *  @return object at specified index
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
-	public T get(int index) {
+	public E get(int index) {
 		if (index < 0)
 			return null;
 	
-		// log.debug("get item at {0}", index);
+		// log.debug("get item at %d", index);
 		
 		if (max == 0 || initializing) {
 			if (!initSent) {
@@ -559,50 +404,15 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 		    return null;
 		}
 
-		if (firstGetNext == -1) {
-			if (maxGetAfterHandle == -1)
-				maxGetAfterHandle = index;
-			else if (index > maxGetAfterHandle)
-				maxGetAfterHandle = index;
-				
-			if (index < maxGetAfterHandle)
-				firstGetNext = index;
-		}
-		else if (index > maxGetAfterHandle && firstGetNext < maxGetAfterHandle)
-			firstGetNext = index;
-	
-		if (localIndex != null && ipes != null) {
-			// Check if requested page is already pending, and rethrow existing error
-			// Always rethrow when data is after (workaround for probable bug of Flex DataGrid)
-			for (int i = 0; i < ipes.size(); i++) {
-				Object[] a = (Object[])ipes.get(i);
-				ItemPendingException ipe = (ItemPendingException)a[0];
-				if (index >= (Integer)a[1] && index < (Integer)a[2] && (Integer)a[2] > last && !ipe.hasResponders() && index != firstGetNext) {
-				    log.debug("forced rethrow of existing IPE for index %d (%d - %d)", index, a[1], a[2]);
-					((List<Integer>)a[3]).add(index);
-				    // log.debug("stacktrace {0}", ipe.getStackTrace());
-				    throw ipe;
-				}
-			}
-		}
-	    
 		if (localIndex != null && index >= first && index < last) {	// Local data available for index
 		    int j = index-first;
-		    // log.debug("getItemAt index {0} (current {1} to {2})", index, _first, _last);
 			return localIndex[j];
 		}
 		
-		if (ipes != null) {
-			// Check if requested page is already pending, and rethrow existing error
-			for (int i = 0; i < ipes.size(); i++) {
-				Object[] a = (Object[])ipes.get(i);
-				ItemPendingException ipe = (ItemPendingException)a[0];
-				if (index >= (Integer)a[1] && index < (Integer)a[2]) {
-				    log.debug("rethrow existing IPE for index %d (%d - %d)", index, a[1], a[2]);
-					((List<Integer>)a[3]).add(index);
-					throw ipe;
-				}
-			}
+		// If already in a pending range, return null
+		for (Integer[] pendingRange : pendingRanges) {
+			if (index >= pendingRange[0] && index < pendingRange[1])
+				return null;
 		}
 	    
 	    int page = index / max;
@@ -642,30 +452,297 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 		}
 		log.debug("request find for index " + index);
 		find(nfi, nla);
-		
-		// Throw ItemPendingError for requested index
-		// log.debug("ItemPendingError for index " + index + " triggered " + nfi + " to " + nla);
-		ItemPendingException ipe = new ItemPendingException("Items pending from " + nfi + " to " + nla + " for index " + index);
-		if (ipes == null)
-			ipes = new ArrayList<Object[]>();
-		List<Integer> indices = new ArrayList<Integer>();
-		indices.add(index);
-		ipes.add(new Object[] { ipe, nfi, nla, indices });
-	    log.debug("throw IPE for index %d (%d - %d)", index, nfi, nla);
-	    // log.debug("stacktrace {0}", ipe.getStackTrace());
-		throw ipe;
+		return null;
 	}
 	
 	
-    protected void startTrackUpdates(T item) {
+    protected void startTrackUpdates(E item) {
 //        if (item != null)
 //            IEventDispatcher(item).addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, itemUpdateHandler, false, 0, true);
     }
     
-    protected void stopTrackUpdates(T item) {
+    protected void stopTrackUpdates(E item) {
 //        if (item != null)
 //            IEventDispatcher(item).removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, itemUpdateHandler);    
     }
+
+
+	@Override
+	public boolean isEmpty() {
+		return size() == 0;
+	}
+
+
+	@Override
+	public boolean contains(Object o) {
+		if (o == null)
+			return false;
+		
+		if (localIndex != null) {
+			for (Object obj : localIndex) {
+				if (o.equals(obj))
+					return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		return false;
+	}
+
+	@Override
+	public int indexOf(Object o) {
+		if (o == null)
+			return -1;
+		
+		if (localIndex != null) {
+			for (int i = 0; i < localIndex.length; i++) {
+				if (o.equals(localIndex[i]))
+					return first+i;;
+			}
+		}
+		return -1;
+	}
+
+	@Override
+	public int lastIndexOf(Object o) {
+		if (o == null)
+			return -1;
+				
+		if (localIndex != null) {
+			int index = -1;
+			for (int i = 0; i < localIndex.length; i++) {
+				if (o.equals(localIndex[i]))
+					index = first+i;;
+			}
+			return index;
+		}
+		return -1;
+	}
+
+	@Override
+	public Iterator<E> iterator() {
+		return new PagedCollectionIterator();
+	}
+
+	@Override
+	public ListIterator<E> listIterator() {
+		return new PagedCollectionIterator();
+	}
+
+	@Override
+	public ListIterator<E> listIterator(int index) {
+		return new PagedCollectionIterator();
+	}
+	
+	
+	private ListListenerHelper<E> helper = new ListListenerHelper<E>();
+	
+	public void addListener(ListChangeListener<? super E> listener) {
+		helper.addListener(listener);
+    }
+
+	public void removeListener(ListChangeListener<? super E> listener) {
+		helper.removeListener(listener);
+    }
+	
+	public void addListener(InvalidationListener listener) {
+		helper.addListener(listener);
+    }
+
+	public void removeListener(InvalidationListener listener) {
+		helper.removeListener(listener);
+    }
+	
+	public class WrappedListListChangeListener implements ListChangeListener<E> {		
+	    @Override
+	    public void onChanged(ListChangeListener.Change<? extends E> change) {
+	    	ListChangeWrapper wrappedChange = new ListChangeWrapper(wrappedList, change);
+    		helper.fireValueChangedEvent(wrappedChange);
+	    }
+	}
+
+	public class ListChangeWrapper extends ListChangeListener.Change<E> {            
+	    private final ListChangeListener.Change<? extends E> wrappedChange;
+	    
+	    public ListChangeWrapper(ObservableList<E> list, ListChangeListener.Change<? extends E> wrappedChange) {
+	        super(list);
+	        this.wrappedChange = wrappedChange;
+	    }
+
+	    @Override
+		public int getAddedSize() {
+			return wrappedChange.getAddedSize();
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public List<E> getAddedSubList() {
+			return (List<E>)wrappedChange.getAddedSubList();
+		}
+
+		@Override
+		public int getRemovedSize() {
+			return wrappedChange.getRemovedSize();
+		}
+
+		@Override
+		public boolean wasAdded() {
+			return wrappedChange.wasAdded();
+		}
+
+		@Override
+		public boolean wasPermutated() {
+			return wrappedChange.wasPermutated();
+		}
+
+		@Override
+		public boolean wasRemoved() {
+			return wrappedChange.wasRemoved();
+		}
+
+		@Override
+		public boolean wasReplaced() {
+			return wrappedChange.wasReplaced();
+		}
+
+		@Override
+		public boolean wasUpdated() {
+			return wrappedChange.wasUpdated();
+		}
+
+		@Override
+	    public int getFrom() {
+			int from = wrappedChange.getFrom();
+	        return from+first;
+	    }
+
+	    @Override
+	    public int getTo() {
+	    	int to = wrappedChange.getTo();
+	        return to+first;
+	    }
+
+	    @Override
+	    protected int[] getPermutation() {
+	        // TODO
+	        return new int[0]; // wrappedChange.getPermutation();
+	    }
+
+	    @Override
+	    public int getPermutation(int num) {
+	        return wrappedChange.getPermutation(num);
+	    }
+
+	    @SuppressWarnings("unchecked")
+		@Override
+	    public List<E> getRemoved() {
+	        return (List<E>)wrappedChange.getRemoved();
+	    }
+
+	    @Override
+	    public boolean next() {
+	        return wrappedChange.next();
+	    }
+
+	    @Override
+	    public void reset() {
+	        wrappedChange.reset();
+	    }        
+	}
+	
+	
+	@Override
+	public Object[] toArray() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public <T> T[] toArray(T[] a) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean add(E e) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void add(int index, E element) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean addAll(Collection<? extends E> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean addAll(int index, Collection<? extends E> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean addAll(E... arg0) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean remove(Object o) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public E remove(int index) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void remove(int arg0, int arg1) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean removeAll(E... arg0) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean retainAll(E... arg0) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean setAll(Collection<? extends E> arg0) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean setAll(E... arg0) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public E set(int index, E element) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public List<E> subList(int fromIndex, int toIndex) {
+		throw new UnsupportedOperationException();
+	}
     
 //    protected void itemUpdateHandler(PropertyChangeEvent event) {
 //		if (hasEventListener(CollectionEvent.COLLECTION_CHANGE)) {
@@ -677,4 +754,123 @@ public abstract class PagedCollection<T> implements ObservableList<T> {
 //	    }
 //    }
 
+	
+	public class PagedCollectionIterator implements ListIterator<E> {
+		
+		private ListIterator<E> wrappedListIterator;
+		
+		public PagedCollectionIterator() {
+			wrappedListIterator = wrappedList.listIterator();
+		}
+
+		public PagedCollectionIterator(int index) {
+			wrappedListIterator = wrappedList.listIterator(index);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return wrappedListIterator.hasNext();
+		}
+	
+		@Override
+		public E next() {
+			return wrappedListIterator.next();
+		}
+	
+		@Override
+		public boolean hasPrevious() {
+			return wrappedListIterator.hasPrevious();
+		}
+	
+		@Override
+		public E previous() {
+			return wrappedListIterator.previous();
+		}
+	
+		@Override
+		public int nextIndex() {
+			return wrappedListIterator.nextIndex();
+		}
+	
+		@Override
+		public int previousIndex() {
+			return wrappedListIterator.previousIndex();
+		}
+	
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+	
+		@Override
+		public void set(E e) {
+			throw new UnsupportedOperationException();
+		}
+	
+		@Override
+		public void add(E e) {
+			throw new UnsupportedOperationException();
+		}
+		
+	}
+	
+	
+	public class PagedCollectionResponder implements TideMergeResponder<Map<String, Object>> {
+	    
+		private ServerSession serverSession;
+	    private int first;
+	    private int max;
+	    private Map<String, Object> mergedResult;
+	    
+	    
+	    public PagedCollectionResponder(ServerSession serverSession, int first, int max) {
+	    	this.serverSession = serverSession;
+	        this.first = first;
+	        this.max = max;
+	        this.mergedResult = new HashMap<String, Object>();
+	    }
+	    
+	    @Override
+    	@SuppressWarnings("unchecked")
+	    public void result(TideResultEvent<Map<String, Object>> event) {
+			List<E> list = (List<E>)mergedResult.get("resultList");
+	    	
+	    	int first = (Integer)mergedResult.get("firstResult");
+	    	int max = (Integer)mergedResult.get("maxResults");
+	    	
+	    	EntityManager entityManager = event.getContext().getEntityManager();
+	    	
+	    	if (!initializing) {
+	    		// Adjust internal list to expected results without triggering events	    		
+		    	if (first > PagedCollection.this.first && first < PagedCollection.this.last) {
+	    			internalWrappedList.subList(0, first - PagedCollection.this.first).clear();
+		    		for (int i = 0; i < first - PagedCollection.this.first && PagedCollection.this.last - first + i < list.size(); i++)
+		    			internalWrappedList.add((E)entityManager.mergeExternalData(serverSession, list.get(PagedCollection.this.last - first + i)));
+		    	}
+		    	else if (first+max > PagedCollection.this.first && first+max < PagedCollection.this.last) {
+		    		internalWrappedList.subList(first+max-PagedCollection.this.first, wrappedList.size()).clear();
+		    		for (int i = 0; i < PagedCollection.this.first - first && i < list.size(); i++)
+		    			internalWrappedList.add(i, (E)entityManager.mergeExternalData(serverSession, list.get(i)));
+		    	}
+		    	else if (first >= PagedCollection.this.last || first+max <= PagedCollection.this.first) {
+		    		internalWrappedList.clear();
+		    		for (int i = 0; i < list.size(); i++)
+		    			internalWrappedList.add((E)entityManager.mergeExternalData(serverSession, list.get(i)));
+		    	}
+	    	}
+	    	
+    		entityManager.mergeExternalData(serverSession, list, wrappedList, null, null);
+	    	
+            findResult(event, first, max);
+	    }
+	    
+	    public void fault(TideFaultEvent event) {
+            findFault(event, first, max);
+	    } 
+
+	    @Override
+        public Map<String, Object> getMergeResultWith() {
+            return mergedResult;
+        }
+	}
 }

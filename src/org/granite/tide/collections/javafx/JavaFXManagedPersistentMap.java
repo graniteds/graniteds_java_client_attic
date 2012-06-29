@@ -1,4 +1,4 @@
-package org.granite.tide.javafx;
+package org.granite.tide.collections.javafx;
 
 import java.util.Collection;
 import java.util.Map;
