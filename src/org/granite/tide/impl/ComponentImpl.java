@@ -15,13 +15,13 @@ import org.granite.tide.Context;
 import org.granite.tide.ContextAware;
 import org.granite.tide.NameAware;
 import org.granite.tide.PropertyHolder;
-import org.granite.tide.TideResponder;
 import org.granite.tide.invocation.InvocationCall;
 import org.granite.tide.server.ArgumentPreprocessor;
 import org.granite.tide.server.Component;
 import org.granite.tide.server.ComponentResponder;
 import org.granite.tide.server.InvocationInterceptor;
 import org.granite.tide.server.ServerSession;
+import org.granite.tide.server.TideResponder;
 import org.granite.tide.server.TrackingContext;
 
 
@@ -49,8 +49,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
     
     public void setContext(Context context) {
     	this.context = context;
-    }
-    
+    }    
     protected Context getContext() {
     	return context;
     }
@@ -155,7 +154,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public AsyncToken invoke(Context context, Component component, String operation, Object[] args, TideResponder<?> tideResponder, 
                            boolean withContext, ComponentResponderImpl.Handler handler) {
-        log.debug("invokeComponent %s > %s.%s", context.getContextId(), component.getName(), operation);
+        log.debug("invokeComponent %s > %s.%s", context.getContextId(), component.getName() != null ? component.getName() : component.getClass().getName(), operation);
         
         ComponentResponder.Handler h = handler != null ? handler : new ComponentResponder.Handler() {            
 			@Override

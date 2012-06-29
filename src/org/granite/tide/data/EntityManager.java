@@ -97,6 +97,7 @@ public interface EntityManager {
      */
     public EntityManager newTemporaryEntityManager();
     
+    
     /**
      *  Intercept a property getter
      * 

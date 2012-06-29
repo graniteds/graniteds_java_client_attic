@@ -5,12 +5,12 @@ import java.util.Map;
 import org.granite.logging.Logger;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.tide.Context;
-import org.granite.tide.TideResponder;
 import org.granite.tide.server.ComponentResponder;
 import org.granite.tide.server.ExceptionHandler;
 import org.granite.tide.server.Fault;
 import org.granite.tide.server.ServerSession;
 import org.granite.tide.server.TideFaultEvent;
+import org.granite.tide.server.TideResponder;
 
 import flex.messaging.messages.ErrorMessage;
 

@@ -1,7 +1,5 @@
-package org.granite.tide;
+package org.granite.tide.server;
 
-import org.granite.tide.server.TideFaultEvent;
-import org.granite.tide.server.TideResultEvent;
 
 
 public interface TideResponder<T> {

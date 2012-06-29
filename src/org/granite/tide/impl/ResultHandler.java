@@ -3,11 +3,11 @@ package org.granite.tide.impl;
 import org.granite.rpc.events.MessageEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.tide.Context;
-import org.granite.tide.TideMergeResponder;
-import org.granite.tide.TideResponder;
 import org.granite.tide.invocation.InvocationResult;
 import org.granite.tide.server.ComponentResponder;
 import org.granite.tide.server.ServerSession;
+import org.granite.tide.server.TideMergeResponder;
+import org.granite.tide.server.TideResponder;
 import org.granite.tide.server.TideResultEvent;
 
 

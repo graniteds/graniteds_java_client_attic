@@ -1,6 +1,5 @@
 package org.granite.tide.server;
 
-import org.granite.tide.TideMergeResponder;
 
 public abstract class SimpleTideResponder<T> implements TideMergeResponder<T> {
 	

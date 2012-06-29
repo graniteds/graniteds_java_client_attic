@@ -3,9 +3,9 @@ package org.granite.tide.impl;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.tide.Context;
-import org.granite.tide.TideResponder;
 import org.granite.tide.server.Component;
 import org.granite.tide.server.ComponentResponder;
+import org.granite.tide.server.TideResponder;
 
 
 /**

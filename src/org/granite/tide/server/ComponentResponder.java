@@ -4,7 +4,6 @@ import org.granite.rpc.AsyncResponder;
 import org.granite.rpc.events.FaultEvent;
 import org.granite.rpc.events.ResultEvent;
 import org.granite.tide.Context;
-import org.granite.tide.TideResponder;
 
 
 /**
