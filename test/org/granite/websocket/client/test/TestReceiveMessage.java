@@ -1,65 +1,78 @@
 package org.granite.websocket.client.test;
 
 import java.net.URI;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
 
 import org.granite.client.messaging.Consumer;
-import org.granite.client.messaging.MessageListener;
-import org.granite.client.messaging.WebSocketChannel;
-import org.granite.client.messaging.Consumer.SubscriptionListener;
-import org.granite.client.messaging.engine.JettyWebSocketEngine;
-import org.granite.client.messaging.engine.WebSocketEngine;
+import org.granite.client.messaging.ResultFaultIssuesResponseListener;
+import org.granite.client.messaging.channel.ResponseMessageFuture;
+import org.granite.client.messaging.channel.amf.AMFMessagingChannel;
+import org.granite.client.messaging.events.FaultEvent;
+import org.granite.client.messaging.events.IssueEvent;
+import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.transport.HTTPTransport;
+import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.junit.Test;
-
-import flex.messaging.messages.AcknowledgeMessage;
-import flex.messaging.messages.CommandMessage;
-import flex.messaging.messages.ErrorMessage;
-import flex.messaging.messages.Message;
 
 public class TestReceiveMessage {
 
 	@Test
 	public void testReceiveMessage() throws Exception {
-		WebSocketEngine engine = new JettyWebSocketEngine();		
-		WebSocketChannel channel = new WebSocketChannel(engine, null, new URI("ws://localhost:8080/shop-admin/gravityamf/amf"));
+		HTTPTransport transport = new ApacheAsyncTransport();		
+		AMFMessagingChannel channel = new AMFMessagingChannel(transport, "<id>", new URI("http://localhost:8080/shop-admin/gravityamf/amf"));
 		
+		transport.start();
 		try {
-			engine.start();
-			
-			Consumer consumer = new Consumer(channel, "wineshopTopic");
-			consumer.setTopic("tideDataTopic");
-			consumer.setSubscriptionListener(new SubscriptionListener() {
-				@Override
-				public void onUnsubscribeSuccess(AcknowledgeMessage message, CommandMessage unsubscriptionMessage) {
-					System.out.println("onUnubscribeSuccess");
-				}
-				
-				@Override
-				public void onUnsubscribeFault(String faultCode, String faultString, String faultDetail, ErrorMessage message) {
-					System.out.println("onUnsubscribeSuccess");
-				}
-				
-				@Override
-				public void onSubscribeSuccess(AcknowledgeMessage ackMessage, CommandMessage subscriptionMessage) {
-					System.out.println("onSubscribeSuccess");
-				}
-				
-				@Override
-				public void onSubscribeFault(String faultCode, String faultString, String faultDetail, ErrorMessage message) {
-					System.out.println("onSubscribeFault");
-				}
-			});
-			consumer.setMessageListener(new MessageListener() {
+			Consumer consumer = new Consumer(channel, "wineshopTopic", "tideDataTopic");
+			consumer.addMessageListener(new MessageListener() {
 				@Override
 				public void onMessage(Message message) {
-					System.out.println(message.getBody());
+					if (message instanceof ObjectMessage) try {
+						System.out.println(((ObjectMessage)message).getObject());
+					}
+					catch (JMSException e) {
+						e.printStackTrace();
+					}
 				}
 			});
-			consumer.subscribe();
 			
-			Thread.sleep(200000);
+			ResponseMessageFuture future = consumer.subscribe(new ResultFaultIssuesResponseListener() {
+
+				@Override
+				public void onResult(ResultEvent event) {
+					System.out.println("onSubscribeSuccess");
+				}
+
+				@Override
+				public void onFault(FaultEvent event) {
+					System.out.println("onSubscribeFault");
+				}
+
+				@Override
+				public void onIssue(IssueEvent event) {
+					System.out.println("onSubscribeIssue");
+				}
+			});
+			
+			future.get();
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		catch (TimeoutException e) {
+			e.printStackTrace();
+		}
+		catch (ExecutionException e) {
+			e.printStackTrace();
 		}
 		finally {
-			engine.stop();
+			transport.stop();
 		}
 	}
 }

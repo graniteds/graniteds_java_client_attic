@@ -1,7 +1,6 @@
 package org.granite.client.tide.impl;
 
-import org.granite.client.rpc.events.MessageEvent;
-import org.granite.client.rpc.events.ResultEvent;
+import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.server.ComponentResponder;
 import org.granite.client.tide.server.ServerSession;
@@ -17,14 +16,14 @@ public class ResultHandler<T> implements Runnable {
 	private final Context sourceContext;
 	private final String componentName;
 	private final String operation;
-	private final MessageEvent event;
+	private final ResultEvent event;
 	@SuppressWarnings("unused")
 	private final Object info;
 	private final TideResponder<T> tideResponder;
 	private final ComponentResponder componentResponder;
 	
 	
-	public ResultHandler(ServerSession serverSession, Context sourceContext, String componentName, String operation, MessageEvent event, Object info, TideResponder<T> tideResponder, ComponentResponder componentResponder) {
+	public ResultHandler(ServerSession serverSession, Context sourceContext, String componentName, String operation, ResultEvent event, Object info, TideResponder<T> tideResponder, ComponentResponder componentResponder) {
 		this.serverSession = serverSession;
 		this.sourceContext = sourceContext;
 		this.componentName = componentName;
@@ -38,10 +37,10 @@ public class ResultHandler<T> implements Runnable {
 	public void run() {
         InvocationResult invocationResult = null;
         Object result = null; 
-        if (event instanceof ResultEvent)
+//        if (event instanceof ResultEvent)
             result = ((ResultEvent)event).getResult();
-        else if (event instanceof MessageEvent)
-            result = ((MessageEvent)event).getMessage().getBody();
+//        else if (event instanceof MessageEvent)
+//            result = ((MessageEvent)event).getMessage().getBody();
         
         if (result instanceof InvocationResult) {
             invocationResult = (InvocationResult)result;
@@ -58,7 +57,7 @@ public class ResultHandler<T> implements Runnable {
         
         Context context = sourceContext.getContextManager().retrieveContext(sourceContext, null, false, false); // conversationId, wasConversationCreated, wasConversationEnded);
         
-        serverSession.handleResultEvent(event);
+//        serverSession.handleResultEvent(event);
         
         serverSession.handleResult(context, componentName, operation, invocationResult, result, 
             tideResponder instanceof TideMergeResponder<?> ? ((TideMergeResponder<T>)tideResponder).getMergeResultWith() : null);
@@ -69,7 +68,7 @@ public class ResultHandler<T> implements Runnable {
 		boolean handled = false;
         if (tideResponder != null) {
             @SuppressWarnings("unchecked")
-            TideResultEvent<T> resultEvent = new TideResultEvent<T>(context, event.getToken(), componentResponder, (T)result);
+            TideResultEvent<T> resultEvent = new TideResultEvent<T>(context, event.getRequest(), componentResponder, (T)result);
             tideResponder.result(resultEvent);
             if (resultEvent.isDefaultPrevented())
                 handled = true;

@@ -2,7 +2,7 @@ package org.granite.client.tide.server;
 
 import java.util.Map;
 
-import org.granite.client.rpc.AsyncToken;
+import org.granite.client.messaging.messages.RequestMessage;
 import org.granite.client.tide.Context;
 
 
@@ -16,9 +16,8 @@ public class TideFaultEvent extends TideRpcEvent {
     private Fault fault;
     private Map<String, Object> extendedData;
 
-    public TideFaultEvent(Context context,
-            AsyncToken token, ComponentResponder componentResponder, Fault fault, Map<String, Object> extendedData) {
-        super(context, token, componentResponder);
+    public TideFaultEvent(Context context, RequestMessage request, ComponentResponder componentResponder, Fault fault, Map<String, Object> extendedData) {
+        super(context, request, componentResponder);
         this.fault = fault;
         this.extendedData = extendedData;
     }

@@ -12,6 +12,9 @@
 	<classpathentry kind="lib" path="libs/jetty-util-8.1.1.jar"/>
 	<classpathentry kind="lib" path="libs/jetty-io-8.1.1.v20120215.jar"/>
 	<classpathentry kind="lib" path="libs/jetty-http-8.1.1.v20120215.jar"/>
+	<classpathentry kind="lib" path="libs/jboss-jms-api-1.1.0.GA.jar"/>
+	<classpathentry kind="lib" path="examples-libs/granite-hibernate.jar"/>
+	<classpathentry kind="lib" path="examples-libs/graniteds-ejb3.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/graniteds"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="libs/jfxrt.jar"/>

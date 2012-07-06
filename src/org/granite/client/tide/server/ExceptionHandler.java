@@ -1,8 +1,7 @@
 package org.granite.client.tide.server;
 
+import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.tide.Context;
-
-import flex.messaging.messages.ErrorMessage;
 
 
 public interface ExceptionHandler {
@@ -13,7 +12,7 @@ public interface ExceptionHandler {
      *  @param emsg an error message 
      *  @return true if ErrorMessage accepted
      */
-    public boolean accepts(ErrorMessage emsg);
+    public boolean accepts(FaultMessage emsg);
    
     /**
      *  Handle the error
@@ -22,6 +21,6 @@ public interface ExceptionHandler {
      *  @param emsg the error message
      *  @param event the full fault event
      */
-    public void handle(Context context, ErrorMessage emsg, TideFaultEvent faultEvent);
+    public void handle(Context context, FaultMessage emsg, TideFaultEvent faultEvent);
 
 }

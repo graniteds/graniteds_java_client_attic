@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.concurrent.Future;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanPropertyBase;
@@ -14,6 +13,9 @@ import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
+import org.granite.client.messaging.channel.ResponseMessageFuture;
+import org.granite.client.messaging.messages.responses.FaultMessage;
+import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.impl.ComponentImpl;
 import org.granite.client.tide.server.ExceptionHandler;
@@ -24,9 +26,6 @@ import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
 import org.granite.client.util.WeakIdentityHashMap;
 import org.granite.messaging.amf.RemoteClass;
-import org.granite.messaging.service.security.SecurityServiceException;
-
-import flex.messaging.messages.ErrorMessage;
 
 
 @RemoteClass("org.granite.tide.spring.security.Identity")
@@ -79,7 +78,7 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
      *  @param resultHandler optional result handler
      *  @param faultHandler optional fault handler 
      */
-    public Future<String> checkLoggedIn(final TideResponder<String> tideResponder) {
+    public ResponseMessageFuture checkLoggedIn(final TideResponder<String> tideResponder) {
     	return super.call("isLoggedIn", new SimpleTideResponder<String>() {
 			@Override
 			public void result(TideResultEvent<String> event) {
@@ -360,12 +359,12 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
     }
 
 	@Override
-	public boolean accepts(ErrorMessage emsg) {
-		return SecurityServiceException.CODE_NOT_LOGGED_IN.equals(emsg.getFaultCode());
+	public boolean accepts(FaultMessage emsg) {
+		return Code.NOT_LOGGED_IN.equals(emsg.getCode());
 	}
 
 	@Override
-	public void handle(Context context, ErrorMessage emsg, TideFaultEvent faultEvent) {
+	public void handle(Context context, FaultMessage emsg, TideFaultEvent faultEvent) {
 		if (isLoggedIn()) {
 			// Session expired, directly mark the channel as logged out
 			getServerSession().sessionExpired();

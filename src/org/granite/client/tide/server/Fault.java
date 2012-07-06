@@ -1,9 +1,11 @@
 package org.granite.client.tide.server;
 
+import org.granite.client.messaging.messages.responses.FaultMessage.Code;
+
 
 public class Fault {
 
-    private String faultCode;
+    private Code faultCode;
     private String faultString;
     private String faultDetail;
     
@@ -11,13 +13,13 @@ public class Fault {
     
     private Object rootCause;
     
-    public Fault(String faultCode, String faultString, String faultDetail) {
+    public Fault(Code faultCode, String faultString, String faultDetail) {
         this.faultCode = faultCode;
         this.faultString = faultString;
         this.faultDetail = faultDetail;
     }
     
-    public String getFaultCode() {
+    public Code getFaultCode() {
         return faultCode;
     }
     

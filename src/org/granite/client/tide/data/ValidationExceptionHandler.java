@@ -7,25 +7,25 @@ import java.util.Set;
 
 import javax.validation.ConstraintViolation;
 
+import org.granite.client.messaging.messages.responses.FaultMessage;
+import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.server.ExceptionHandler;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.validation.InvalidValue;
 import org.granite.client.validation.ServerConstraintViolation;
 
-import flex.messaging.messages.ErrorMessage;
-
 
 public class ValidationExceptionHandler implements ExceptionHandler {
 
 	@Override
-	public boolean accepts(ErrorMessage emsg) {
-		return emsg.getFaultCode().equals("Validation.Failed");
+	public boolean accepts(FaultMessage emsg) {
+		return Code.VALIDATION_FAILED.equals(emsg.getCode());
 	}
 
 	@Override
-	public void handle(Context context, ErrorMessage emsg, TideFaultEvent faultEvent) {
-		Object[] invalidValues = (Object[])emsg.getExtendedData().get("invalidValues");
+	public void handle(Context context, FaultMessage emsg, TideFaultEvent faultEvent) {
+		Object[] invalidValues = (Object[])emsg.getExtended().get("invalidValues");
 		if (invalidValues != null) {
 			Map<Object, Set<ConstraintViolation<?>>> violationsMap = new HashMap<Object, Set<ConstraintViolation<?>>>();
 			for (Object v : invalidValues) {

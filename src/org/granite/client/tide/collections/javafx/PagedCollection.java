@@ -72,6 +72,7 @@ public abstract class PagedCollection<E> implements ObservableList<E>, TideEvent
 	 * 	@private
 	 */
 	protected boolean filterRefresh = false;
+	@SuppressWarnings("unused")
 	private List<Object[]> ipes;		// Array of ItemPendingErrors
 	
 	// GDS-523

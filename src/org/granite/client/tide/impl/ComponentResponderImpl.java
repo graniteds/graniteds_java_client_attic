@@ -1,7 +1,10 @@
 package org.granite.client.tide.impl;
 
-import org.granite.client.rpc.events.FaultEvent;
-import org.granite.client.rpc.events.ResultEvent;
+import org.granite.client.messaging.events.CancelledEvent;
+import org.granite.client.messaging.events.FailureEvent;
+import org.granite.client.messaging.events.FaultEvent;
+import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.events.TimeoutEvent;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ComponentResponder;
@@ -52,13 +55,29 @@ public class ComponentResponderImpl implements ComponentResponder {
     public Component getComponent() {
         return component;
     }
-    
-    public void result(ResultEvent event) {
+
+	@Override
+	public void onResult(ResultEvent event) {
         handler.result(sourceContext, event, info, componentName, operation, tideResponder, this);
-        
-    }
-    
-    public void fault(FaultEvent event) {
+	}
+
+	@Override
+	public void onFault(FaultEvent event) {
         handler.fault(sourceContext, event, info, componentName, operation, tideResponder, this);
-    }    
+	}
+
+	@Override
+	public void onFailure(FailureEvent event) {
+		// TODO Auto-generated method stub		
+	}
+
+	@Override
+	public void onTimeout(TimeoutEvent event) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void onCancelled(CancelledEvent event) {
+		// TODO Auto-generated method stub
+	}    
 }

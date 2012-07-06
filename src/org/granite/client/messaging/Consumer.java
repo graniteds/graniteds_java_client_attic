@@ -1,67 +1,30 @@
 package org.granite.client.messaging;
 
-import java.nio.charset.Charset;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 
-import org.granite.client.rpc.AsyncResponder;
-import org.granite.util.UUIDUtil;
+import org.eclipse.jetty.util.ConcurrentHashSet;
+import org.granite.client.messaging.channel.MessagingChannel;
+import org.granite.client.messaging.channel.ResponseMessageFuture;
+import org.granite.client.messaging.events.IssueEvent;
+import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.messages.requests.SubscribeMessage;
+import org.granite.client.messaging.messages.requests.UnsubscribeMessage;
+import org.granite.logging.Logger;
 
-import flex.messaging.messages.AcknowledgeMessage;
-import flex.messaging.messages.AsyncMessage;
-import flex.messaging.messages.CommandMessage;
-import flex.messaging.messages.ErrorMessage;
-import flex.messaging.messages.Message;
+public class Consumer extends AbstractTopicAgent implements MessageListener {
+	
+	private static final Logger log = Logger.getLogger(Consumer.class);
 
-public class Consumer implements MessageAgent, MessageListener {
+	private ConcurrentHashSet<MessageListener> listeners = new ConcurrentHashSet<MessageListener>();
 	
-	private WebSocketChannel channel;
-	private String destination;
-	private String topic;
-	private String selector;
-	private MessageListener messageListener;
-	private SubscriptionListener subscriptionListener;
+	private String subscriptionId = null;
+	private String selector = null;
 	
-    
-    public Consumer(String destination) {
-        this.destination = destination;
-    }
-	
-	public Consumer(WebSocketChannel channel, String destination) {
-		this.destination = destination;
-		setChannel(channel);
-	}
-	
-	public void setChannel(WebSocketChannel channel) {
-		if (this.channel != null)
-			this.channel.removeMessageListener(this);
-	    this.channel = channel;
-	    if (channel != null)
-	    	channel.addMessageListener(this);
-	}
-	
-	public void setMessageListener(MessageListener messageListener) {
-		this.messageListener = messageListener;
-	}
-	
-	public void setSubscriptionListener(SubscriptionListener subscriptionListener) {
-		this.subscriptionListener = subscriptionListener;
+	public Consumer(MessagingChannel channel, String destination, String topic) {
+		super(channel, destination, topic);
 	}
 
-	public WebSocketChannel getChannel() {
-		return channel;
-	}
-	
-	public String getDestination() {
-		return destination;
-	}
-	
-	public void setTopic(String topic) {
-		this.topic = topic;
-	}
-	
-	public String getTopic() {
-		return topic;
-	}
-	
 	public String getSelector() {
 		return selector;
 	}
@@ -69,98 +32,99 @@ public class Consumer implements MessageAgent, MessageListener {
 	public void setSelector(String selector) {
 		this.selector = selector;
 	}
-
-	public void setCredentials(String username, String password) {
-		setCredentials(username, password, null);
-	}
-
-	public void setCredentials(String username, String password, Charset charset) {
-		if (username == null || password == null)
-			throw new NullPointerException("Username and password must not be null");
-		channel.setCredentials(username + ':' + password, charset);
-	}
-
-	public boolean isAuthenticated() {
-		return channel.isAuthenticated();
-	}
-	
-	private CommandMessage subscribeMessage = null;
-	private CommandMessage unsubscribeMessage = null;
-	private boolean subscribed = false;
-	
-	public void subscribe() {
-		subscribe(null);
-	}
-	
-	public void subscribe(String subscriptionId) {
-		CommandMessage cmdMessage = new CommandMessage();
-		cmdMessage.setOperation(CommandMessage.SUBSCRIBE_OPERATION);
-		cmdMessage.setDestination(destination);
-		cmdMessage.setMessageId(UUIDUtil.randomUUID());
-		cmdMessage.setHeader(CommandMessage.SUBTOPIC_HEADER, topic);
-		cmdMessage.setHeader(CommandMessage.SELECTOR_HEADER, selector);
-		cmdMessage.setHeader(AsyncMessage.DESTINATION_CLIENT_ID_HEADER, subscriptionId);
-		subscribeMessage = cmdMessage;
-		channel.send(cmdMessage);
-	}
-	
-	public void unsubscribe() {
-		CommandMessage cmdMessage = new CommandMessage();
-		cmdMessage.setOperation(CommandMessage.UNSUBSCRIBE_OPERATION);
-		cmdMessage.setDestination(destination);
-		cmdMessage.setMessageId(UUIDUtil.randomUUID());
-		unsubscribeMessage = cmdMessage;
-		channel.send(cmdMessage);
-	}
 	
 	public boolean isSubscribed() {
-		return subscribed;
+		return subscriptionId != null;
 	}
-	
-	public void logout(AsyncResponder responder) {
-		channel.logout(responder);
+
+	public String getSubscriptionId() {
+		return subscriptionId;
+	}
+
+	public ResponseMessageFuture subscribe(ResponseListener...listeners) {
+		SubscribeMessage subscribeMessage = new SubscribeMessage(destination, topic, selector);
+		subscribeMessage.getHeaders().putAll(defaultHeaders);
+		
+		final Consumer consumer = this;
+		ResponseListener listener = new ResultIssuesResponseListener() {
+			
+			@Override
+			public void onResult(ResultEvent event) {
+				subscriptionId = (String)event.getResult();
+				channel.addConsumer(consumer);
+			}
+			
+			@Override
+			public void onIssue(IssueEvent event) {
+				log.error("Subscription failed %s: %s", consumer, event);
+			}
+		};
+		
+		if (listeners == null || listeners.length == 0)
+			listeners = new ResponseListener[]{listener};
+		else {
+			ResponseListener[] tmp = new ResponseListener[listeners.length + 1];
+			System.arraycopy(listeners, 0, tmp, 0, listeners.length);
+			tmp[listeners.length] = listener;
+			listeners = tmp;
+		}
+		
+		return channel.send(subscribeMessage, listeners);
+	}
+
+	public ResponseMessageFuture unsubscribe(ResponseListener...listeners) {
+		UnsubscribeMessage unsubscribeMessage = new UnsubscribeMessage(destination, topic, subscriptionId);
+		unsubscribeMessage.getHeaders().putAll(defaultHeaders);
+		
+		final Consumer consumer = this;
+		ResponseListener listener = new ResultIssuesResponseListener() {
+			
+			@Override
+			public void onResult(ResultEvent event) {
+				channel.removeConsumer(consumer);
+				subscriptionId = null;
+			}
+			
+			@Override
+			public void onIssue(IssueEvent event) {
+				log.error("Unsubscription failed %s: %s", consumer, event);
+			}
+		};
+		
+		if (listeners == null || listeners.length == 0)
+			listeners = new ResponseListener[]{listener};
+		else {
+			ResponseListener[] tmp = new ResponseListener[listeners.length + 1];
+			System.arraycopy(listeners, 0, tmp, 0, listeners.length);
+			tmp[listeners.length] = listener;
+			listeners = tmp;
+		}
+
+		return channel.send(unsubscribeMessage, listeners);
+	}
+
+	public void addMessageListener(MessageListener listener) {
+		listeners.add(listener);
 	}
 
 	@Override
 	public void onMessage(Message message) {
-		if (message instanceof AcknowledgeMessage) {
-			AcknowledgeMessage ackMessage = (AcknowledgeMessage)message;
-			if (subscribeMessage != null && ackMessage.getCorrelationId().equals(subscribeMessage.getMessageId())) {
-				subscribed = true;
-				if (subscriptionListener != null)
-					subscriptionListener.onSubscribeSuccess(ackMessage, subscribeMessage);
+		for (MessageListener listener : listeners) {
+			try {
+				listener.onMessage(message);
 			}
-			else if (unsubscribeMessage != null && ackMessage.getCorrelationId().equals(unsubscribeMessage.getMessageId())) {
-				subscribed = false;
-				if (subscriptionListener != null)
-					subscriptionListener.onUnsubscribeSuccess(ackMessage, unsubscribeMessage);
+			catch (Exception e) {
+				log.error(e, "Consumer listener threw an exception: ", listener);
 			}
 		}
-		else if (message instanceof ErrorMessage) {
-			ErrorMessage errorMessage = (ErrorMessage)message;
-			if (unsubscribeMessage != null && errorMessage.getCorrelationId().equals(subscribeMessage.getMessageId())) {
-				subscribed = false;
-				if (subscriptionListener != null)
-					subscriptionListener.onSubscribeFault(errorMessage.getFaultCode(), errorMessage.getFaultString(), errorMessage.getFaultDetail(), errorMessage);
-			}
-			else if (unsubscribeMessage != null && errorMessage.getCorrelationId().equals(unsubscribeMessage.getMessageId())) {
-				subscribed = false;
-				if (subscriptionListener != null)
-					subscriptionListener.onSubscribeFault(errorMessage.getFaultCode(), errorMessage.getFaultString(), errorMessage.getFaultDetail(), errorMessage);
-			}
-		}
-		else if (messageListener != null)
-			messageListener.onMessage(message);
 	}
 
-	public interface SubscriptionListener {
-		
-		public void onSubscribeSuccess(AcknowledgeMessage ackMessage, CommandMessage subscriptionMessage);
-		
-		public void onSubscribeFault(String faultCode, String faultString, String faultDetail, ErrorMessage message);
-		
-		public void onUnsubscribeSuccess(AcknowledgeMessage message, CommandMessage unsubscriptionMessage);
-		
-		public void onUnsubscribeFault(String faultCode, String faultString, String faultDetail, ErrorMessage message);
+	@Override
+	public String toString() {
+		return getClass().getName() + " {subscriptionId=" + subscriptionId +
+			", destination=" + destination +
+			", topic=" + topic +
+			", selector=" + selector +
+		"}";
 	}
 }

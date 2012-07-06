@@ -7,10 +7,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.granite.client.rpc.AsyncResponder;
-import org.granite.client.rpc.events.FaultEvent;
-import org.granite.client.rpc.events.ResultEvent;
-import org.granite.client.rpc.remoting.RemoteObject;
+import org.granite.client.messaging.RemoteService;
+import org.granite.client.messaging.ResultFaultIssuesResponseListener;
+import org.granite.client.messaging.events.FaultEvent;
+import org.granite.client.messaging.events.IssueEvent;
+import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.collections.ManagedPersistentAssociation;
 import org.granite.client.tide.data.EntityManager;
@@ -105,16 +106,16 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 				}
 	    	}
 			
-	    	RemoteObject ro = serverSession.getRemoteObject();
+	    	RemoteService ro = serverSession.getRemoteObject();
 			for (Object entity : initMap.keySet()) {
-				ro.call("initializeObject", new Object[] { entity, initMap.get(entity).toArray(), new InvocationCall() },
-						new InitializerResponder(serverSession, entity));
+				ro.newInvocation("initializeObject", new Object[] { entity, initMap.get(entity).toArray(), new InvocationCall() })
+				  .addListener(new InitializerResponder(serverSession, entity));
 			}
     	}
 	}
 	
     
-    public class InitializerResponder implements AsyncResponder {
+    public class InitializerResponder extends ResultFaultIssuesResponseListener {
     	
     	private final ServerSession serverSession;
     	private final Object entity;
@@ -125,7 +126,7 @@ public class RemoteInitializerImpl implements RemoteInitializer {
     	}
 
 		@Override
-		public void result(final ResultEvent event) {
+		public void onResult(final ResultEvent event) {
 			context.callLater(new Runnable() {
 				public void run() {
 					EntityManager entityManager = PersistenceManager.getEntityManager(entity);
@@ -145,14 +146,19 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 		}
 
 		@Override
-		public void fault(final FaultEvent event) {
+		public void onFault(final FaultEvent event) {
 			context.callLater(new Runnable() {
 				public void run() {
 					log.error("Fault initializing collection " + ObjectUtil.toString(entity) + " " + event.toString());
 					
-					serverSession.handleFault(context, null, null, event.getMessage());
+					serverSession.handleFault(context, null, null, event.getResponse());
 				}
 			});
-		}   	
+		}
+
+		@Override
+		public void onIssue(IssueEvent event) {
+			// TODO Auto-generated method stub
+		}
     }
 }

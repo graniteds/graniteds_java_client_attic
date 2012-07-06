@@ -1,6 +1,6 @@
 package org.granite.client.tide.server;
 
-import org.granite.client.rpc.AsyncToken;
+import org.granite.client.messaging.messages.RequestMessage;
 import org.granite.client.tide.Context;
 
 
@@ -13,13 +13,12 @@ public class TideResultEvent<T> extends TideRpcEvent {
     
     private T result;
 
-    public TideResultEvent(Context context, AsyncToken token, ComponentResponder componentResponder, T result) {
-        super(context, token, componentResponder);
+    public TideResultEvent(Context context, RequestMessage request, ComponentResponder componentResponder, T result) {
+        super(context, request, componentResponder);
         this.result = result;
     }
     
     public T getResult() {
         return result;
     }
-    
 }

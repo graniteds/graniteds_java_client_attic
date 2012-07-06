@@ -1,9 +1,7 @@
 package org.granite.client.tide.impl;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.Future;
 
-import org.granite.client.rpc.AsyncToken;
 import org.granite.client.tide.BeanManager;
 import org.granite.logging.Logger;
 
@@ -50,9 +48,31 @@ public class SimpleBeanManager implements BeanManager {
         }
     }
 
-    @Override
-    public <T> Future<T> buildFutureResult(AsyncToken token) {
-        return new FutureResult<T>(token);
-    }
-
+//    @Override
+//    public ResponseMessageFuture buildFutureResult(AsyncToken token) {
+//    	return new ResponseMessageFuture() {
+//
+//			@Override
+//			public boolean cancel() {
+//				return false;
+//			}
+//
+//			@Override
+//			public ResponseMessage get() throws InterruptedException,
+//					ExecutionException, TimeoutException {
+//				return null;
+//			}
+//
+//			@Override
+//			public boolean isCancelled() {
+//				return false;
+//			}
+//
+//			@Override
+//			public boolean isDone() {
+//				return false;
+//			}
+//    	};
+//    }
+//
 }

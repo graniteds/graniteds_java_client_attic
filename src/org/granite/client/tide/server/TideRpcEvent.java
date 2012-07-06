@@ -1,6 +1,6 @@
 package org.granite.client.tide.server;
 
-import org.granite.client.rpc.AsyncToken;
+import org.granite.client.messaging.messages.RequestMessage;
 import org.granite.client.tide.Context;
 
 
@@ -12,14 +12,13 @@ import org.granite.client.tide.Context;
 public class TideRpcEvent {
     
     private Context context;
-    private AsyncToken token;
+    private RequestMessage request;
     private ComponentResponder componentResponder;
     private boolean defaultPrevented = false;
 
-    public TideRpcEvent(Context context,
-            AsyncToken token, ComponentResponder componentResponder) {
+    public TideRpcEvent(Context context, RequestMessage request, ComponentResponder componentResponder) {
         this.context = context;
-        this.token = token;
+        this.request = request;
         this.componentResponder = componentResponder;
     }
     
@@ -27,8 +26,8 @@ public class TideRpcEvent {
         return context;
     }
     
-    public AsyncToken getToken() {
-        return token;
+    public RequestMessage getToken() {
+        return request;
     }
     
     public ComponentResponder getComponentResponder() {

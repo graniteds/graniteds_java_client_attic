@@ -21,8 +21,8 @@
 package org.granite.client.tide.collections.javafx;
 
 import java.util.Map;
-import java.util.concurrent.Future;
 
+import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.Initializable;
@@ -225,7 +225,7 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 
 	
 	@Override
-	public <T> Future<T> call(String operation, Object... args) {
+	public ResponseMessageFuture call(String operation, Object... args) {
 		throw new UnsupportedOperationException();
 	}
 	

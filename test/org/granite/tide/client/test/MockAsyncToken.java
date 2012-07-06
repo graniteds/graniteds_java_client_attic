@@ -1,6 +1,6 @@
 package org.granite.tide.client.test;
 
-import org.granite.client.rpc.AsyncToken;
+import org.granite.client.messaging.channel.AsyncToken;
 import org.granite.client.tide.impl.ComponentResponderImpl;
 
 

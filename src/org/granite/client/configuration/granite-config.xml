@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE granite-config PUBLIC "-//Granite Data Services//DTD granite-config internal//EN"
+    "http://www.graniteds.org/public/dtd/2.3.0/granite-config.dtd">
+
+<granite-config scan="true">
+
+    <descriptors>
+    	<descriptor
+            instance-of="java.lang.Object"
+            java="org.granite.messaging.amf.io.util.DefaultJavaClassDescriptor"
+            as3="org.granite.client.messaging.codec.ClientJavaClassDescriptor" />
+    </descriptors>
+
+</granite-config>

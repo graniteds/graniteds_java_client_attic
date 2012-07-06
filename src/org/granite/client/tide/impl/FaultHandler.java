@@ -2,7 +2,8 @@ package org.granite.client.tide.impl;
 
 import java.util.Map;
 
-import org.granite.client.rpc.events.FaultEvent;
+import org.granite.client.messaging.events.FaultEvent;
+import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.server.ComponentResponder;
 import org.granite.client.tide.server.ExceptionHandler;
@@ -11,8 +12,6 @@ import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.logging.Logger;
-
-import flex.messaging.messages.ErrorMessage;
 
 /**
  *  @private
@@ -65,34 +64,35 @@ public class FaultHandler<T> implements Runnable {
         
         Context context = sourceContext.getContextManager().retrieveContext(sourceContext, null, false, false);
         
-        ErrorMessage emsg = event.getMessage();
-        ErrorMessage m = emsg;
-        Map<String, Object> extendedData = emsg != null ? emsg.getExtendedData() : null;
+        FaultMessage emsg = event.getResponse();
+        FaultMessage m = emsg;
+        Map<String, Object> extendedData = emsg != null ? emsg.getExtended() : null;
         do {
-            if (m != null && m.getFaultCode() != null && m.getFaultCode().indexOf("Server.Security.") == 0) {
+            if (m != null && m.isSecurityFault()) {
                 emsg = m;
-                extendedData = emsg != null ? emsg.getExtendedData() : null;
+                extendedData = emsg != null ? emsg.getExtended() : null;
                 break;
             }
-            if (m != null && m.getRootCause() instanceof FaultEvent)
-                m = (ErrorMessage)((FaultEvent)m.getRootCause()).getRootCause();
-            else if (m.getRootCause() instanceof ErrorMessage)
-                m = (ErrorMessage)m.getRootCause();
+            // TODO: certainly bad...
+            if (m != null && m.getCause() instanceof FaultEvent)
+                m = ((FaultEvent)m.getCause()).getResponse();
+            else if (m.getCause() instanceof FaultMessage)
+                m = (FaultMessage)m.getCause();
             else
             	m = null;
         }
         while (m != null);
         
-        serverSession.handleFaultEvent(event, emsg);
+        //serverSession.handleFaultEvent(event, emsg);
         
         serverSession.handleFault(context, componentName, operation, emsg);
         
         boolean handled = false;
-        Fault fault = new Fault(emsg.getFaultCode(), emsg.getFaultString(), emsg.getFaultDetail());
+        Fault fault = new Fault(emsg.getCode(), emsg.getDescription(), emsg.getDetails());
         fault.setContent(event.getMessage());
-        fault.setRootCause(event.getRootCause());
+        fault.setRootCause(event.getCause());
         
-        TideFaultEvent faultEvent = new TideFaultEvent(context, event.getToken(), componentResponder, fault, extendedData);
+        TideFaultEvent faultEvent = new TideFaultEvent(context, event.getRequest(), componentResponder, fault, extendedData);
         if (tideResponder != null) {
             tideResponder.fault(faultEvent);
             if (faultEvent.isDefaultPrevented())
@@ -111,11 +111,11 @@ public class FaultHandler<T> implements Runnable {
                     }
                 }
                 if (!handled)
-                    log.error("Unhandled fault: " + emsg.getFaultCode() + ": " + emsg.getFaultDetail());
+                    log.error("Unhandled fault: " + emsg.getCode() + ": " + emsg.getDetails());
             }
-            else if (exceptionHandlers != null && exceptionHandlers.length > 0 && event.getMessage() instanceof ErrorMessage) {
+            else if (exceptionHandlers != null && exceptionHandlers.length > 0) {
                 // Handle fault with default exception handler
-                exceptionHandlers[0].handle(context, (ErrorMessage)event.getMessage(), faultEvent);
+                exceptionHandlers[0].handle(context, event.getMessage(), faultEvent);
             }
             else {
                 log.error("Unknown fault: " + event.toString());

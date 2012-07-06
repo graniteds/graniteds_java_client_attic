@@ -3,8 +3,8 @@ package org.granite.client.tide.collections.javafx;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.persistence.LazyableCollection;
-import org.granite.client.rpc.events.ResultEvent;
 import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.collections.ManagedPersistentAssociation;
 import org.granite.client.tide.data.EntityManager;

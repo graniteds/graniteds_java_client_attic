@@ -3,12 +3,11 @@ package org.granite.client.tide.impl;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Future;
 
-import org.granite.client.rpc.AsyncToken;
-import org.granite.client.rpc.events.FaultEvent;
-import org.granite.client.rpc.events.ResultEvent;
-import org.granite.client.rpc.remoting.RemoteObject;
+import org.granite.client.messaging.RemoteService;
+import org.granite.client.messaging.channel.ResponseMessageFuture;
+import org.granite.client.messaging.events.FaultEvent;
+import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.NameAware;
@@ -59,8 +58,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
     }
     
     
-    @SuppressWarnings("unchecked")
-    public <T> Future<T> call(String operation, Object... args) {
+    public ResponseMessageFuture call(String operation, Object... args) {
         Context context = this.context;
         
         if (args != null && args.length > 0 && args[0] instanceof Context) {
@@ -71,7 +69,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
             args = newArgs;
         }
         
-        return (Future<T>)callComponent(context, operation, args, false);
+        return callComponent(context, operation, args, false);
     }
 
     /**
@@ -85,7 +83,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
      *  @return the operation token
      */
     @SuppressWarnings("unchecked")
-	protected <T> Future<T> callComponent(Context context, String operation, Object[] args, boolean withContext) {
+	protected ResponseMessageFuture callComponent(Context context, String operation, Object[] args, boolean withContext) {
     	context.checkValid();
         
         log.debug("callComponent %s.%s", getName(), operation);
@@ -128,12 +126,11 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
         }
         
         TrackingContext trackingContext = serverSession.getTrackingContext();
-        Future<T> future = null;
+        ResponseMessageFuture future = null;
         boolean saveTracking = trackingContext.isEnabled();
         try {
             trackingContext.setEnabled(false);
-            AsyncToken token = invoke(context, this, operation, args, responder, withContext, null);
-            future = context.getBeanManager().buildFutureResult(token);
+            future = invoke(context, this, operation, args, responder, withContext, null);
         }
         finally {
             trackingContext.setEnabled(saveTracking);
@@ -152,7 +149,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
     
     
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public AsyncToken invoke(Context context, Component component, String operation, Object[] args, TideResponder<?> tideResponder, 
+    public ResponseMessageFuture invoke(Context context, Component component, String operation, Object[] args, TideResponder<?> tideResponder, 
                            boolean withContext, ComponentResponderImpl.Handler handler) {
         log.debug("invokeComponent %s > %s.%s", context.getContextId(), component.getName() != null ? component.getName() : component.getClass().getName(), operation);
         
@@ -203,11 +200,11 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
     	call[3] = componentResponder.getArgs();
     	call[4] = new InvocationCall();
     	
-        RemoteObject ro = serverSession.getRemoteObject();
-        AsyncToken token = ro.call("invokeComponent", call, componentResponder);
+        RemoteService ro = serverSession.getRemoteObject();
+        ResponseMessageFuture future = ro.newInvocation("invokeComponent", call).addListener(componentResponder).invoke();
         
         serverSession.checkWaitForLogout();
         
-        return token;
+        return future;
     }
 }

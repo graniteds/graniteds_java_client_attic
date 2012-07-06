@@ -3,16 +3,17 @@ package org.granite.tide.client.test;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import org.granite.client.rpc.AsyncToken;
+import org.granite.client.messaging.channel.AsyncToken;
 import org.granite.client.tide.impl.ComponentImpl;
 import org.granite.client.tide.impl.ComponentResponderImpl;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.logging.Logger;
 
 
+@SuppressWarnings("unused")
 public class MockComponent extends ComponentImpl {
     
-    private static final Logger log = Logger.getLogger(MockComponent.class);
+	private static final Logger log = Logger.getLogger(MockComponent.class);
     
     private Executor executor = null;
     private ResponseBuilder responseBuilder = null;
@@ -28,22 +29,22 @@ public class MockComponent extends ComponentImpl {
     
     public AsyncToken invoke(final ComponentResponderImpl componentResponder) {
         final AsyncToken token = new MockAsyncToken(null);
-        token.addResponder(componentResponder);
-        
-        // TODO: should probably wait for client operations to finish so caller has the opportunity to add responders
-        
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(500);
-                    token.callResponders(responseBuilder.buildResponseEvent(token, componentResponder.getComponent(), componentResponder.getOperation(), componentResponder.getArgs()));
-                }
-                catch (InterruptedException e) {
-                    log.error(e, e.getMessage());
-                }                
-            }            
-        });
+//        token.addResponder(componentResponder);
+//        
+//        // TODO: should probably wait for client operations to finish so caller has the opportunity to add responders
+//        
+//        executor.execute(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    Thread.sleep(500);
+//                    token.callResponders(responseBuilder.buildResponseEvent(token, componentResponder.getComponent(), componentResponder.getOperation(), componentResponder.getArgs()));
+//                }
+//                catch (InterruptedException e) {
+//                    log.error(e, e.getMessage());
+//                }                
+//            }            
+//        });
         
         // remoteSession.checkWaitForLogout();            
         
