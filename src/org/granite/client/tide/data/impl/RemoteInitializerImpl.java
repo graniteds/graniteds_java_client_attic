@@ -109,7 +109,7 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 	    	RemoteService ro = serverSession.getRemoteObject();
 			for (Object entity : initMap.keySet()) {
 				ro.newInvocation("initializeObject", new Object[] { entity, initMap.get(entity).toArray(), new InvocationCall() })
-				  .addListener(new InitializerResponder(serverSession, entity));
+				  .addListener(new InitializerResponder(serverSession, entity)).invoke();
 			}
     	}
 	}
