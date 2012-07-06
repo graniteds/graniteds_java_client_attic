@@ -2,12 +2,12 @@ package org.granite.websocket.client.test;
 
 import java.net.URI;
 
-import org.granite.messaging.Consumer;
-import org.granite.messaging.Consumer.SubscriptionListener;
-import org.granite.messaging.MessageListener;
-import org.granite.messaging.WebSocketChannel;
-import org.granite.messaging.engine.JettyWebSocketEngine;
-import org.granite.messaging.engine.WebSocketEngine;
+import org.granite.client.messaging.Consumer;
+import org.granite.client.messaging.MessageListener;
+import org.granite.client.messaging.WebSocketChannel;
+import org.granite.client.messaging.Consumer.SubscriptionListener;
+import org.granite.client.messaging.engine.JettyWebSocketEngine;
+import org.granite.client.messaging.engine.WebSocketEngine;
 import org.junit.Test;
 
 import flex.messaging.messages.AcknowledgeMessage;

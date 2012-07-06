@@ -1,7 +1,7 @@
 package org.granite.tide.client.test;
 
-import org.granite.rpc.AsyncToken;
-import org.granite.tide.impl.ComponentResponderImpl;
+import org.granite.client.rpc.AsyncToken;
+import org.granite.client.tide.impl.ComponentResponderImpl;
 
 
 public class MockAsyncToken extends AsyncToken {

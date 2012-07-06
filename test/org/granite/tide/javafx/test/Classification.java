@@ -1,6 +1,6 @@
 package org.granite.tide.javafx.test;
 
-import org.granite.tide.data.Lazy;
+import org.granite.client.tide.data.Lazy;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;

@@ -3,11 +3,11 @@ package org.granite.tide.client.test;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import org.granite.client.rpc.AsyncToken;
+import org.granite.client.tide.impl.ComponentImpl;
+import org.granite.client.tide.impl.ComponentResponderImpl;
+import org.granite.client.tide.server.ServerSession;
 import org.granite.logging.Logger;
-import org.granite.rpc.AsyncToken;
-import org.granite.tide.impl.ComponentImpl;
-import org.granite.tide.impl.ComponentResponderImpl;
-import org.granite.tide.server.ServerSession;
 
 
 public class MockComponent extends ComponentImpl {

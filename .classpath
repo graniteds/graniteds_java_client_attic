@@ -7,10 +7,6 @@
 	<classpathentry kind="lib" path="libs/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="examples-libs/ejb3-persistence.jar"/>
 	<classpathentry kind="lib" path="examples-libs/hibernate3.jar"/>
-	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-alpha3.jar"/>
-	<classpathentry kind="lib" path="libs/httpclient-4.1.2.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-4.2-alpha2.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-nio-4.2-alpha2.jar"/>
 	<classpathentry kind="lib" path="libs/jetty-client-8.1.1.jar"/>
 	<classpathentry kind="lib" path="libs/jetty-websocket-8.1.1.jar"/>
 	<classpathentry kind="lib" path="libs/jetty-util-8.1.1.jar"/>
@@ -23,5 +19,9 @@
 	<classpathentry kind="lib" path="libs/spring-context.jar"/>
 	<classpathentry kind="lib" path="libs/spring-core.jar"/>
 	<classpathentry kind="lib" path="libs/validation-api.jar"/>
+	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-beta1.jar"/>
+	<classpathentry kind="lib" path="libs/httpclient-4.2-beta1.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-4.2-beta1.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-nio-4.2-beta1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

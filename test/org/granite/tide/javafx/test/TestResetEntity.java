@@ -7,17 +7,17 @@ import java.util.List;
 
 import javafx.collections.FXCollections;
 
-import org.granite.persistence.javafx.PersistentList;
-import org.granite.persistence.javafx.PersistentMap;
-import org.granite.persistence.javafx.PersistentSet;
-import org.granite.tide.Context;
-import org.granite.tide.ContextManager;
+import org.granite.client.persistence.javafx.PersistentList;
+import org.granite.client.persistence.javafx.PersistentMap;
+import org.granite.client.persistence.javafx.PersistentSet;
+import org.granite.client.tide.Context;
+import org.granite.client.tide.ContextManager;
+import org.granite.client.tide.data.EntityManager;
+import org.granite.client.tide.data.spi.DataManager;
+import org.granite.client.tide.impl.SimpleContextManager;
+import org.granite.client.tide.javafx.JavaFXPlatform;
+import org.granite.client.tide.server.ServerSession;
 import org.granite.tide.client.test.TestInstanceStoreFactory;
-import org.granite.tide.data.EntityManager;
-import org.granite.tide.data.spi.DataManager;
-import org.granite.tide.impl.SimpleContextManager;
-import org.granite.tide.javafx.JavaFXPlatform;
-import org.granite.tide.server.ServerSession;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

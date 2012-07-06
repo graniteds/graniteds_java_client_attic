@@ -1,7 +1,7 @@
 package org.granite.tide.client.test;
 
-import org.granite.tide.Context;
-import org.granite.tide.impl.SimpleInstanceStore;
+import org.granite.client.tide.Context;
+import org.granite.client.tide.impl.SimpleInstanceStore;
 
 
 public class TestInstanceStore extends SimpleInstanceStore {

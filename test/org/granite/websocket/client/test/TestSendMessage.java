@@ -2,10 +2,10 @@ package org.granite.websocket.client.test;
 
 import java.net.URI;
 
-import org.granite.messaging.Producer;
-import org.granite.messaging.WebSocketChannel;
-import org.granite.messaging.engine.JettyWebSocketEngine;
-import org.granite.messaging.engine.WebSocketEngine;
+import org.granite.client.messaging.Producer;
+import org.granite.client.messaging.WebSocketChannel;
+import org.granite.client.messaging.engine.JettyWebSocketEngine;
+import org.granite.client.messaging.engine.WebSocketEngine;
 import org.junit.Test;
 
 import flex.messaging.messages.AsyncMessage;

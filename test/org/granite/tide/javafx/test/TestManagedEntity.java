@@ -15,11 +15,11 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
-import org.granite.persistence.javafx.PersistentSet;
-import org.granite.tide.collections.ManagedPersistentCollection;
-import org.granite.tide.data.EntityManager;
-import org.granite.tide.data.impl.EntityManagerImpl;
-import org.granite.tide.javafx.JavaFXDataManager;
+import org.granite.client.persistence.javafx.PersistentSet;
+import org.granite.client.tide.collections.ManagedPersistentCollection;
+import org.granite.client.tide.data.EntityManager;
+import org.granite.client.tide.data.impl.EntityManagerImpl;
+import org.granite.client.tide.javafx.JavaFXDataManager;
 import org.granite.tide.javafx.test.PersonEmbedColl.ContactList;
 import org.junit.Assert;
 import org.junit.Before;

@@ -15,10 +15,10 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-import org.granite.tide.data.Id;
-import org.granite.tide.data.Identifiable;
-import org.granite.tide.data.Lazyable;
-import org.granite.tide.data.Version;
+import org.granite.client.tide.data.Id;
+import org.granite.client.tide.data.Identifiable;
+import org.granite.client.tide.data.Lazyable;
+import org.granite.client.tide.data.Version;
 
 
 public class AbstractEntity implements Identifiable, Lazyable, Externalizable {

@@ -10,8 +10,8 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
-import org.granite.tide.PropertyHolder;
-import org.granite.tide.data.Lazy;
+import org.granite.client.tide.PropertyHolder;
+import org.granite.client.tide.data.Lazy;
 
 
 public class Person extends AbstractEntity {
