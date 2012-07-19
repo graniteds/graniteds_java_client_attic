@@ -187,9 +187,9 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	private void scheduleReconnectTimerTask() {
 		ReconnectTimerTask task = new ReconnectTimerTask();
 		
-		task = reconnectTimerTask.getAndSet(task);
-		if (task != null)
-			task.cancel();
+		ReconnectTimerTask previousTask = reconnectTimerTask.getAndSet(task);
+		if (previousTask != null)
+			previousTask.cancel();
 		
 		if (reconnectAttempts < reconnectMaxAttempts) {
 			reconnectAttempts++;
