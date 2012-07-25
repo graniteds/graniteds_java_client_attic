@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.granite.messaging.amf.io.util.DefaultActionScriptClassDescriptor;
-import org.granite.util.ClassUtil;
+import org.granite.util.TypeUtil;
 
 /**
  * @author Franck WOLFF
@@ -57,7 +57,7 @@ public class ClientJavaClassDescriptor extends DefaultActionScriptClassDescripto
 		try {
 			Constructor<?> defaultContructor = constructors.get(type);
 			if (defaultContructor == null) {
-				defaultContructor = factory.findDefaultConstructor(ClassUtil.forName(type));
+				defaultContructor = factory.findDefaultConstructor(TypeUtil.forName(type));
 	            Constructor<?> previousConstructor = constructors.putIfAbsent(type, defaultContructor);
 	            if (previousConstructor != null)
 	            	defaultContructor = previousConstructor; // Should be the same instance, anyway...
@@ -76,7 +76,7 @@ class SunConstructorFactory {
 
     public SunConstructorFactory() {
         try {
-            Class<?> factoryClass = ClassUtil.forName("sun.reflect.ReflectionFactory");
+            Class<?> factoryClass = TypeUtil.forName("sun.reflect.ReflectionFactory");
             Method getReflectionFactory = factoryClass.getDeclaredMethod("getReflectionFactory");
             reflectionFactory = getReflectionFactory.invoke(null);
             newConstructorForSerialization = factoryClass.getDeclaredMethod(

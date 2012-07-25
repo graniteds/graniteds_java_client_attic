@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -22,6 +23,7 @@ import org.granite.messaging.engine.Engine;
 import org.granite.messaging.engine.EngineException;
 import org.granite.messaging.engine.EngineStatusHandler;
 import org.granite.messaging.engine.HttpClientEngine;
+import org.granite.messaging.engine.RemoteClassScanner;
 import org.granite.messaging.engine.WebSocketEngine;
 import org.granite.rpc.AsyncResponder;
 import org.granite.rpc.events.FaultEvent;
@@ -92,6 +94,7 @@ public class ServerSession implements ContextAware {
 	private WebSocketChannel gravityChannel;
 	protected Map<String, RemoteObject> remoteObjects = new HashMap<String, RemoteObject>();
 	protected Map<String, MessageAgent> messageAgents = new HashMap<String, MessageAgent>();
+	private RemoteClassScanner remoteClassConfigurator = new RemoteClassScanner();
 	
 	
     public ServerSession() throws Exception {    	
@@ -187,11 +190,20 @@ public class ServerSession implements ContextAware {
 		return status;
 	}
 	
+	public void addRemoteClassPackage(String packageName) {		
+		remoteClassConfigurator.addPackageName(packageName);
+	}
+	
+	public void setRemoteClassPackage(Set<String> packageNames) {
+		remoteClassConfigurator.setPackageNames(packageNames);
+	}
+	
 	public void start() throws Exception {
 		if (httpClientEngine == null)
 			log.warn("No http client engine defined for server session, remoting disabled");
 		else {
 			httpClientEngine.setStatusHandler(new ServerSessionStatusHandler());
+			httpClientEngine.addGraniteConfigurator(remoteClassConfigurator);
 			httpClientEngine.start();
 			graniteURI = new URI(protocol + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.graniteUrlMapping);
 			graniteChannel = new Channel(httpClientEngine, "graniteamf", graniteURI);
@@ -201,6 +213,7 @@ public class ServerSession implements ContextAware {
 			log.warn("No websocket engine defined for server session, messaging disabled");
 		else {
 			webSocketEngine.setStatusHandler(new ServerSessionStatusHandler());
+			webSocketEngine.addGraniteConfigurator(remoteClassConfigurator);
 			webSocketEngine.start();
 			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.gravityUrlMapping);
 			gravityChannel = new WebSocketChannel(webSocketEngine, "gravityamf", gravityURI);

@@ -31,7 +31,7 @@ public interface Engine {
 	
 	void setGraniteConfigPath(String graniteConfigPath);
 	
-	void setGraniteConfigurator(Configurator configurator);
+	void addGraniteConfigurator(Configurator configurator);
 	
 	static interface Configurator {		
 		void configure(GraniteConfig graniteConfig);

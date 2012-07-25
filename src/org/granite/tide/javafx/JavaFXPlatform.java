@@ -50,12 +50,12 @@ public class JavaFXPlatform implements org.granite.tide.Platform {
 			if (serverSession.getHttpClientEngine() == null)
 				serverSession.setHttpClientEngine(new ApacheAsyncEngine());
 			serverSession.getHttpClientEngine().setGraniteStdConfigPath(graniteStdConfigPath);
-			serverSession.getHttpClientEngine().setGraniteConfigurator(graniteConfigurator);
+			serverSession.getHttpClientEngine().addGraniteConfigurator(graniteConfigurator);
 
 			if (serverSession.getWebSocketEngine() == null)
 				serverSession.setWebSocketEngine(new JettyWebSocketEngine());
 			serverSession.getWebSocketEngine().setGraniteStdConfigPath(graniteStdConfigPath);
-			serverSession.getWebSocketEngine().setGraniteConfigurator(graniteConfigurator);
+			serverSession.getWebSocketEngine().addGraniteConfigurator(graniteConfigurator);
 			
 			serverSession.setStatus(serverSessionStatus);
 		}

@@ -16,6 +16,9 @@
 	<classpathentry kind="lib" path="libs/jetty-util-8.1.1.jar"/>
 	<classpathentry kind="lib" path="libs/jetty-io-8.1.1.v20120215.jar"/>
 	<classpathentry kind="lib" path="libs/jetty-http-8.1.1.v20120215.jar"/>
+	<classpathentry kind="lib" path="libs/granite-client.jar"/>
+	<classpathentry kind="lib" path="libs/extcos-0.3b.jar"/>
+	<classpathentry kind="lib" path="libs/asm-all-3.2.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/graniteds"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="libs/jfxrt.jar"/>

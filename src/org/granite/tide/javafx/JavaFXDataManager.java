@@ -10,7 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
@@ -38,6 +37,7 @@ import org.granite.tide.data.Identifiable;
 import org.granite.tide.data.Transient;
 import org.granite.tide.data.impl.AbstractDataManager;
 import org.granite.tide.data.spi.EntityDescriptor;
+import org.granite.util.WeakIdentityHashMap;
 import org.granite.util.javafx.DataNotifier;
 import org.granite.validation.javafx.ConstraintViolationEvent;
 
@@ -283,7 +283,7 @@ public class JavaFXDataManager extends AbstractDataManager {
     private ListChangeListener<Object> entityListChangeListener = new EntityListChangeListener<Object>();
     private MapChangeListener<Object, Object> entityMapChangeListener = new EntityMapChangeListener<Object, Object>();
     
-    private WeakHashMap<Object, TrackingType> trackingListeners = new WeakHashMap<Object, TrackingType>();
+    private WeakIdentityHashMap<Object, TrackingType> trackingListeners = new WeakIdentityHashMap<Object, TrackingType>();
     
     
     @Override

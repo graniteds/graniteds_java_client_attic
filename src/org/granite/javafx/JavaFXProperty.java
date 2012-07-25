@@ -10,8 +10,8 @@ import javafx.beans.value.WritableValue;
 
 import org.granite.messaging.amf.io.convert.Converters;
 import org.granite.messaging.amf.io.util.Property;
-import org.granite.util.ClassUtil;
-import org.granite.util.ClassUtil.DeclaredAnnotation;
+import org.granite.util.TypeUtil;
+import org.granite.util.TypeUtil.DeclaredAnnotation;
 
 public class JavaFXProperty extends Property {
 	
@@ -66,19 +66,19 @@ public class JavaFXProperty extends Property {
 		if (property != null) {
             if (property.isAnnotationPresent(annotationClass))
                 return true;
-            if (recursive && ClassUtil.isAnnotationPresent(property, annotationClass))
+            if (recursive && TypeUtil.isAnnotationPresent(property, annotationClass))
             	return true;
 		}
         if (getter != null) {
             if (getter.isAnnotationPresent(annotationClass))
                 return true;
-            if (recursive && ClassUtil.isAnnotationPresent(getter, annotationClass))
+            if (recursive && TypeUtil.isAnnotationPresent(getter, annotationClass))
             	return true;
         }
         if (setter != null) {
             if (setter.isAnnotationPresent(annotationClass))
             	return true;
-            if (recursive && ClassUtil.isAnnotationPresent(setter, annotationClass))
+            if (recursive && TypeUtil.isAnnotationPresent(setter, annotationClass))
             	return true;
         }
         return false;
@@ -90,7 +90,7 @@ public class JavaFXProperty extends Property {
     	if (property != null) {
     		annotation = property.getAnnotation(annotationClass);
     		if (annotation == null && recursive) {
-    			DeclaredAnnotation<T> declaredAnnotation = ClassUtil.getAnnotation(property, annotationClass);
+    			DeclaredAnnotation<T> declaredAnnotation = TypeUtil.getAnnotation(property, annotationClass);
     			if (declaredAnnotation != null)
     				annotation = declaredAnnotation.annotation;
     		}
@@ -98,7 +98,7 @@ public class JavaFXProperty extends Property {
     	if (getter != null) {
     		annotation = getter.getAnnotation(annotationClass);
     		if (annotation == null && recursive) {
-    			DeclaredAnnotation<T> declaredAnnotation = ClassUtil.getAnnotation(getter, annotationClass);
+    			DeclaredAnnotation<T> declaredAnnotation = TypeUtil.getAnnotation(getter, annotationClass);
     			if (declaredAnnotation != null)
     				annotation = declaredAnnotation.annotation;
     		}
@@ -106,7 +106,7 @@ public class JavaFXProperty extends Property {
     	if (annotation == null && setter != null) {
     		annotation = setter.getAnnotation(annotationClass);
     		if (annotation == null && recursive) {
-    			DeclaredAnnotation<T> declaredAnnotation = ClassUtil.getAnnotation(setter, annotationClass);
+    			DeclaredAnnotation<T> declaredAnnotation = TypeUtil.getAnnotation(setter, annotationClass);
     			if (declaredAnnotation != null)
     				annotation = declaredAnnotation.annotation;
     		}

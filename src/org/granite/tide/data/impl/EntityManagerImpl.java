@@ -41,7 +41,7 @@ import org.granite.tide.data.spi.MergeContext;
 import org.granite.tide.server.Component;
 import org.granite.tide.server.ServerSession;
 import org.granite.tide.server.TrackingContext;
-import org.granite.util.ClassUtil;
+import org.granite.util.TypeUtil;
 import org.granite.util.WeakIdentityHashMap;
 
 
@@ -633,17 +633,17 @@ public class EntityManagerImpl implements EntityManager {
 //                    next = obj = _mergeContext.proxyGetter(obj, parent, propertyName);
 
                 // Clear change tracking
-                dataManager.stopTracking(previous, parent); 
-                
                 if (obj == null) {
                     next = null;
                 }
                 else if (((obj instanceof LazyableCollection && !((LazyableCollection)obj).isInitialized()) 
                     || (obj instanceof LazyableCollection && !(previous instanceof LazyableCollection))) && parent instanceof Identifiable && propertyName != null) {
+                    dataManager.stopTracking(previous, parent); 
                     next = mergePersistentCollection(mergeContext, (LazyableCollection)obj, previous, null, (Identifiable)parent, propertyName);
                     addRef = true;
                 }
                 else if (obj instanceof List<?>) {
+                    dataManager.stopTracking(previous, parent); 
                     next = mergeCollection(mergeContext, (List<Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
@@ -652,6 +652,7 @@ public class EntityManagerImpl implements EntityManager {
 //                    addRef = true;
 //                }
                 else if (obj instanceof Map<?, ?>) {
+                    dataManager.stopTracking(previous, parent); 
                     next = mergeMap(mergeContext, (Map<Object, Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
@@ -664,6 +665,8 @@ public class EntityManagerImpl implements EntityManager {
                     if (customMergers != null) {
                         for (DataMerger merger : customMergers) {
                             if (merger.accepts(obj)) {
+                                dataManager.stopTracking(previous, parent);
+                                
                                 next = merger.merge(mergeContext, obj, previous, parent == null ? expr : null, parent, propertyName);
 
                                 // Keep notified of collection updates to notify the server at next remote call
@@ -767,6 +770,9 @@ public class EntityManagerImpl implements EntityManager {
                 dest = previous;
             }
         }
+        
+        dataManager.stopTracking(dest, parent);
+        
         if (dest != previous && previous != null && (ObjectUtil.objectEquals(dataManager, previous, obj)
             || (parent != null && !(previous instanceof Identifiable))))    // GDS-649 Case of embedded objects 
             dest = previous;
@@ -775,7 +781,7 @@ public class EntityManagerImpl implements EntityManager {
             // When merging from another entity manager, ensure we create a new copy of the entity
             // An instance can exist in only one entity manager at a time 
             try {
-                dest = ClassUtil.newInstance(obj.getClass(), Object.class);
+                dest = TypeUtil.newInstance(obj.getClass(), Object.class);
                 if (obj instanceof Identifiable)
                     ((Identifiable)dest).setUid(((Identifiable)obj).getUid());
             }
@@ -1184,7 +1190,7 @@ public class EntityManagerImpl implements EntityManager {
             m = (Map<Object, Object>)previous;
         else if (mergeContext.getSourceEntityManager() != null) {
             try {
-                m = (Map<Object, Object>)ClassUtil.newInstance(map.getClass(), Map.class);
+                m = (Map<Object, Object>)TypeUtil.newInstance(map.getClass(), Map.class);
             }
             catch (Exception e) {
                 throw new RuntimeException("Could not create class " + map.getClass());

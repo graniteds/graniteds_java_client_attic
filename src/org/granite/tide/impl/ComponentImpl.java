@@ -1,5 +1,6 @@
 package org.granite.tide.impl;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +26,7 @@ import org.granite.tide.server.TideResponder;
 import org.granite.tide.server.TrackingContext;
 
 
-public class ComponentImpl implements Component, ContextAware, NameAware {
+public class ComponentImpl implements Component, ContextAware, NameAware, InvocationHandler {
     
 	private static final Logger log = Logger.getLogger(ComponentImpl.class);
 
@@ -73,6 +74,16 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
         
         return (Future<T>)callComponent(context, operation, args, false);
     }
+
+    
+	@Override
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		if (!method.getDeclaringClass().isAnnotationPresent(RemoteClass.class))
+			return method.invoke(proxy, args);
+		
+		return callComponent(getContext(), method.getName(), args, false);
+	}
+
 
     /**
      *  Calls a remote component

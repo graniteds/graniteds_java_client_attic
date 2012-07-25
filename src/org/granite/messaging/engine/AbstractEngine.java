@@ -22,6 +22,8 @@ package org.granite.messaging.engine;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
@@ -35,7 +37,7 @@ public abstract class AbstractEngine implements Engine {
 
 	protected boolean started = false;
 	protected GraniteConfig graniteConfig = null;
-	protected Configurator configurator = null;
+	protected List<Configurator> configurators = new ArrayList<Configurator>();
 	protected ServicesConfig servicesConfig = null;
 
 	protected EngineStatusHandler statusHandler = new DefaultEngineStatusHandler();
@@ -62,8 +64,8 @@ public abstract class AbstractEngine implements Engine {
 		this.graniteConfigPath = graniteConfigPath;
 	}
 	
-	public void setGraniteConfigurator(Configurator configurator) {
-		this.configurator = configurator;
+	public void addGraniteConfigurator(Configurator configurator) {
+		this.configurators.add(configurator);
 	}
 	
 	public void setMaxIdleTime(int maxIdleTime) {
@@ -84,7 +86,7 @@ public abstract class AbstractEngine implements Engine {
 			if (graniteConfigPath != null)
 				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(graniteConfigPath);
 			graniteConfig = new GraniteConfig(graniteStdConfigPath, is, null, null);
-			if (configurator != null)
+			for (Configurator configurator : configurators)
 				configurator.configure(graniteConfig);
 			servicesConfig = new ServicesConfig(null, null, false);
 			started = true;

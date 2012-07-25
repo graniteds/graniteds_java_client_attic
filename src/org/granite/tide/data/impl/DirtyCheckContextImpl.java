@@ -199,7 +199,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         Object n = val1 instanceof Wrapper ? ((Wrapper)val1).getWrappedObject() : val1;
         Object o = val2 instanceof Wrapper ? ((Wrapper)val2).getWrappedObject() : val2;
         if (n instanceof Identifiable && o instanceof Identifiable)
-            return ((Identifiable)n).getUid().equals(((Identifiable)o).getUid());
+            return ((Identifiable)n).getUid() != null && ((Identifiable)n).getUid().equals(((Identifiable)o).getUid());
         return n == o;
     }
     
