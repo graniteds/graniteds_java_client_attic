@@ -18,9 +18,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
-import org.granite.client.persistence.LazyableCollection;
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
+import org.granite.client.persistence.LazyableCollection;
 
 
 @RemoteClass("org.granite.messaging.persistence.ExternalizablePersistentList")

@@ -11,25 +11,25 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.granite.logging.Logger;
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.tide.collections.ManagedPersistentAssociation;
 import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.Lazyable;
 import org.granite.client.tide.data.spi.DataManager;
+import org.granite.client.tide.data.spi.DataManager.ChangeKind;
+import org.granite.client.tide.data.spi.ExpressionEvaluator.Value;
 import org.granite.client.tide.data.spi.DirtyCheckContext;
 import org.granite.client.tide.data.spi.EntityDescriptor;
 import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.client.tide.data.spi.Wrapper;
-import org.granite.client.tide.data.spi.DataManager.ChangeKind;
-import org.granite.client.tide.data.spi.ExpressionEvaluator.Value;
 import org.granite.client.tide.server.TrackingContext;
 import org.granite.client.util.WeakIdentityHashMap;
-import org.granite.logging.Logger;
 
 
 public class DirtyCheckContextImpl implements DirtyCheckContext {
     
-    private static Logger log = Logger.getLogger("org.granite.tide.data.DirtyCheckContextImpl");
+    private static Logger log = Logger.getLogger("org.granite.client.tide.data.DirtyCheckContextImpl");
     
     private DataManager dataManager;
     private TrackingContext trackingContext;
@@ -199,7 +199,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         Object n = val1 instanceof Wrapper ? ((Wrapper)val1).getWrappedObject() : val1;
         Object o = val2 instanceof Wrapper ? ((Wrapper)val2).getWrappedObject() : val2;
         if (n instanceof Identifiable && o instanceof Identifiable)
-            return ((Identifiable)n).getUid().equals(((Identifiable)o).getUid());
+            return ((Identifiable)n).getUid() != null && ((Identifiable)n).getUid().equals(((Identifiable)o).getUid());
         return n == o;
     }
     

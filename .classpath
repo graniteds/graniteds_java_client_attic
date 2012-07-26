@@ -14,7 +14,9 @@
 	<classpathentry kind="lib" path="libs/jboss-jms-api-1.1.0.GA.jar"/>
 	<classpathentry kind="lib" path="examples-libs/granite-hibernate.jar"/>
 	<classpathentry kind="lib" path="examples-libs/graniteds-ejb3.jar"/>
-	<classpathentry kind="lib" path="libs/granite.jar"/>
+	<classpathentry kind="lib" path="libs/granite-client.jar"/>
+	<classpathentry kind="lib" path="libs/extcos-0.3b.jar"/>
+	<classpathentry kind="lib" path="libs/asm-all-3.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="libs/jfxrt.jar"/>
 	<classpathentry kind="lib" path="libs/spring-beans.jar"/>

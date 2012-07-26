@@ -95,7 +95,7 @@ public abstract class AbstractMessage implements Message {
 
 	@Override
 	public Object getHeader(String name) {
-		return headers;
+		return headers.get(name);
 	}
 
 	@Override

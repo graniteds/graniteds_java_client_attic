@@ -5,13 +5,13 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.granite.messaging.amf.RemoteClass;
 import org.granite.client.tide.data.Dirty;
 import org.granite.client.tide.data.Id;
 import org.granite.client.tide.data.Lazy;
 import org.granite.client.tide.data.Version;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.EntityDescriptor;
-import org.granite.messaging.amf.RemoteClass;
 import org.granite.util.Introspector;
 
 public abstract class AbstractDataManager implements DataManager {
@@ -45,11 +45,12 @@ public abstract class AbstractDataManager implements DataManager {
                 else if (m.isAnnotationPresent(Lazy.class))
                     lazy.put(Introspector.decapitalize(m.getName().substring(3)), true);
             }
-            else if (m.getName().equals("isDirty") && m.getParameterTypes().length == 0 && m.getReturnType() == boolean.class) {
-                hasDirty = true;
+            else if (m.getName().startsWith("is") && m.getParameterTypes().length == 0 && m.getReturnType() == boolean.class) {
+            	if (m.isAnnotationPresent(Dirty.class))
+            		dirtyPropertyName = Introspector.decapitalize(m.getName().substring(2));
             }
         }
-
+        
         Class<?> clazz = entity.getClass();
         while (clazz != null && clazz != Object.class) {
             for (Field f : clazz.getDeclaredFields()) {

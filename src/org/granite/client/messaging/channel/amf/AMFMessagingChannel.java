@@ -11,9 +11,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.granite.client.configuration.Configuration;
 import org.granite.client.configuration.DefaultConfiguration;
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.channel.AsyncToken;
+import org.granite.client.messaging.channel.Channel;
 import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.codec.AMF3MessagingCodec;
 import org.granite.client.messaging.messages.RequestMessage;
@@ -23,7 +25,6 @@ import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportMessage;
-import org.granite.gravity.Gravity;
 import org.granite.util.UUIDUtil;
 
 import flex.messaging.messages.AcknowledgeMessage;
@@ -44,9 +45,13 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	private volatile long reconnectAttempts = 0L;
 	
 	public AMFMessagingChannel(HTTPTransport transport, String id, URI uri) {
+		this(transport, DefaultConfiguration.getInstance(), id, uri);
+	}
+	
+	public AMFMessagingChannel(HTTPTransport transport, Configuration configuration, String id, URI uri) {
 		super(transport, id, uri, 1);
 		
-		this.codec = new AMF3MessagingCodec(DefaultConfiguration.getInstance());
+		this.codec = new AMF3MessagingCodec(configuration);
 	}
 
 	private boolean connect() {
@@ -123,10 +128,10 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 							case PING:
 								if (messages[0].getBody() instanceof Map) {
 									Map<?, ?> advices = (Map<?, ?>)messages[0].getBody();
-									Object reconnectIntervalMillis = advices.get(Gravity.RECONNECT_INTERVAL_MS_KEY);
+									Object reconnectIntervalMillis = advices.get(Channel.RECONNECT_INTERVAL_MS_KEY);
 									if (reconnectIntervalMillis instanceof Number)
 										this.reconnectIntervalMillis = ((Number)reconnectIntervalMillis).longValue();
-									Object reconnectMaxAttempts = advices.get(Gravity.RECONNECT_MAX_ATTEMPTS_KEY);
+									Object reconnectMaxAttempts = advices.get(Channel.RECONNECT_MAX_ATTEMPTS_KEY);
 									if (reconnectMaxAttempts instanceof Number)
 										this.reconnectMaxAttempts = ((Number)reconnectMaxAttempts).longValue();
 								}

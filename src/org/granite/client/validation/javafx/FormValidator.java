@@ -36,9 +36,9 @@ import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import javax.validation.groups.Default;
 
+import org.granite.logging.Logger;
 import org.granite.client.util.javafx.DataNotifier;
 import org.granite.client.validation.ValidationResult;
-import org.granite.logging.Logger;
 
 
 public class FormValidator {

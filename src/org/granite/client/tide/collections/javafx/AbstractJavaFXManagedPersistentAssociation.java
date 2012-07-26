@@ -25,7 +25,7 @@ import org.granite.logging.Logger;
  */
 public abstract class AbstractJavaFXManagedPersistentAssociation implements ManagedPersistentAssociation, PropertyHolder, Wrapper {
     
-    private static Logger log = Logger.getLogger("org.granite.tide.javafx.AbstractJavaFXManagedPersistentAssociation");
+    private static Logger log = Logger.getLogger("org.granite.client.tide.javafx.AbstractJavaFXManagedPersistentAssociation");
     
     private final Identifiable entity;
     private final String propertyName;
@@ -119,19 +119,6 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
     public void initialize() {
         ((LazyableCollection)getObject()).initialize();
         localInitializing = false;
-        
-        if (initializing) {
-            log.debug("notify item pending");
-            // TODO: check JavaFX mechanism for deferred loading
-//            ResultEvent event = new ResultEvent(null, null);
-//            
-//            if (_itemPendingError.responders) {
-//                for (var k:int = 0; k < _itemPendingError.responders.length; k++)
-//                    _itemPendingError.responders[k].result(event);
-//            }
-            
-            initializing = false;
-        }
         
         for (InitializationListener listener : listeners)
             listener.initialized(this);

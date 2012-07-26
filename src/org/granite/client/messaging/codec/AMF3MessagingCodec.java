@@ -7,9 +7,9 @@ import java.io.OutputStream;
 import java.util.HashMap;
 
 import org.granite.client.configuration.Configuration;
+import org.granite.client.messaging.channel.Channel;
 import org.granite.context.GraniteContext;
 import org.granite.context.SimpleGraniteContext;
-import org.granite.gravity.Gravity;
 import org.granite.messaging.amf.io.AMF3Deserializer;
 import org.granite.messaging.amf.io.AMF3Serializer;
 
@@ -51,7 +51,7 @@ public class AMF3MessagingCodec implements MessagingCodec<Message[]> {
 				System.arraycopy(objects, 0, messages, 0, objects.length);
 				
 				for (Message message : messages) {
-					if (Boolean.TRUE.equals(message.getHeader(Gravity.BYTEARRAY_BODY_HEADER))) {
+					if (Boolean.TRUE.equals(message.getHeader(Channel.BYTEARRAY_BODY_HEADER))) {
 						byte[] body = (byte[])message.getBody();
 						message.setBody(new AMF3Deserializer(new ByteArrayInputStream(body)).readObject());
 					}

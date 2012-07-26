@@ -1,8 +1,10 @@
 package org.granite.client.tide.impl;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Future;
 
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.channel.ResponseMessageFuture;
@@ -14,7 +16,7 @@ import org.granite.client.tide.NameAware;
 import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.server.ArgumentPreprocessor;
 import org.granite.client.tide.server.Component;
-import org.granite.client.tide.server.ComponentResponder;
+import org.granite.client.tide.server.ComponentListener;
 import org.granite.client.tide.server.InvocationInterceptor;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideResponder;
@@ -24,7 +26,7 @@ import org.granite.messaging.amf.RemoteClass;
 import org.granite.tide.invocation.InvocationCall;
 
 
-public class ComponentImpl implements Component, ContextAware, NameAware {
+public class ComponentImpl implements Component, ContextAware, NameAware, InvocationHandler {
     
 	private static final Logger log = Logger.getLogger(ComponentImpl.class);
 
@@ -58,7 +60,8 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
     }
     
     
-    public ResponseMessageFuture call(String operation, Object... args) {
+    @SuppressWarnings("unchecked")
+    public <T> Future<T> call(String operation, Object... args) {
         Context context = this.context;
         
         if (args != null && args.length > 0 && args[0] instanceof Context) {
@@ -69,8 +72,18 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
             args = newArgs;
         }
         
-        return callComponent(context, operation, args, false);
+        return (Future<T>)callComponent(context, operation, args, false);
     }
+
+    
+	@Override
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		if (!method.getDeclaringClass().isAnnotationPresent(RemoteClass.class))
+			return method.invoke(proxy, args);
+		
+		return callComponent(getContext(), method.getName(), args, false);
+	}
+
 
     /**
      *  Calls a remote component
@@ -83,7 +96,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
      *  @return the operation token
      */
     @SuppressWarnings("unchecked")
-	protected ResponseMessageFuture callComponent(Context context, String operation, Object[] args, boolean withContext) {
+	protected <T> Future<T> callComponent(Context context, String operation, Object[] args, boolean withContext) {
     	context.checkValid();
         
         log.debug("callComponent %s.%s", getName(), operation);
@@ -111,7 +124,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
         Method method = null;
         // TODO: improve method matching
         for (Method m : getClass().getMethods()) {
-            if (m.getName().equals(operation)) {
+            if (m.getName().equals(operation) && m.getParameterTypes().length == args.length) {
                 method = m;
                 break;
             }
@@ -126,11 +139,12 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
         }
         
         TrackingContext trackingContext = serverSession.getTrackingContext();
-        ResponseMessageFuture future = null;
+        Future<T> future = null;
         boolean saveTracking = trackingContext.isEnabled();
         try {
             trackingContext.setEnabled(false);
-            future = invoke(context, this, operation, args, responder, withContext, null);
+            ResponseMessageFuture rmf = invoke(context, this, operation, args, responder, withContext, null);
+            future = context.getBeanManager().buildFutureResult(rmf);
         }
         finally {
             trackingContext.setEnabled(saveTracking);
@@ -139,7 +153,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
         if (withContext)
             trackingContext.clearUpdates(true);
         
-        // TODO
+        // TODO: conversation contexts
 		serverSession.trackCall();
 //        if (remoteConversation != null)
 //            remoteConversation.call();
@@ -150,28 +164,28 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
     
     @SuppressWarnings({"unchecked", "rawtypes"})
     public ResponseMessageFuture invoke(Context context, Component component, String operation, Object[] args, TideResponder<?> tideResponder, 
-                           boolean withContext, ComponentResponderImpl.Handler handler) {
+                           boolean withContext, ComponentListener.Handler handler) {
         log.debug("invokeComponent %s > %s.%s", context.getContextId(), component.getName() != null ? component.getName() : component.getClass().getName(), operation);
         
-        ComponentResponder.Handler h = handler != null ? handler : new ComponentResponder.Handler() {            
+        ComponentListener.Handler h = handler != null ? handler : new ComponentListener.Handler() {            
 			@Override
             public void result(Context context, ResultEvent event, Object info, String componentName,
-                    String operation, TideResponder<?> tideResponder, ComponentResponder componentResponder) {
+                    String operation, TideResponder<?> tideResponder, ComponentListener componentResponder) {
             	context.callLater(new ResultHandler(serverSession, context, componentName, operation, event, info, tideResponder, componentResponder));
             }
             
             @Override
             public void fault(Context context, FaultEvent event, Object info, String componentName,
-                    String operation, TideResponder<?> tideResponder, ComponentResponder componentResponder) {
+                    String operation, TideResponder<?> tideResponder, ComponentListener componentResponder) {
             	context.callLater(new FaultHandler(serverSession, context, componentName, operation, event, info, tideResponder, componentResponder));
             }
         };
-        ComponentResponder componentResponder = new ComponentResponderImpl(context, h, component, operation, args, null, tideResponder);
+        ComponentListener componentListener = new ComponentListenerImpl(context, h, component, operation, args, null, tideResponder);
         
         InvocationInterceptor[] interceptors = context.allByType(InvocationInterceptor.class);
         if (interceptors != null) {
             for (InvocationInterceptor interceptor : interceptors)
-                interceptor.beforeInvocation(context, component, operation, args, componentResponder);
+                interceptor.beforeInvocation(context, component, operation, args, componentListener);
         }
         
         context.getContextManager().destroyFinishedContexts();
@@ -189,22 +203,22 @@ public class ComponentImpl implements Component, ContextAware, NameAware {
 //            componentResponder.args = app.preprocess(method, args);
         
     	Object[] call = new Object[5];
-    	call[0] = componentResponder.getComponent().getName();
+    	call[0] = componentListener.getComponent().getName();
     	String componentClassName = null;
-    	if (componentResponder.getComponent().getClass() != ComponentImpl.class) {
-    		RemoteClass remoteClass = componentResponder.getComponent().getClass().getAnnotation(RemoteClass.class);
-    		componentClassName = remoteClass != null ? remoteClass.value() : componentResponder.getComponent().getClass().getName();
+    	if (componentListener.getComponent().getClass() != ComponentImpl.class) {
+    		RemoteClass remoteClass = componentListener.getComponent().getClass().getAnnotation(RemoteClass.class);
+    		componentClassName = remoteClass != null ? remoteClass.value() : componentListener.getComponent().getClass().getName();
     	}
     	call[1] = componentClassName;
-    	call[2] = componentResponder.getOperation();
-    	call[3] = componentResponder.getArgs();
+    	call[2] = componentListener.getOperation();
+    	call[3] = componentListener.getArgs();
     	call[4] = new InvocationCall();
     	
-        RemoteService ro = serverSession.getRemoteObject();
-        ResponseMessageFuture future = ro.newInvocation("invokeComponent", call).addListener(componentResponder).invoke();
+        RemoteService ro = serverSession.getRemoteService();
+        ResponseMessageFuture rmf = ro.newInvocation("invokeComponent", call).addListener(componentListener).invoke();
         
         serverSession.checkWaitForLogout();
         
-        return future;
+        return rmf;
     }
 }

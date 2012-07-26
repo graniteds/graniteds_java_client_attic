@@ -9,6 +9,8 @@ public interface ContextManager {
     
     public void setBeanManager(BeanManager beanManager);
     
+    public Context getContext();
+    
     public Context getContext(String contextId);
     
     public Context getContext(String contextId, String parentContextId, boolean create);

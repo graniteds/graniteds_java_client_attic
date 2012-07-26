@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
+import org.granite.client.configuration.Configuration;
 import org.granite.client.configuration.DefaultConfiguration;
 import org.granite.client.messaging.channel.AsyncToken;
 import org.granite.client.messaging.channel.RemotingChannel;
@@ -31,9 +32,13 @@ public class AMFRemotingChannel extends AbstractAMFChannel implements RemotingCh
 	}
 	
 	public AMFRemotingChannel(HTTPTransport transport, String id, URI uri, int maxConcurrentRequests) {
+		this(transport, DefaultConfiguration.getInstance(), id, uri, maxConcurrentRequests);
+	}
+	
+	public AMFRemotingChannel(HTTPTransport transport, Configuration configuration, String id, URI uri, int maxConcurrentRequests) {
 		super(transport, id, uri, maxConcurrentRequests);
 		
-		this.codec = new AMF0MessagingCodec(DefaultConfiguration.getInstance());
+		this.codec = new AMF0MessagingCodec(configuration);
 	}
 
 	@Override

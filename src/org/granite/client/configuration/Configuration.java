@@ -7,4 +7,10 @@ public interface Configuration {
 
 	GraniteConfig getGraniteConfig();
 	ServicesConfig getServicesConfig();
+	
+	void addConfigurator(Configurator configurator);
+	
+	static interface Configurator {		
+		void configure(GraniteConfig graniteConfig);
+	}
 }

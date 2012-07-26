@@ -9,26 +9,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.Producer;
+import org.granite.client.messaging.RemoteClassScanner;
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.TopicAgent;
 import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.channel.RemotingChannel;
+import org.granite.client.messaging.channel.SessionAwareChannel;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
 import org.granite.client.messaging.channel.amf.AMFMessagingChannel;
 import org.granite.client.messaging.channel.amf.AMFRemotingChannel;
+import org.granite.client.messaging.events.Event;
 import org.granite.client.messaging.events.FaultEvent;
+import org.granite.client.messaging.events.IncomingMessageEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.messaging.messages.responses.FaultMessage;
+import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler;
+import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.tide.BeanManager;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
@@ -55,22 +63,25 @@ public class ServerSession implements ContextAware {
     public static final String IS_LONG_RUNNING_CONVERSATION_TAG = "isLongRunningConversation";
     public static final String WAS_LONG_RUNNING_CONVERSATION_ENDED_TAG = "wasLongRunningConversationEnded";
     public static final String WAS_LONG_RUNNING_CONVERSATION_CREATED_TAG = "wasLongRunningConversationCreated";
-    public static final String IS_FIRST_CALL_TAG = "org.granite.tide.isFirstCall";
-    public static final String IS_FIRST_CONVERSATION_CALL_TAG = "org.granite.tide.isFirstConversationCall";
+    public static final String IS_FIRST_CALL_TAG = "org.granite.client.tide.isFirstCall";
+    public static final String IS_FIRST_CONVERSATION_CALL_TAG = "org.granite.client.tide.isFirstConversationCall";
 	
-	public static final String LOGIN = "org.granite.tide.login";
-	public static final String LOGOUT = "org.granite.tide.logout";
-	public static final String SESSION_EXPIRED = "org.granite.tide.sessionExpired";
+    public static final String CONTEXT_RESULT = "org.granite.tide.result";
+    public static final String CONTEXT_FAULT = "org.granite.tide.fault";
+    
+	public static final String LOGIN = "org.granite.client.tide.login";
+	public static final String LOGOUT = "org.granite.client.tide.logout";
+	public static final String SESSION_EXPIRED = "org.granite.client.tide.sessionExpired";
     
     
 	@SuppressWarnings("unused")
 	private boolean confChanged = false;
-    private HTTPTransport httpClientEngine = null;
-//    private WebSocketEngine webSocketEngine = null;
+    private HTTPTransport httpTransport = null;
+    //private WebSocketEngine webSocketEngine = null;
     private String protocol = "http";
     private String contextRoot = "";
-    private String serverName = "{server.name}";
-    private String serverPort = "{server.port}";
+    private String serverName = null;
+    private int serverPort = 0;
     private String graniteUrlMapping = "/graniteamf/amf.txt";		// .txt for stupid bug in IE8
     private String gravityUrlMapping = "/gravityamf/amf.txt";
     
@@ -88,24 +99,26 @@ public class ServerSession implements ContextAware {
 	private LogoutState logoutState = new LogoutState();
 		
 	private String destination = null;
-    private RemotingChannel graniteChannel;
-	private MessagingChannel gravityChannel;
-	protected Map<String, RemoteService> remoteObjects = new HashMap<String, RemoteService>();
-	protected Map<String, TopicAgent> messageAgents = new HashMap<String, TopicAgent>();
+	private Configuration configuration = null;
+    private RemotingChannel remotingChannel;
+	private MessagingChannel messagingChannel;
+	protected Map<String, RemoteService> remoteServices = new HashMap<String, RemoteService>();
+	protected Map<String, TopicAgent> topicAgents = new HashMap<String, TopicAgent>();
+	private RemoteClassScanner remoteClassConfigurator = new RemoteClassScanner();
 	
 	
     public ServerSession() throws Exception {    	
     }
     
-    public ServerSession(String destination, String contextRoot, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
-        this(destination, contextRoot, "{server.name}", "{server.port}", graniteUrlMapping, gravityUrlMapping);
+    public ServerSession(String destination, String contextRoot, String serverName, int serverPort) throws Exception {
+    	this(destination, "http", contextRoot, serverName, serverPort, null, null);
     }
 
-    public ServerSession(String destination, String contextRoot, String serverName, String serverPort, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
+    public ServerSession(String destination, String contextRoot, String serverName, int serverPort, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
     	this(destination, "http", contextRoot, serverName, serverPort, graniteUrlMapping, gravityUrlMapping);
     }
     
-    public ServerSession(String destination, String protocol, String contextRoot, String serverName, String serverPort, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
+    public ServerSession(String destination, String protocol, String contextRoot, String serverName, int serverPort, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
         super();
         this.destination = destination;
         this.protocol = protocol;
@@ -118,25 +131,7 @@ public class ServerSession implements ContextAware {
         	this.gravityUrlMapping = gravityUrlMapping;
     }
 
-    
-    public void setHttpClientEngine(HTTPTransport engine) {
-		this.httpClientEngine = engine;
-    	confChanged = true;
-	}
-
-//    public void setWebSocketEngine(WebSocketEngine engine) {
-//		this.webSocketEngine = engine;
-//    	confChanged = true;
-//	}
-
-    public HTTPTransport getHttpClientEngine() {
-    	return httpClientEngine;
-    }
-
-//    public WebSocketEngine getWebSocketEngine() {
-//    	return webSocketEngine;
-//    }
-	
+    	
     public void setContextRoot(String contextRoot) {
     	this.contextRoot = contextRoot;
     	confChanged = true;
@@ -152,7 +147,7 @@ public class ServerSession implements ContextAware {
     	confChanged = true;
     }
     
-    public void setServerPort(String serverPort) {
+    public void setServerPort(int serverPort) {
     	this.serverPort = serverPort;
     	confChanged = true;
     }
@@ -187,79 +182,117 @@ public class ServerSession implements ContextAware {
 		return status;
 	}
 	
+	public void setTransport(HTTPTransport transport) {
+		this.httpTransport = transport;
+	}
+	
+	public void setConfiguration(Configuration configuration) {
+		this.configuration = configuration;
+	}
+	
+	public void addRemoteClassPackage(String packageName) {		
+		remoteClassConfigurator.addPackageName(packageName);
+	}
+	
+	public void setRemoteClassPackage(Set<String> packageNames) {
+		remoteClassConfigurator.setPackageNames(packageNames);
+	}
+	
 	public void start() throws Exception {
-		if (httpClientEngine == null)
-			log.warn("No http client engine defined for server session, remoting disabled");
-		else {
-			httpClientEngine.setStatusHandler(new ServerSessionStatusHandler());
-			httpClientEngine.start();
-			graniteURI = new URI(protocol + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.graniteUrlMapping);
-			graniteChannel = new AMFRemotingChannel(httpClientEngine, "graniteamf", graniteURI);
-
-			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.gravityUrlMapping);
-			gravityChannel = new AMFMessagingChannel(httpClientEngine, "gravityamf", gravityURI);
-		}		
+		if (httpTransport == null)
+			httpTransport = new ApacheAsyncTransport();
 		
-//		if (webSocketEngine == null)
-//			log.warn("No websocket engine defined for server session, messaging disabled");
-//		else {
-//			webSocketEngine.setStatusHandler(new ServerSessionStatusHandler());
-//			webSocketEngine.start();
-//			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + ":" + this.serverPort + this.contextRoot + this.gravityUrlMapping);
-//			gravityChannel = new WebSocketChannel(webSocketEngine, "gravityamf", gravityURI);
-//		}
+		httpTransport.setStatusHandler(new ServerSessionStatusHandler());
+		httpTransport.start();
+		
+		configuration.addConfigurator(remoteClassConfigurator);
+		
+		graniteURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.graniteUrlMapping);
+		remotingChannel = new AMFRemotingChannel(httpTransport, configuration, "graniteamf", graniteURI, 1);
+		
+		gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
+		messagingChannel = new AMFMessagingChannel(httpTransport, configuration, "gravityamf", gravityURI);
 	}
 	
 	public void stop()throws Exception {
-		if (httpClientEngine != null) {
-			graniteChannel = null;
-			httpClientEngine.stop();
+		if (httpTransport != null) {
+			remotingChannel = null;
+			messagingChannel = null;
+			httpTransport.stop();
 		}
-//		if (webSocketEngine != null) {
-//			gravityChannel = null;
-//			webSocketEngine.stop();
-//		}
 	}
 	
-	public RemoteService getRemoteObject() {
-		return getRemoteObject(destination);
-	}
-	public synchronized RemoteService getRemoteObject(String destination) {
-		if (graniteChannel == null)
-			throw new IllegalStateException("Engine not started for server session");
+	
+	public static interface ServiceFactory {
 		
-		RemoteService remoteObject = remoteObjects.get(destination);
-		if (remoteObject == null) {
-			remoteObject = new RemoteService(graniteChannel, destination);
-			remoteObjects.put(destination, remoteObject);
+		public RemoteService newRemoteService(RemotingChannel remotingChannel, String destination);
+		
+		public Producer newProducer(MessagingChannel messagingChannel, String destination, String topic);
+		
+		public Consumer newConsumer(MessagingChannel messagingChannel, String destination, String topic);
+	}
+	
+	private static class DefaultServiceFactory implements ServiceFactory {
+		
+		@Override
+		public RemoteService newRemoteService(RemotingChannel remotingChannel, String destination) {
+			return new RemoteService(remotingChannel, destination);
 		}
-		return remoteObject;
+		
+		@Override
+		public Producer newProducer(MessagingChannel messagingChannel, String destination, String topic) {
+			return new Producer(messagingChannel, destination, topic);
+		}
+		
+		@Override
+		public Consumer newConsumer(MessagingChannel messagingChannel, String destination, String topic) {
+			return new Consumer(messagingChannel, destination, topic);
+		}
+	}
+	
+	private ServiceFactory serviceFactory = new DefaultServiceFactory();
+	
+	public void setServiceFactory(ServiceFactory serviceFactory) {
+		this.serviceFactory = serviceFactory;
+	}
+	
+	public RemoteService getRemoteService() {
+		return getRemoteService(destination);
+	}
+	public synchronized RemoteService getRemoteService(String destination) {
+		if (remotingChannel == null)
+			throw new IllegalStateException("Channel not defined for server session");
+		
+		RemoteService remoteService = remoteServices.get(destination);
+		if (remoteService == null) {
+			remoteService = serviceFactory.newRemoteService(remotingChannel, destination);
+			remoteServices.put(destination, remoteService);
+		}
+		return remoteService;
 	}
 
 	public synchronized Consumer getConsumer(String destination, String topic) {
-		if (gravityChannel == null)
-			throw new IllegalStateException("Engine not started for server session");
+		if (messagingChannel == null)
+			throw new IllegalStateException("Channel not defined for server session");
 		
-		final String key = "consumer:" + destination + ":" + topic;
-		
-		TopicAgent consumer = messageAgents.get(key);
+		String key = destination + '@' + topic;
+		TopicAgent consumer = topicAgents.get(key);
 		if (consumer == null) {
-			consumer = new Consumer(gravityChannel, destination, topic);
-			messageAgents.put(key, consumer);
+			consumer = serviceFactory.newConsumer(messagingChannel, destination, topic);
+			topicAgents.put(key, consumer);
 		}
 		return consumer instanceof Consumer ? (Consumer)consumer : null;
 	}
 
 	public synchronized Producer getProducer(String destination, String topic) {
-		if (gravityChannel == null)
-			throw new IllegalStateException("Engine not started for server session");
+		if (messagingChannel == null)
+			throw new IllegalStateException("Channel not defined for server session");
 		
-		final String key = "producer:" + destination + ":" + topic;
-
-		TopicAgent producer = messageAgents.get(key);
+		String key = destination + '@' + topic;
+		TopicAgent producer = topicAgents.get(key);
 		if (producer == null) {
-			producer = new Producer(gravityChannel, destination, topic);
-			messageAgents.put(key, producer);
+			producer = serviceFactory.newProducer(messagingChannel, destination, topic);
+			topicAgents.put(key, producer);
 		}
 		return producer instanceof Producer ? (Producer)producer : null;
 	}
@@ -272,26 +305,35 @@ public class ServerSession implements ContextAware {
 		return sessionId;
 	}
 	
+	public boolean isLogoutInProgress() {
+		return logoutState.logoutInProgress;
+	}
+	
 	public void trackCall() {
 		isFirstCall = false;
 	}
 	
-//	public void handleResultEvent(MessageEvent event) {
-//		sessionId = (String)event.getMessage().getHeader(SESSION_ID_TAG);
-//		if (gravityChannel != null && sessionId != null)
-//			gravityChannel.setSessionId(sessionId);
-//		isFirstCall = false;
-//		status.setConnected(true);
-//	}
-//	
-//	public void handleFaultEvent(FaultEvent event, ErrorMessage emsg) {
-//		sessionId = (String)event.getMessage().getHeader(SESSION_ID_TAG);
-//		if (gravityChannel != null && sessionId != null)
-//			gravityChannel.setSessionId(sessionId);
-//		
-//        if (emsg != null && emsg.getFaultCode().equals("Connection.Failed"))
-//        	status.setConnected(false);            
-//	}
+	public void handleResultEvent(Event event) {
+		if (event instanceof ResultEvent)
+			sessionId = (String)((ResultEvent)event).getMessage().getHeader(SESSION_ID_TAG);
+		else if (event instanceof IncomingMessageEvent<?>)
+			sessionId = (String)((IncomingMessageEvent<?>)event).getMessage().getHeader(SESSION_ID_TAG);
+
+		if (messagingChannel != null && sessionId != null && messagingChannel instanceof SessionAwareChannel)
+			((SessionAwareChannel)messagingChannel).setSessionId(sessionId);
+		isFirstCall = false;
+		status.setConnected(true);
+	}
+	
+	public void handleFaultEvent(FaultEvent event, FaultMessage emsg) {
+		sessionId = (String)event.getMessage().getHeader(SESSION_ID_TAG);
+
+		if (messagingChannel != null && sessionId != null && messagingChannel instanceof SessionAwareChannel)
+			((SessionAwareChannel)messagingChannel).setSessionId(sessionId);
+		
+        if (emsg != null && emsg.getCode().equals(Code.SERVER_CALL_FAILED))
+        	status.setConnected(false);            
+	}
 	
 	public class ServerSessionStatusHandler implements TransportStatusHandler {
 
@@ -302,8 +344,9 @@ public class ServerSession implements ContextAware {
 
 		@Override
 		public void handleException(TransportException e) {
-			log.error(e, "Engine failed");
-		}
+			// TODO: never called
+			log.error(e, "Transport failed");
+		}		
 	}
 	
 	
@@ -323,8 +366,8 @@ public class ServerSession implements ContextAware {
 	
     
     public void login(String username, String password) {
-    	graniteChannel.setCredentials(new UsernamePasswordCredentials(username, password));
-    	gravityChannel.setCredentials(new UsernamePasswordCredentials(username, password));
+    	remotingChannel.setCredentials(new UsernamePasswordCredentials(username, password));
+    	messagingChannel.setCredentials(new UsernamePasswordCredentials(username, password));
     }
     
     public void afterLogin() {
@@ -391,8 +434,8 @@ public class ServerSession implements ContextAware {
 		if (logoutState.stillWaiting())
 			return;
 		
-		graniteChannel.logout(new ResultFaultIssuesResponseListener() {
-			
+		// TODO: check session expiration
+		remotingChannel.logout(new ResultFaultIssuesResponseListener() {
 			@Override
 			public void onResult(final ResultEvent event) {
 				context.callLater(new Runnable() {
@@ -402,7 +445,7 @@ public class ServerSession implements ContextAware {
 						handleResult(context, null, "logout", null, null, null);
 						context.getContextManager().destroyContexts(false);
 												
-						logoutState.loggedOut(new TideResultEvent<Object>(context, event.getRequest(), null, event.getResponse()));
+						logoutState.loggedOut(new TideResultEvent<Object>(context, null, event.getResult()));
 					}
 				});
 			}
@@ -413,22 +456,31 @@ public class ServerSession implements ContextAware {
 					public void run() {
 						log.error("Could not logout %s", event.getDescription());
 						
-						handleFault(context, null, "logout", event.getResponse());
+						handleFault(context, null, "logout", event.getMessage());
 						
 				        Fault fault = new Fault(event.getCode(), event.getDescription(), event.getDetails());
 				        fault.setContent(event.getMessage());
-				        fault.setRootCause(event.getCause());				        
-						logoutState.loggedOut(new TideFaultEvent(context, event.getRequest(), null, fault, event.getExtended()));
+				        fault.setCause(event.getCause());				        
+						logoutState.loggedOut(new TideFaultEvent(context, null, fault, event.getExtended()));
 					}
 				});
 			}
-
+			
 			@Override
-			public void onIssue(IssueEvent event) {
-				// TODO...
+			public void onIssue(final IssueEvent event) {
+				context.callLater(new Runnable() {
+					public void run() {
+						log.error("Could not logout %s", event.getType());
+						
+						handleFault(context, null, "logout", null);
+						
+				        Fault fault = new Fault(Code.SERVER_CALL_FAILED, event.getType().name(), "");
+						logoutState.loggedOut(new TideFaultEvent(context, null, fault, null));
+					}
+				});
 			}
 		});
-		// TODO: logoutState.isSessionExpired());
+		// }, logoutState.isSessionExpired());
 	}
 	
 	
@@ -475,7 +527,7 @@ public class ServerSession implements ContextAware {
                 }
                 
                 // Handle scope changes
-                // TODO: migrate
+                // TODO: merge context variables
     //            if (_componentStore.isComponentInEvent(componentName) && invocationResult.scope == Tide.SCOPE_SESSION && !meta_isGlobal) {
     //                var instance:Object = this[componentName];
     //                this[componentName] = null;
@@ -501,7 +553,7 @@ public class ServerSession implements ContextAware {
                         log.debug("update expression {0}: {1}", r, val);
     
                         String compName = r.getComponentName();
-                        // TODO
+                        // TODO: merge context variables
     //                    if (compName == null && val != null) {
     //                        var t:Type = Type.forInstance(val);
     //                        compName = ComponentStore.internalNameForTypedComponent(t.name + '_' + t.id);
@@ -511,7 +563,7 @@ public class ServerSession implements ContextAware {
                                 + (r.getComponentClassName() != null ? "(" + r.getComponentClassName() + ")" : "") 
                                 + (r.getExpression() != null ? "." + r.getExpression() : ""));
                         
-                        // TODO
+                        // TODO: merge context variables
     //                    if (val != null) {
     //                        if (_componentStore.getDescriptor(compName).restrict == Tide.RESTRICT_UNKNOWN)
     //                            _componentStore.getDescriptor(compName).restrict = r.restrict ? Tide.RESTRICT_YES : Tide.RESTRICT_NO;
@@ -544,12 +596,12 @@ public class ServerSession implements ContextAware {
                             previous = obj;
                         
                         // Don't merge with temporary properties
-                        // TODO
+                        // TODO: merge context variables
                         if (previous instanceof Component) //  || previous instanceof ComponentProperty)
                             previous = null;
                         
                         Expression res = new ContextResult(r.getComponentName(), r.getExpression());
-                        // TODO
+                        // TODO: merge context variables
     //                    var res:IExpression = ComponentStore.isInternalNameForTypedComponent(compName)
     //                        ? new TypedContextExpression(compName, r.expression)
     //                        : new ContextResult(r.componentName, r.expression);
@@ -588,7 +640,7 @@ public class ServerSession implements ContextAware {
             trackingContext.setEnabled(true);
         }
 
-        // TODO
+        // TODO: Seam 2 status messages support
 //        if (componentRegistry.isComponent("statusMessages"))
 //            get("statusMessages").setFromServer(invocationResult);
         
@@ -600,8 +652,7 @@ public class ServerSession implements ContextAware {
             if (updates != null)
                 entityManager.raiseUpdateEvents(context, updates);
             
-            // Dispatch received context events
-            // TODO
+            // TODO: dispatch received context events
 //            List<ContextEvent> events = invocationResult.getEvents();
 //            if (events != null && events.size() > 0) {
 //                for (ContextEvent event : events) {
@@ -629,7 +680,7 @@ public class ServerSession implements ContextAware {
     public void handleFault(Context context, String componentName, String operation, FaultMessage emsg) {
         trackingContext.clearPendingUpdates();
 
-        // TODO
+        // TODO: Seam 2 status messages support
 //        if (emsg != null && emsg.getExtendedData() != null && componentRegistry.isComponent("statusMessages"))
 //            get("statusMessages").setFromServer(emsg.getExtendedData());
     }

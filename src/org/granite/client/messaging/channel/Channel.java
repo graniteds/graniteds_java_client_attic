@@ -9,6 +9,11 @@ import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportMessage;
 
 public interface Channel {
+	
+    public static final String RECONNECT_INTERVAL_MS_KEY = "reconnect-interval-ms";
+    public static final String RECONNECT_MAX_ATTEMPTS_KEY = "reconnect-max-attempts";
+    
+    public static final String BYTEARRAY_BODY_HEADER = "GDS_BYTEARRAY_BODY";    
 
 	Transport getTransport();
 	String getId();

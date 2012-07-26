@@ -15,9 +15,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 
-import org.granite.client.persistence.LazyableCollection;
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
+import org.granite.client.persistence.LazyableCollection;
 
 
 @RemoteClass("org.granite.messaging.persistence.ExternalizablePersistentMap")
@@ -131,7 +131,6 @@ public class PersistentMap<K, V> implements ObservableMap<K, V>, LazyableCollect
         return omap.isEmpty();
     }
     
-    // TODO: should probably use a wrapper for the underlying set
     public Set<K> keySet() {
         return omap.keySet();
     }

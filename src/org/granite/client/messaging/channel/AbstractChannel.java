@@ -17,7 +17,7 @@ public abstract class AbstractChannel<T extends Transport> implements Channel {
 	
 	public AbstractChannel(T transport, String id, URI uri) {
 		if (transport == null || id == null || uri == null)
-			throw new NullPointerException("Engine, id and uri must be not null");
+			throw new NullPointerException("Transport, id and uri must be not null");
 		
 		this.transport = transport;
 		this.id = id;

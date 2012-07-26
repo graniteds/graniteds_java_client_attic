@@ -2,6 +2,7 @@ package org.granite.client.tide;
 
 import java.util.List;
 
+import org.granite.logging.Logger;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.impl.EntityManagerImpl;
 import org.granite.client.tide.data.impl.RemoteInitializerImpl;
@@ -9,7 +10,6 @@ import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.impl.DefaultPlatform;
 import org.granite.client.tide.impl.SimpleEventBus;
 import org.granite.client.tide.impl.SimpleInstanceStore;
-import org.granite.logging.Logger;
 
 
 public class Context {
@@ -34,7 +34,8 @@ public class Context {
     
     public Context(ContextManager contextManager, Context parentCtx, String contextId) {
         this.contextManager = contextManager;
-        // TODO : parentCtx
+        // TODO: conversation contexts 
+        // parentCtx
         this.contextId = contextId;
     }
     
@@ -69,7 +70,7 @@ public class Context {
     }
     
     public void postInit() {
-        // TODO
+        // TODO: postInit ?
     }
     
     public Context getParentContext() {
@@ -97,7 +98,7 @@ public class Context {
     public void setContextId(String contextId, boolean fromServer) {
         String previousContextId = this.contextId;
         this.contextId = contextId;
-        // TODO
+        // TODO: conversation contexts
 //        if (_remoteConversation != null)
 //            _remoteConversation.id = contextId;
         this.isContextIdFromServer = fromServer;
@@ -137,7 +138,7 @@ public class Context {
     }
     
     public void clear(boolean force) {
-        // TODO
+        instanceStore.clear();
     }
     
     public void initInstance(Object instance, String name) {
@@ -147,6 +148,8 @@ public class Context {
     		((ContextAware)instance).setContext(this);
     	if (instance instanceof Initializable)
     		((Initializable)instance).init();
+    	if (instance.getClass().isAnnotationPresent(PlatformConfigurable.class))
+    		platform.configure(instance);
     }
     
     

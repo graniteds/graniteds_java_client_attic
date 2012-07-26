@@ -37,6 +37,8 @@ public class SimpleInstanceStore implements InstanceStore {
     private int NUM_TYPED_INSTANCE = 1;
     
     public void set(Object instance) {
+    	if (instance == null)
+    		throw new NullPointerException("Cannot register null component instance");
     	context.initInstance(instance, null);
     	if (!instances.containsValue(instance))
     		instances.put(TYPED + (NUM_TYPED_INSTANCE++), instance);
@@ -44,15 +46,13 @@ public class SimpleInstanceStore implements InstanceStore {
 
     @Override
     public void remove(String name) {
-        Object instance = instances.get(name);
-        if (instance == null)
-            return;
-        
-//        for (var key:String in object['flash']) {
-//            object['flash'][key] = null;
-//            delete object['flash'][key];
-//        }
+        instances.remove(name);
     }
+    
+    @Override
+    public void clear() {
+    	instances.clear();
+	}
     
     public List<String> allNames() {
     	List<String> names = new ArrayList<String>(instances.size());

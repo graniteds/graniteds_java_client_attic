@@ -6,29 +6,29 @@ import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 public class Fault {
 
     private Code faultCode;
-    private String faultString;
-    private String faultDetail;
+    private String faultDescription;
+    private String faultDetails;
     
     private Object content;
     
-    private Object rootCause;
+    private Object cause;
     
-    public Fault(Code faultCode, String faultString, String faultDetail) {
+    public Fault(Code faultCode, String faultDescription, String faultDetails) {
         this.faultCode = faultCode;
-        this.faultString = faultString;
-        this.faultDetail = faultDetail;
+        this.faultDescription = faultDescription;
+        this.faultDetails = faultDetails;
     }
     
-    public Code getFaultCode() {
+    public Code getCode() {
         return faultCode;
     }
     
-    public String getFaultString() {
-        return faultString;
+    public String getFaultDescription() {
+        return faultDescription;
     }
     
-    public String getFaultDetail() {
-        return faultDetail;
+    public String getFaultDetails() {
+        return faultDetails;
     }
 
     
@@ -40,11 +40,11 @@ public class Fault {
         this.content = context;
     }
     
-    public Object getRootCause() {
-        return rootCause;
+    public Object getCause() {
+        return cause;
     }
     
-    public void setRootCause(Object rootCause) {
-        this.rootCause = rootCause;
+    public void setCause(Object cause) {
+        this.cause = cause;
     }
 }

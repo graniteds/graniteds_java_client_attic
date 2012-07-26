@@ -2,10 +2,17 @@ package org.granite.client.tide.javafx;
 
 import javafx.application.Platform;
 
+import org.granite.client.configuration.Configuration;
+import org.granite.client.configuration.SimpleConfiguration;
+import org.granite.client.persistence.javafx.PersistentBag;
+import org.granite.client.persistence.javafx.PersistentList;
+import org.granite.client.persistence.javafx.PersistentMap;
+import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.tide.EventBus;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.impl.SimpleEventBus;
 import org.granite.client.tide.server.ServerSession;
+import org.granite.config.GraniteConfig;
 
 
 public class JavaFXPlatform implements org.granite.client.tide.Platform {
@@ -28,26 +35,17 @@ public class JavaFXPlatform implements org.granite.client.tide.Platform {
 		if (instance instanceof ServerSession) {
 			ServerSession serverSession = (ServerSession)instance;
 			
-//			String graniteStdConfigPath = "org/granite/client/tide/javafx/granite-config-javafx.xml";
-//			Engine.Configurator graniteConfigurator = new Engine.Configurator() {
-//				@Override
-//				public void configure(GraniteConfig graniteConfig) {
-//					graniteConfig.registerClassAlias(PersistentSet.class);
-//					graniteConfig.registerClassAlias(PersistentBag.class);
-//					graniteConfig.registerClassAlias(PersistentList.class);
-//					graniteConfig.registerClassAlias(PersistentMap.class);
-//				}
-//			};
-//
-//			if (serverSession.getHttpClientEngine() == null)
-//				serverSession.setHttpClientEngine(new ApacheAsyncTransport());
-//			serverSession.getHttpClientEngine().setGraniteStdConfigPath(graniteStdConfigPath);
-//			serverSession.getHttpClientEngine().setGraniteConfigurator(graniteConfigurator);
-
-//			if (serverSession.getWebSocketEngine() == null)
-//				serverSession.setWebSocketEngine(new JettyWebSocketEngine());
-//			serverSession.getWebSocketEngine().setGraniteStdConfigPath(graniteStdConfigPath);
-//			serverSession.getWebSocketEngine().setGraniteConfigurator(graniteConfigurator);
+			Configuration configuration = new SimpleConfiguration("org/granite/tide/javafx/granite-config-javafx.xml", null);
+			configuration.addConfigurator(new Configuration.Configurator() {
+				@Override
+				public void configure(GraniteConfig graniteConfig) {
+					graniteConfig.registerClassAlias(PersistentSet.class);
+					graniteConfig.registerClassAlias(PersistentBag.class);
+					graniteConfig.registerClassAlias(PersistentList.class);
+					graniteConfig.registerClassAlias(PersistentMap.class);
+				}
+			});			
+			serverSession.setConfiguration(configuration);
 			
 			serverSession.setStatus(serverSessionStatus);
 		}

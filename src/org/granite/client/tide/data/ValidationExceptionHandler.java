@@ -20,7 +20,7 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 
 	@Override
 	public boolean accepts(FaultMessage emsg) {
-		return Code.VALIDATION_FAILED.equals(emsg.getCode());
+		return emsg.getCode().equals(Code.VALIDATION_FAILED);
 	}
 
 	@Override

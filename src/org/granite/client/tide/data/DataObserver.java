@@ -13,6 +13,7 @@ import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.messages.requests.SubscribeMessage;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.data.EntityManager.UpdateKind;
@@ -20,9 +21,12 @@ import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.logging.Logger;
 
+
 public class DataObserver implements ContextAware {
     
     private static Logger log = Logger.getLogger(DataObserver.class);
+    
+    public static final String DATA_OBSERVER_TOPIC_NAME = "tideDataTopic";
 
     private Context context;
     private ServerSession serverSession = null;
@@ -43,8 +47,7 @@ public class DataObserver implements ContextAware {
 	}
 	
 	public void start() {
-        consumer = serverSession.getConsumer(destination, "tideDataTopic");
-        consumer.addMessageListener(new MessageListenerImpl());
+        consumer = serverSession.getConsumer(destination, DATA_OBSERVER_TOPIC_NAME);
 	}	
 	
 	public void stop() {
@@ -52,67 +55,58 @@ public class DataObserver implements ContextAware {
 			unsubscribe();
 	}
 	
-//	public void setTopic(String topic) {
-//		consumer.setTopic(topic);
-//	}
-	
 	
 	/**
 	 * 	Subscribe the data topic
 	 */
 	public void subscribe() {
+		consumer.addMessageListener(new MessageListenerImpl());
 	    consumer.subscribe(new SubscriptionListenerImpl());
 	    serverSession.checkWaitForLogout();
 	}
 	
 	public void unsubscribe() {
-		consumer.unsubscribe(new UnsubscriptionListenerImpl());
+		consumer.unsubscribe();
+		consumer.removeMessageListener(messageListener);
 	    serverSession.checkWaitForLogout();
 	}
 	
-	private class UnsubscriptionListenerImpl extends ResultFaultIssuesResponseListener {
-		
+	
+	private class SubscriptionListenerImpl extends ResultFaultIssuesResponseListener {
 		@Override
 		public void onResult(ResultEvent event) {
-			log.info("Destination %s unsubscribed", destination);
-			// consumer.disconnect();
-			serverSession.tryLogout();
+			if (event.getRequest() instanceof SubscribeMessage)
+				log.info("Destination %s subscribed", destination);
+			else {
+				log.info("Destination %s unsubscribed", destination);
+				serverSession.tryLogout();
+			}
 		}
 
 		@Override
 		public void onFault(FaultEvent event) {
-			log.error("Destination %s could not be unsubscribed: %s", destination, event.getCode());
-			// consumer.disconnect();
-			serverSession.tryLogout();
+			if (event.getRequest() instanceof SubscribeMessage)
+				log.error("Destination %s could not be subscribed: %s", destination, event.getCode());
+			else {
+				log.error("Destination %s could not be unsubscribed: %s", destination, event.getCode());
+				serverSession.tryLogout();
+			}
 		}
 
 		@Override
 		public void onIssue(IssueEvent event) {
-			log.error("Destination %s could not be unsubscribed: %s", destination, event);
-			// consumer.disconnect();
-			serverSession.tryLogout();
+			if (event.getRequest() instanceof SubscribeMessage)
+				log.error("Destination %s could not be subscribed: %s", destination, event.getType());
+			else {
+				log.error("Destination %s could not be unsubscribed: %s", destination, event.getType());
+				serverSession.tryLogout();
+			}
 		}
 	}
 
 	
-	private class SubscriptionListenerImpl extends ResultFaultIssuesResponseListener {
-
-		@Override
-		public void onResult(ResultEvent event) {
-			log.info("Destination %s subscribed", destination);
-		}
-
-		@Override
-		public void onFault(FaultEvent event) {
-			log.error("Destination %s could not be subscribed: %s", destination, event.getCode());
-		}
-
-		@Override
-		public void onIssue(IssueEvent event) {
-			log.error("Destination %s could not be subscribed: %s", destination, event);
-		}
-	}
-
+	private MessageListener messageListener = new MessageListenerImpl();
+	
 	/**
 	 * 	Message handler that merges data from the JMS topic in the current context.<br/>
 	 *  Could be overriden to provide custom behaviour.
@@ -120,7 +114,6 @@ public class DataObserver implements ContextAware {
 	 *  @param event message event from the Consumer
 	 */
     public class MessageListenerImpl implements MessageListener {
-    	
 		@Override
 		public void onMessage(Message msg) {
 	        log.debug("Destination %s message received %s", destination, msg.toString());
@@ -130,11 +123,11 @@ public class DataObserver implements ContextAware {
 	        context.callLater(new Runnable() {
 				@Override
 				public void run() {
-//			        String receivedSessionId = (String)message.getHeader("GDSSessionID");
-//			        if (receivedSessionId != null && receivedSessionId.equals(serverSession.getSessionId()))
-//			        	receivedSessionId = null;
-			        
 			        try {
+				        String receivedSessionId = (String)message.getStringProperty("GDSSessionID");
+				        if (receivedSessionId != null && receivedSessionId.equals(serverSession.getSessionId()))
+				        	receivedSessionId = null;
+				        
 			        	MergeContext mergeContext = entityManager.initMerge();
 			        	
 				        Object[] updates = (Object[])message.getObject();
@@ -142,11 +135,11 @@ public class DataObserver implements ContextAware {
 				        for (Object update : updates)
 				        	upds.add(new EntityManager.Update(UpdateKind.forName(((Object[])update)[0].toString().toUpperCase()), ((Object[])update)[1]));
 				        
-			        	entityManager.handleUpdates(mergeContext, null, upds);
+			        	entityManager.handleUpdates(mergeContext, receivedSessionId, upds);
 			        	entityManager.raiseUpdateEvents(context, upds);
 			        }
 			        catch (JMSException e) {
-			        	
+			        	// Ignored: should never happen
 			        }
 			        finally {
 			        	MergeContext.destroy(entityManager);

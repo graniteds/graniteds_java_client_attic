@@ -1,6 +1,5 @@
 package org.granite.client.tide.server;
 
-import org.granite.client.messaging.messages.RequestMessage;
 import org.granite.client.tide.Context;
 
 
@@ -13,12 +12,13 @@ public class TideResultEvent<T> extends TideRpcEvent {
     
     private T result;
 
-    public TideResultEvent(Context context, RequestMessage request, ComponentResponder componentResponder, T result) {
-        super(context, request, componentResponder);
+    public TideResultEvent(Context context, ComponentListener componentResponder, T result) {
+        super(context, componentResponder);
         this.result = result;
     }
     
     public T getResult() {
         return result;
     }
+    
 }

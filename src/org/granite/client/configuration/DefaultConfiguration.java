@@ -41,6 +41,9 @@ public class DefaultConfiguration implements Configuration {
 			}
 		}
 	}
+	
+	public void addConfigurator(Configurator configurator) {		
+	}
 
 	@Override
 	public GraniteConfig getGraniteConfig() {

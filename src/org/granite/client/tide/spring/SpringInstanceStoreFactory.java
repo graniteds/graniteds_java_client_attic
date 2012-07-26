@@ -36,21 +36,30 @@ public class SpringInstanceStoreFactory implements InstanceStoreFactory {
 			this.applicationContext = applicationContext;
 		}
 	    
+		@SuppressWarnings("unchecked")
 		@Override
 		public <T> T getNoProxy(String name) {
-			return null;
+			return (T)applicationContext.getBean(name);
 		}
 
 		@Override
 		public void set(String name, Object instance) {
+			// Nothing, managed by Spring
 		}
 
 		@Override
 		public void set(Object instance) {
+			// Nothing, managed by Spring
 		}
 
 		@Override
 		public void remove(String name) {
+			// Nothing, managed by Spring
+		}
+		
+		@Override
+		public void clear() {
+			// Nothing, managed by Spring
 		}
 
 		@Override
