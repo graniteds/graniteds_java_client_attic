@@ -10,7 +10,7 @@ import org.granite.logging.Logger;
 public class EntityDescriptor {
     
     @SuppressWarnings("unused")
-    private final static Logger log = Logger.getLogger("org.granite.tide.data.EntityDescriptor");
+    private final static Logger log = Logger.getLogger("org.granite.client.tide.data.EntityDescriptor");
     
     private final String className;
     private final String idPropertyName;

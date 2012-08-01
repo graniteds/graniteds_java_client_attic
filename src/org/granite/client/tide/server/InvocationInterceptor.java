@@ -5,6 +5,6 @@ import org.granite.client.tide.Context;
 
 public interface InvocationInterceptor {
     
-    public void beforeInvocation(Context ctx, Component component, String operation, Object[] args, ComponentResponder componentResponder);
+    public void beforeInvocation(Context ctx, Component component, String operation, Object[] args, ComponentListener componentResponder);
 
 }

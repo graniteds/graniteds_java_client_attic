@@ -29,7 +29,7 @@ public class SpringContextManager extends SimpleContextManager implements Applic
 		this.applicationContext = applicationContext;
 		setInstanceStoreFactory(new SpringInstanceStoreFactory(applicationContext));
 	}
-		
+	
 	@Override
 	public Object postProcessBeforeInitialization(Object instance, String name) throws BeansException {
     	if (name != null && instance instanceof NameAware)
@@ -58,7 +58,7 @@ public class SpringContextManager extends SimpleContextManager implements Applic
 	private final class SpringDataConflictListener implements DataConflictListener {
 		@Override
 		public void onConflict(EntityManager entityManager, Conflicts conflicts) {
-			TideApplicationEvent event = new TideApplicationEvent(getContext(null), "org.granite.tide.data.conflict", conflicts);
+			TideApplicationEvent event = new TideApplicationEvent(getContext(null), "org.granite.client.tide.data.conflict", conflicts);
 			applicationContext.publishEvent(event);
 		}
 	}

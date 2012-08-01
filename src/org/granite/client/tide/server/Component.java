@@ -1,12 +1,12 @@
 package org.granite.client.tide.server;
 
-import org.granite.client.messaging.channel.ResponseMessageFuture;
+import java.util.concurrent.Future;
 
 
 public interface Component {
     
     public String getName();
     
-    public ResponseMessageFuture call(String operation, Object... args);
+    public <T> Future<T> call(String operation, Object... args);
 
 }

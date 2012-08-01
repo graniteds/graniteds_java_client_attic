@@ -13,6 +13,8 @@ public interface InstanceStore {
 
     public void remove(String name);
     
+    public void clear();
+    
     public List<String> allNames();
     
     public <T> T byName(String name, Context context);

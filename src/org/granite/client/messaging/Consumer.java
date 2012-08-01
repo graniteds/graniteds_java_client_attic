@@ -107,6 +107,10 @@ public class Consumer extends AbstractTopicAgent implements MessageListener {
 	public void addMessageListener(MessageListener listener) {
 		listeners.putIfAbsent(listener, Boolean.TRUE);
 	}
+	
+	public boolean removeMessageListener(MessageListener listener) {
+		return listeners.remove(listener);
+	}
 
 	@Override
 	public void onMessage(Message message) {

@@ -18,6 +18,9 @@ public class SimpleContextManager implements ContextManager {
     
     static final String DEFAULT_CONTEXT = "__DEFAULT__CONTEXT__";
     
+    public static final String CONTEXT_CREATE = "org.granite.tide.contextCreate";
+    public static final String CONTEXT_DESTROY = "org.granite.tide.contextDestroy";
+    
     protected final Platform platform;
     private InstanceStoreFactory instanceStoreFactory = new DefaultInstanceStoreFactory();
     private BeanManager beanManager = new SimpleBeanManager();
@@ -54,6 +57,15 @@ public class SimpleContextManager implements ContextManager {
     public boolean isGlobal(Context context) {
         return contextsById.get(DEFAULT_CONTEXT) == context;
     }
+
+    /**
+     *  Return the global context
+     *  
+     *  @return context
+     */ 
+    public Context getContext() {
+    	return getContext(null, null, true);
+    }
     
     /**
      *  Return a context from its id
@@ -78,7 +90,7 @@ public class SimpleContextManager implements ContextManager {
      *  @param contextId context id
      *  @param create should create when not existing
      *  @return context
-     */ 
+     */
     public Context getContext(String contextId, String parentContextId, boolean create) {
         Context ctx = contextsById.get(contextId != null ? contextId : DEFAULT_CONTEXT);
         if (ctx == null && create) {
@@ -88,9 +100,7 @@ public class SimpleContextManager implements ContextManager {
             
             ctx = createContext(parentCtx, contextId);
             contextsById.put(contextId != null ? contextId : DEFAULT_CONTEXT, ctx);
-            // TODO
-//            if (contextId != null)
-//                ctx.raiseEvent(Tide.CONTEXT_CREATE);
+            ctx.getEventBus().raiseEvent(ctx, CONTEXT_CREATE);
             ctx.postInit();
         }
         return ctx;
@@ -116,7 +126,7 @@ public class SimpleContextManager implements ContextManager {
             ctx = createContext(parentCtx, contextId);
             if (contextId != null)
                 contextsById.put(contextId, ctx);
-//            ctx.raiseEvent(Tide.CONTEXT_CREATE);
+            ctx.getEventBus().raiseEvent(ctx, CONTEXT_CREATE);
             ctx.postInit();
         }
         return ctx;
@@ -139,7 +149,7 @@ public class SimpleContextManager implements ContextManager {
             }
             
             removeFromContextsToDestroy(contextId);
-//            ctx.raiseEvent(Tide.CONTEXT_DESTROY);
+            ctx.getEventBus().raiseEvent(ctx, CONTEXT_DESTROY);
             contextsById.get(contextId).clear(force);
             contextsById.remove(contextId);
         }
@@ -267,7 +277,7 @@ public class SimpleContextManager implements ContextManager {
      * 
      *  @param name component name
      */
-    // TODO
+    // TODO: destroy component instances
 //    public void destroyComponentInstances(String name) {
 //        for (Context ctx : contextsById.values())
 //            ctx.destroy(name, true);

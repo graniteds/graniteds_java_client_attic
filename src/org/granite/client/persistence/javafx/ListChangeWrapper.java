@@ -5,8 +5,11 @@ import java.util.List;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
-public class ListChangeWrapper<T> extends ListChangeListener.Change<T> {            
+public class ListChangeWrapper<T> extends ListChangeListener.Change<T> {
+	
     private final ListChangeListener.Change<? extends T> wrappedChange;
+    
+    private static final int[] EMPTY_PERMUTATION = new int[0];
     
     public ListChangeWrapper(ObservableList<T> list, ListChangeListener.Change<? extends T> wrappedChange) {
         super(list);
@@ -66,8 +69,7 @@ public class ListChangeWrapper<T> extends ListChangeListener.Change<T> {
 
     @Override
     protected int[] getPermutation() {
-        // TODO
-        return new int[0]; // wrappedChange.getPermutation();
+        return EMPTY_PERMUTATION;
     }
 
     @Override

@@ -14,7 +14,7 @@ import org.granite.logging.Logger;
 public class Conflicts {
     
     @SuppressWarnings("unused")
-    private static Logger log = Logger.getLogger("org.granite.tide.data.Conflicts");
+    private static Logger log = Logger.getLogger("org.granite.client.tide.data.Conflicts");
 
     private EntityManager entityManager;
     

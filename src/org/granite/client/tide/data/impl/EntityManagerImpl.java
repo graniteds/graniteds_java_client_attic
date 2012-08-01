@@ -29,13 +29,13 @@ import org.granite.client.tide.data.RemoteValidator;
 import org.granite.client.tide.data.impl.UIDWeakSet.Matcher;
 import org.granite.client.tide.data.impl.UIDWeakSet.Operation;
 import org.granite.client.tide.data.spi.DataManager;
+import org.granite.client.tide.data.spi.DataManager.ChangeKind;
 import org.granite.client.tide.data.spi.DirtyCheckContext;
 import org.granite.client.tide.data.spi.EntityDescriptor;
 import org.granite.client.tide.data.spi.EntityRef;
 import org.granite.client.tide.data.spi.ExpressionEvaluator;
-import org.granite.client.tide.data.spi.MergeContext;
-import org.granite.client.tide.data.spi.DataManager.ChangeKind;
 import org.granite.client.tide.data.spi.ExpressionEvaluator.Value;
+import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TrackingContext;
@@ -60,19 +60,14 @@ public class EntityManagerImpl implements EntityManager {
     
     private DataMerger[] customMergers = null;
     
-//    private RemoteInitializer remoteInitializer = null;
-//    private RemoteValidator remoteValidator = null;
-    
 
     public EntityManagerImpl(String id, DataManager dataManager, TrackingContext trackingContext, ExpressionEvaluator expressionEvaluator) {
         this.id = id;
         this.active = true;
-        this.dataManager = dataManager != null ? dataManager : new DefaultDataManager();
+        this.dataManager = dataManager != null ? dataManager : new JavaBeanDataManager();
         this.dataManager.setTrackingHandler(new DefaultTrackingHandler());
         this.trackingContext = trackingContext != null ? trackingContext : new TrackingContext();
         this.dirtyCheckContext = new DirtyCheckContextImpl(this.dataManager, this.trackingContext);
-        // TODO
-//        this.dirtyCheckContext.addEventListener(DIRTY_CHANGE, dirtyChangeHandler, false, 0, true);
         this.expressionEvaluator = expressionEvaluator;
     }
     
@@ -628,22 +623,22 @@ public class EntityManagerImpl implements EntityManager {
             }
             else {
                 // Give a chance to intercept received value so we can apply changes on private values
-                // TODO
+                // TODO: differential updates
 //                if (_mergeContext.proxyGetter != null && parent != null && propertyName != null)
 //                    next = obj = _mergeContext.proxyGetter(obj, parent, propertyName);
 
                 // Clear change tracking
-                dataManager.stopTracking(previous, parent); 
-                
                 if (obj == null) {
                     next = null;
                 }
                 else if (((obj instanceof LazyableCollection && !((LazyableCollection)obj).isInitialized()) 
                     || (obj instanceof LazyableCollection && !(previous instanceof LazyableCollection))) && parent instanceof Identifiable && propertyName != null) {
+                    dataManager.stopTracking(previous, parent); 
                     next = mergePersistentCollection(mergeContext, (LazyableCollection)obj, previous, null, (Identifiable)parent, propertyName);
                     addRef = true;
                 }
                 else if (obj instanceof List<?>) {
+                    dataManager.stopTracking(previous, parent); 
                     next = mergeCollection(mergeContext, (List<Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
@@ -652,6 +647,7 @@ public class EntityManagerImpl implements EntityManager {
 //                    addRef = true;
 //                }
                 else if (obj instanceof Map<?, ?>) {
+                    dataManager.stopTracking(previous, parent); 
                     next = mergeMap(mergeContext, (Map<Object, Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
@@ -664,6 +660,8 @@ public class EntityManagerImpl implements EntityManager {
                     if (customMergers != null) {
                         for (DataMerger merger : customMergers) {
                             if (merger.accepts(obj)) {
+                                dataManager.stopTracking(previous, parent);
+                                
                                 next = merger.merge(mergeContext, obj, previous, parent == null ? expr : null, parent, propertyName);
 
                                 // Keep notified of collection updates to notify the server at next remote call
@@ -767,6 +765,9 @@ public class EntityManagerImpl implements EntityManager {
                 dest = previous;
             }
         }
+        
+        dataManager.stopTracking(previous, parent);
+        
         if (dest != previous && previous != null && (ObjectUtil.objectEquals(dataManager, previous, obj)
             || (parent != null && !(previous instanceof Identifiable))))    // GDS-649 Case of embedded objects 
             dest = previous;
@@ -996,15 +997,6 @@ public class EntityManagerImpl implements EntityManager {
 
         List<Object> prevColl = list != coll ? list : null;
         List<Object> destColl = prevColl;
-        // TODO ??
-//      // Restore collection sort/filter state
-//        if (destColl is ListCollectionView && (ListCollectionView(destColl).sort != null || ListCollectionView(destColl).filterFunction != null))
-//            destColl = ListCollectionView(destColl).list;
-//        else if (destColl is ICollectionView && coll is ICollectionView) {
-//            ICollectionView(coll).sort = ICollectionView(destColl).sort;
-//            ICollectionView(coll).filterFunction = ICollectionView(destColl).filterFunction;
-//            ICollectionView(coll).refresh();
-//        }
 
         if (prevColl != null && mergeContext.isMergeUpdate()) {
             // Enable tracking before modifying collection when resolving a conflict
@@ -1516,12 +1508,6 @@ public class EntityManagerImpl implements EntityManager {
                             if (idx >= 0)
                                 ((List<?>)val).remove(idx);
                         }
-                        // TODO
-//                        else if (val != null && val.getClass().isArray()) {
-//                            int idx = Arrays.val.indexOf(entity);
-//                            if (idx >= 0)
-//                                val.splice(idx, 1);
-//                        }
                         else if (val instanceof Map<?, ?>) {
                             Map<?, ?> map = (Map<?, ?>)val;
                             if (map.containsKey(entity))
@@ -1897,7 +1883,7 @@ public class EntityManagerImpl implements EntityManager {
                     dirtyCheckContext.entityPropertyChangeHandler(((Object[])owner)[0], target, property, oldValue, newValue);
             }
             
-            // TODO
+            // TODO: EntityManager embedded
     //        PropertyChangeEvent pce = new PropertyChangeEvent("entityEmbeddedChange", event.property, event.oldValue, event.newValue, event.source);
     //        dispatchEvent(pce);
         }
@@ -2171,7 +2157,7 @@ public class EntityManagerImpl implements EntityManager {
 			
 			if (entity != null) {
 				String entityName = entity instanceof EntityRef ? getUnqualifiedClassName(((EntityRef)entity).getClassName()) : entity.getClass().getSimpleName();
-				String eventType = "org.granite.tide.data." + update.getKind().name().toLowerCase() + "." + entityName;
+				String eventType = "org.granite.client.tide.data." + update.getKind().name().toLowerCase() + "." + entityName;
 				context.getEventBus().raiseEvent(context, eventType, entity);
 				
 				if (UpdateKind.PERSIST.equals(update.getKind()) || UpdateKind.REMOVE.equals(update.getKind())) {
@@ -2182,7 +2168,7 @@ public class EntityManagerImpl implements EntityManager {
 		}
 		
 		for (String refresh : refreshes)
-			context.getEventBus().raiseEvent(context, "org.granite.tide.data.refresh." + refresh);
+			context.getEventBus().raiseEvent(context, "org.granite.client.tide.data.refresh." + refresh);
 	}
     
 	private static String getUnqualifiedClassName(String className) {
