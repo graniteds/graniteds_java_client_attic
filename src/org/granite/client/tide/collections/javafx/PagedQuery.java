@@ -33,7 +33,7 @@ import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideResultEvent;
 import org.granite.logging.Logger;
-import org.granite.util.ClassUtil;
+import org.granite.util.TypeUtil;
     
     	
 
@@ -111,7 +111,7 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 //		_filter.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, filterChangedHandler, false, 0, true);
 	}
 	public void setFilterClass(Class<?> filterClass) throws IllegalAccessException, InstantiationException {
-		filter = ClassUtil.newInstance(filterClass, Object.class);
+		filter = TypeUtil.newInstance(filterClass, Object.class);
 	}
 
 
@@ -137,7 +137,7 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 	}
 	
 	public void setRemoteComponentClass(Class<? extends ComponentImpl> remoteComponentClass) throws IllegalAccessException, InstantiationException {
-		component = ClassUtil.newInstance(remoteComponentClass, new Class<?>[] { ServerSession.class }, new Object[] { serverSession });
+		component = TypeUtil.newInstance(remoteComponentClass, new Class<?>[] { ServerSession.class }, new Object[] { serverSession });
 	}
 	
 	public void setMethodName(String methodName) {

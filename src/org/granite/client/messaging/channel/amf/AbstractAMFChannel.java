@@ -159,16 +159,24 @@ public abstract class AbstractAMFChannel extends AbstractHTTPChannel {
 			String flexCode = errorMessage.getFaultCode();
 			if (ErrorMessage.CODE_SERVER_CALL_FAILED.equals(flexCode))
 				code = Code.SERVER_CALL_FAILED;
-			else if (SecurityServiceException.CODE_INVALID_CREDENTIALS.equals(flexCode))
-				code = Code.INVALID_CREDENTIALS;
 			else if (SecurityServiceException.CODE_ACCESS_DENIED.equals(flexCode))
 				code = Code.ACCESS_DENIED;
-			else if (SecurityServiceException.CODE_AUTHENTICATION_FAILED.equals(flexCode))
+			else if (SecurityServiceException.CODE_INVALID_CREDENTIALS.equals(flexCode)) {
+				authenticated = false;
+				code = Code.INVALID_CREDENTIALS;
+			}
+			else if (SecurityServiceException.CODE_AUTHENTICATION_FAILED.equals(flexCode)) {
+				authenticated = false;
 				code = Code.AUTHENTICATION_FAILED;
-			else if (SecurityServiceException.CODE_NOT_LOGGED_IN.equals(flexCode))
+			}
+			else if (SecurityServiceException.CODE_NOT_LOGGED_IN.equals(flexCode)) {
+				authenticated = false;
 				code = Code.NOT_LOGGED_IN;
-			else if (SecurityServiceException.CODE_SESSION_EXPIRED.equals(flexCode))
+			}
+			else if (SecurityServiceException.CODE_SESSION_EXPIRED.equals(flexCode)) {
+				authenticated = false;
 				code = Code.SESSION_EXPIRED;
+			}
 			else if ("Validation.Failed".equals(flexCode))
 				code = Code.VALIDATION_FAILED;
 				

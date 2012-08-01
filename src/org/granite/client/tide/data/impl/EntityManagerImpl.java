@@ -42,7 +42,7 @@ import org.granite.client.tide.server.TrackingContext;
 import org.granite.client.util.WeakIdentityHashMap;
 import org.granite.logging.Logger;
 import org.granite.tide.Expression;
-import org.granite.util.ClassUtil;
+import org.granite.util.TypeUtil;
 
 
 public class EntityManagerImpl implements EntityManager {
@@ -775,7 +775,7 @@ public class EntityManagerImpl implements EntityManager {
             // When merging from another entity manager, ensure we create a new copy of the entity
             // An instance can exist in only one entity manager at a time 
             try {
-                dest = ClassUtil.newInstance(obj.getClass(), Object.class);
+                dest = TypeUtil.newInstance(obj.getClass(), Object.class);
                 if (obj instanceof Identifiable)
                     ((Identifiable)dest).setUid(((Identifiable)obj).getUid());
             }
@@ -1184,7 +1184,7 @@ public class EntityManagerImpl implements EntityManager {
             m = (Map<Object, Object>)previous;
         else if (mergeContext.getSourceEntityManager() != null) {
             try {
-                m = (Map<Object, Object>)ClassUtil.newInstance(map.getClass(), Map.class);
+                m = (Map<Object, Object>)TypeUtil.newInstance(map.getClass(), Map.class);
             }
             catch (Exception e) {
                 throw new RuntimeException("Could not create class " + map.getClass());

@@ -1,9 +1,10 @@
 package org.granite.client.messaging;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
-import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.events.IssueEvent;
@@ -16,7 +17,7 @@ public class Consumer extends AbstractTopicAgent implements MessageListener {
 	
 	private static final Logger log = Logger.getLogger(Consumer.class);
 
-	private ConcurrentHashSet<MessageListener> listeners = new ConcurrentHashSet<MessageListener>();
+	private ConcurrentHashMap<MessageListener, Boolean> listeners = new ConcurrentHashMap<MessageListener, Boolean>();
 	
 	private String subscriptionId = null;
 	private String selector = null;
@@ -104,12 +105,12 @@ public class Consumer extends AbstractTopicAgent implements MessageListener {
 	}
 
 	public void addMessageListener(MessageListener listener) {
-		listeners.add(listener);
+		listeners.putIfAbsent(listener, Boolean.TRUE);
 	}
 
 	@Override
 	public void onMessage(Message message) {
-		for (MessageListener listener : listeners) {
+		for (MessageListener listener : listeners.keySet()) {
 			try {
 				listener.onMessage(message);
 			}
