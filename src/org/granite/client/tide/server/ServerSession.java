@@ -33,10 +33,11 @@ import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage.Code;
-import org.granite.client.messaging.transport.HTTPTransport;
+import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
+import org.granite.client.messaging.transport.jetty.JettyWebSocketTransport;
 import org.granite.client.tide.BeanManager;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
@@ -72,18 +73,23 @@ public class ServerSession implements ContextAware {
 	public static final String LOGIN = "org.granite.client.tide.login";
 	public static final String LOGOUT = "org.granite.client.tide.logout";
 	public static final String SESSION_EXPIRED = "org.granite.client.tide.sessionExpired";
+	
+	private static final String DEFAULT_REMOTING_URL_MAPPING = "/graniteamf/amf.txt";
+	private static final String DEFAULT_COMET_URL_MAPPING = "/gravityamf/amf.txt";
+	private static final String DEFAULT_WEBSOCKET_URL_MAPPING = "/websocketamf/amf";
     
     
 	@SuppressWarnings("unused")
 	private boolean confChanged = false;
-    private HTTPTransport httpTransport = null;
-    //private WebSocketEngine webSocketEngine = null;
+	private boolean useWebSocket = true;
+    private Transport remotingTransport = null;
+    private Transport messagingTransport = null;
     private String protocol = "http";
     private String contextRoot = "";
     private String serverName = null;
     private int serverPort = 0;
-    private String graniteUrlMapping = "/graniteamf/amf.txt";		// .txt for stupid bug in IE8
-    private String gravityUrlMapping = "/gravityamf/amf.txt";
+    private String graniteUrlMapping = DEFAULT_REMOTING_URL_MAPPING;		// .txt for stupid bug in IE8
+    private String gravityUrlMapping = DEFAULT_COMET_URL_MAPPING;
     
     private URI graniteURI;
 	private URI gravityURI;
@@ -182,8 +188,18 @@ public class ServerSession implements ContextAware {
 		return status;
 	}
 	
-	public void setTransport(HTTPTransport transport) {
-		this.httpTransport = transport;
+	public void setUseWebSocket(boolean useWebSocket) {
+		this.useWebSocket = useWebSocket;
+		if (useWebSocket && DEFAULT_COMET_URL_MAPPING.equals(gravityUrlMapping))
+			this.gravityUrlMapping = DEFAULT_WEBSOCKET_URL_MAPPING;
+	}
+	
+	public void setRemotingTransport(Transport transport) {
+		this.remotingTransport = transport;
+	}
+	
+	public void setMessagingTransport(Transport transport) {
+		this.messagingTransport = transport;
 	}
 	
 	public void setConfiguration(Configuration configuration) {
@@ -199,27 +215,40 @@ public class ServerSession implements ContextAware {
 	}
 	
 	public void start() throws Exception {
-		if (httpTransport == null)
-			httpTransport = new ApacheAsyncTransport();
+		if (remotingTransport == null)
+			remotingTransport = new ApacheAsyncTransport();
 		
-		httpTransport.setStatusHandler(new ServerSessionStatusHandler());
-		httpTransport.start();
+		if (messagingTransport == null)
+			messagingTransport = useWebSocket ? new JettyWebSocketTransport() : remotingTransport;
+		
+		remotingTransport.setStatusHandler(statusHandler);
+		remotingTransport.start();
+		if (messagingTransport != remotingTransport) {
+			messagingTransport.setStatusHandler(statusHandler);
+			messagingTransport.start();
+		}
 		
 		configuration.addConfigurator(remoteClassConfigurator);
+		configuration.load();
 		
 		graniteURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.graniteUrlMapping);
-		remotingChannel = new AMFRemotingChannel(httpTransport, configuration, "graniteamf", graniteURI, 1);
-		
-		gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
-		messagingChannel = new AMFMessagingChannel(httpTransport, configuration, "gravityamf", gravityURI);
+		remotingChannel = new AMFRemotingChannel(remotingTransport, configuration, "graniteamf", graniteURI, 1);
+
+		if (useWebSocket)
+			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
+		else
+			gravityURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
+		messagingChannel = new AMFMessagingChannel(messagingTransport, configuration, "gravityamf", gravityURI);
 	}
 	
 	public void stop()throws Exception {
-		if (httpTransport != null) {
-			remotingChannel = null;
-			messagingChannel = null;
-			httpTransport.stop();
-		}
+		if (remotingTransport != null)
+			remotingTransport.stop();		
+		remotingChannel = null;
+		
+		if (messagingTransport != null && messagingTransport != remotingTransport)
+			messagingTransport.stop();		
+		messagingChannel = null;
 	}
 	
 	
@@ -335,11 +364,17 @@ public class ServerSession implements ContextAware {
         	status.setConnected(false);            
 	}
 	
-	public class ServerSessionStatusHandler implements TransportStatusHandler {
-
+	private final TransportStatusHandler statusHandler = new TransportStatusHandler() {
+		
+		private int busyCount = 0;
+		
 		@Override
-		public void handleIO(boolean active) {
-			status.setBusy(active);
+		public void handleIO(boolean active) {			
+			if (active)
+				busyCount++;
+			else
+				busyCount--;
+			status.setBusy(busyCount > 0);
 		}
 
 		@Override
@@ -347,7 +382,7 @@ public class ServerSession implements ContextAware {
 			// TODO: never called
 			log.error(e, "Transport failed");
 		}		
-	}
+	};
 	
 	
     /**
@@ -371,7 +406,7 @@ public class ServerSession implements ContextAware {
     }
     
     public void afterLogin() {
-		log.info("Application login");
+		log.info("Application session authenticated");
 		
 		context.getEventBus().raiseEvent(context, LOGIN);
     }
@@ -382,17 +417,10 @@ public class ServerSession implements ContextAware {
 		sessionId = null;
 		isFirstCall = true;
 		
-		logoutState.sessionExpired(new TimerTask() {
-			@Override
-			public void run() {
-				logoutState.sessionExpired();
-				tryLogout();
-			}
-		});
+		logoutState.sessionExpired();
 		
-		context.getEventBus().raiseEvent(context, SESSION_EXPIRED);
-		
-        tryLogout();
+		context.getEventBus().raiseEvent(context, SESSION_EXPIRED);		
+		context.getEventBus().raiseEvent(context, LOGOUT);		
     }
     
 	/**
@@ -406,6 +434,7 @@ public class ServerSession implements ContextAware {
 		logoutState.logout(logoutObserver, new TimerTask() {
 			@Override
 			public void run() {
+				log.info("Force session logout");
 				logoutState.logout(logoutObserver);
 				tryLogout();
 			}
@@ -440,11 +469,11 @@ public class ServerSession implements ContextAware {
 			public void onResult(final ResultEvent event) {
 				context.callLater(new Runnable() {
 					public void run() {
-						log.info("Application logout");
+						log.info("Application session logged out");
 						
 						handleResult(context, null, "logout", null, null, null);
 						context.getContextManager().destroyContexts(false);
-												
+						
 						logoutState.loggedOut(new TideResultEvent<Object>(context, null, event.getResult()));
 					}
 				});
@@ -454,7 +483,7 @@ public class ServerSession implements ContextAware {
 			public void onFault(final FaultEvent event) {
 				context.callLater(new Runnable() {
 					public void run() {
-						log.error("Could not logout %s", event.getDescription());
+						log.error("Could not log out %s", event.getDescription());
 						
 						handleFault(context, null, "logout", event.getMessage());
 						
@@ -480,7 +509,6 @@ public class ServerSession implements ContextAware {
 				});
 			}
 		});
-		// }, logoutState.isSessionExpired());
 	}
 	
 	
@@ -744,12 +772,6 @@ public class ServerSession implements ContextAware {
 			logoutInProgress = false;
 			waitForLogout = 0;
 			sessionExpired = false;
-		}
-		
-		public void sessionExpired(TimerTask forceLogout) {
-			sessionExpired();
-			logoutTimeout = new Timer(true);
-			logoutTimeout.schedule(forceLogout, 1000L);
 		}
 		
 		public void sessionExpired() {

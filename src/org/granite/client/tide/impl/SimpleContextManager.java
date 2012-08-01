@@ -100,7 +100,8 @@ public class SimpleContextManager implements ContextManager {
             
             ctx = createContext(parentCtx, contextId);
             contextsById.put(contextId != null ? contextId : DEFAULT_CONTEXT, ctx);
-            ctx.getEventBus().raiseEvent(ctx, CONTEXT_CREATE);
+            if (contextId != null)
+            	ctx.getEventBus().raiseEvent(ctx, CONTEXT_CREATE);
             ctx.postInit();
         }
         return ctx;
