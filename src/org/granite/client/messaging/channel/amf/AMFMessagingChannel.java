@@ -40,8 +40,6 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	
 	private static final Logger log = Logger.getLogger(AMFMessagingChannel.class);
 	
-	private static final Logger log = Logger.getLogger(AMFMessagingChannel.class);
-	
 	private final AMF3MessagingCodec codec;
 	
 	private String sessionId = null;
