@@ -37,8 +37,7 @@ import org.granite.client.tide.server.TideResultEvent;
 import org.granite.logging.Logger;
 import org.granite.tide.data.model.Page;
 import org.granite.tide.data.model.PageInfo;
-import org.granite.util.TypeUtil;
-    	
+import org.granite.util.TypeUtil;    	
 
 /**
  * 	Implementation of the Tide paged collection with an generic service backend.<br/>
