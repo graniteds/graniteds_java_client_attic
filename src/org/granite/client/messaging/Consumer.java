@@ -17,7 +17,7 @@ public class Consumer extends AbstractTopicAgent implements MessageListener {
 	
 	private static final Logger log = Logger.getLogger(Consumer.class);
 
-	private ConcurrentHashMap<MessageListener, Boolean> listeners = new ConcurrentHashMap<MessageListener, Boolean>();
+	private final ConcurrentHashMap<MessageListener, Boolean> listeners = new ConcurrentHashMap<MessageListener, Boolean>();
 	
 	private String subscriptionId = null;
 	private String selector = null;
@@ -109,7 +109,7 @@ public class Consumer extends AbstractTopicAgent implements MessageListener {
 	}
 	
 	public boolean removeMessageListener(MessageListener listener) {
-		return listeners.remove(listener);
+		return listeners.remove(listener) != null;
 	}
 
 	@Override
