@@ -463,52 +463,56 @@ public class ServerSession implements ContextAware {
 		if (logoutState.stillWaiting())
 			return;
 		
-		// TODO: check session expiration
-		remotingChannel.logout(new ResultFaultIssuesResponseListener() {
-			@Override
-			public void onResult(final ResultEvent event) {
-				context.callLater(new Runnable() {
-					public void run() {
-						log.info("Application session logged out");
-						
-						handleResult(context, null, "logout", null, null, null);
-						context.getContextManager().destroyContexts(false);
-						
-						logoutState.loggedOut(new TideResultEvent<Object>(context, null, event.getResult()));
-					}
-				});
-			}
-
-			@Override
-			public void onFault(final FaultEvent event) {
-				context.callLater(new Runnable() {
-					public void run() {
-						log.error("Could not log out %s", event.getDescription());
-						
-						handleFault(context, null, "logout", event.getMessage());
-						
-				        Fault fault = new Fault(event.getCode(), event.getDescription(), event.getDetails());
-				        fault.setContent(event.getMessage());
-				        fault.setCause(event.getCause());				        
-						logoutState.loggedOut(new TideFaultEvent(context, null, fault, event.getExtended()));
-					}
-				});
-			}
-			
-			@Override
-			public void onIssue(final IssueEvent event) {
-				context.callLater(new Runnable() {
-					public void run() {
-						log.error("Could not logout %s", event.getType());
-						
-						handleFault(context, null, "logout", null);
-						
-				        Fault fault = new Fault(Code.SERVER_CALL_FAILED, event.getType().name(), "");
-						logoutState.loggedOut(new TideFaultEvent(context, null, fault, null));
-					}
-				});
-			}
-		});
+		if (remotingChannel.isAuthenticated()) {
+			remotingChannel.logout(new ResultFaultIssuesResponseListener() {
+				@Override
+				public void onResult(final ResultEvent event) {
+					context.callLater(new Runnable() {
+						public void run() {
+							log.info("Application session logged out");
+							
+							handleResult(context, null, "logout", null, null, null);
+							context.getContextManager().destroyContexts(false);
+							
+							logoutState.loggedOut(new TideResultEvent<Object>(context, null, event.getResult()));
+						}
+					});
+				}
+	
+				@Override
+				public void onFault(final FaultEvent event) {
+					context.callLater(new Runnable() {
+						public void run() {
+							log.error("Could not log out %s", event.getDescription());
+							
+							handleFault(context, null, "logout", event.getMessage());
+							
+					        Fault fault = new Fault(event.getCode(), event.getDescription(), event.getDetails());
+					        fault.setContent(event.getMessage());
+					        fault.setCause(event.getCause());				        
+							logoutState.loggedOut(new TideFaultEvent(context, null, fault, event.getExtended()));
+						}
+					});
+				}
+				
+				@Override
+				public void onIssue(final IssueEvent event) {
+					context.callLater(new Runnable() {
+						public void run() {
+							log.error("Could not logout %s", event.getType());
+							
+							handleFault(context, null, "logout", null);
+							
+					        Fault fault = new Fault(Code.SERVER_CALL_FAILED, event.getType().name(), "");
+							logoutState.loggedOut(new TideFaultEvent(context, null, fault, null));
+						}
+					});
+				}
+			});
+		}
+		
+		if (messagingChannel != remotingChannel && messagingChannel.isAuthenticated())
+			messagingChannel.logout();
 	}
 	
 	
