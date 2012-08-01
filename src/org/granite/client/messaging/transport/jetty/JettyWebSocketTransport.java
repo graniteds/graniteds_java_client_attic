@@ -18,7 +18,7 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.messaging.transport.websocket;
+package org.granite.client.messaging.transport.jetty;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -40,6 +40,7 @@ import org.granite.client.messaging.transport.WebSocketTransport;
 import org.granite.logging.Logger;
 import org.granite.util.PublicByteArrayOutputStream;
 
+
 /**
  * @author Franck WOLFF
  */
@@ -48,12 +49,17 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 	private static final Logger log = Logger.getLogger(JettyWebSocketTransport.class);
 
 	private final static int CLOSE_NORMAL = 1000;
-//	private final static int CLOSE_SHUTDOWN = 1001;
+	private final static int CLOSE_SHUTDOWN = 1001;
 //	private final static int CLOSE_PROTOCOL = 1002;
 	
 	private WebSocketClientFactory webSocketClientFactory = null;
+
+	private Future<Connection> connectionFuture = null;
+	private boolean connected = false;
 	
 	private int maxIdleTime = 30000;
+	private int reconnectMaxAttempts = 5;
+	private int reconnectIntervalMillis = 60000;
 	
 	public void setMaxIdleTime(int maxIdleTime) {
 		this.maxIdleTime = maxIdleTime;
@@ -66,7 +72,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 		
 		stop();
 
-		log.info("Starting Jetty WebSocketClient engine...");
+		log.info("Starting Jetty WebSocketClient transport...");
 		
 		try {
 			webSocketClientFactory = new WebSocketClientFactory();
@@ -80,16 +86,20 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 				Thread.sleep(100);
 			}
 			
-			log.info("Jetty WebSocketClient engine started.");
+			log.info("Jetty WebSocketClient transport started.");
 			return true;
 		}
 		catch (Exception e) {
 			webSocketClientFactory = null;
 			getStatusHandler().handleException(new TransportException("Could not start Jetty WebSocketFactory", e));
 			
-			log.error(e, "Jetty WebSocketClient engine failed to start.");
+			log.error(e, "Jetty WebSocketClient transport failed to start.");
 			return false;
 		}
+	}
+	
+	public boolean isStarted() {
+		return webSocketClientFactory != null && webSocketClientFactory.isStarted();
 	}
 	
 	@Override
@@ -97,30 +107,34 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 
 		synchronized (channel) {
 
-			ChannelData channelData = channel.getTransportData();
-			if (channelData == null) {
-				channelData = new ChannelData();
-				channel.setTransportData(channelData);
+			TransportData transportData = channel.getTransportData();
+			if (transportData == null) {
+				transportData = new TransportData();
+				channel.setTransportData(transportData);
 			}
 			
-			if (message != null)
-				channelData.pendingMessages.addLast(message);
+			if (message != null) {
+				if (message.isConnect())
+					connectMessage = message;
+				else
+					transportData.pendingMessages.addLast(message);
+			}
 			
-			if (channelData.connection == null) {
+			if (transportData.connection == null) {
 				connect(channel, message);
 				return null;
 			}
 
-			while (!channelData.pendingMessages.isEmpty()) {
-				TransportMessage pendingMessage = channelData.pendingMessages.removeFirst();
+			while (!transportData.pendingMessages.isEmpty()) {
+				TransportMessage pendingMessage = transportData.pendingMessages.removeFirst();
 				try {
 					PublicByteArrayOutputStream os = new PublicByteArrayOutputStream(256);
 					pendingMessage.encode(os);
 					byte[] data = os.getBytes();
-					channelData.connection.sendMessage(data, 0, os.size());
+					transportData.connection.sendMessage(data, 0, os.size());
 				}
 				catch (IOException e) {
-					channelData.pendingMessages.addFirst(pendingMessage);
+					transportData.pendingMessages.addFirst(pendingMessage);
 					// report error...
 					break;
 				}
@@ -135,7 +149,15 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 		send(channel, message);
 	}
 	
-	public Future<Connection> connect(final Channel channel, final TransportMessage engineMessage) {
+	private int reconnectAttempts = 0;
+	private TransportMessage connectMessage = null;
+
+	public Future<Connection> connect(final Channel channel, final TransportMessage transportMessage) {
+		if (connectionFuture != null)
+			return connectionFuture;
+		
+		connected = true;
+		
 		URI uri = channel.getUri();
 		
 		try {		
@@ -144,16 +166,27 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 			webSocketClient.setMaxTextMessageSize(1024);
 			webSocketClient.setProtocol("gravity");
 			
-			return webSocketClient.open(uri, new OnBinaryMessage() {
+			String u = uri.toString();
+			u += "?connectId=" + transportMessage.getId();
+			if (transportMessage.getClientId() != null)
+				u += "&GDSClientId=" + transportMessage.getClientId();
+			else if (channel.getClientId() != null)
+				u += "&GDSClientId=" + channel.getClientId();
+			if (transportMessage.getSessionId() != null)
+				u += "&GDSSessionId=" + transportMessage.getSessionId();
+			
+			connectionFuture = webSocketClient.open(new URI(u), new OnBinaryMessage() {
 				
 				@Override
 				public void onOpen(Connection connection) {
 					synchronized (channel) {
-						((ChannelData)channel.getTransportData()).connection = connection;
+						connectionFuture = null;
+						reconnectAttempts = 0;
+						((TransportData)channel.getTransportData()).connection = connection;
 						send(channel, null);
 					}
 				}
-	
+				
 				@Override
 				public void onMessage(byte[] data, int offset, int length) {
 					channel.onMessage(new ByteArrayInputStream(data, offset, length));
@@ -161,13 +194,57 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 	
 				@Override
 				public void onClose(int closeCode, String message) {
+					boolean waitBeforeReconnect = !(closeCode == CLOSE_NORMAL && message.startsWith("Idle"));
+					
 					synchronized (channel) {
-						((ChannelData)channel.getTransportData()).connection = null;
-						if (closeCode != CLOSE_NORMAL)
-							channel.onError(engineMessage, new RuntimeException(message + " (code=" + closeCode + ")"));
+						// Mark the connection as close, the channel should reopen a connection for the next message
+						((TransportData)channel.getTransportData()).connection = null;
+						connectionFuture = null;
+						
+						if (!isStarted())
+							connected = false;
+						
+						if (closeCode == CLOSE_SHUTDOWN) {
+							connected = false;
+							return;
+						}
+						
+						if (channel.getClientId() == null) {
+							getStatusHandler().handleException(new TransportException("Transport could not connect code: " + closeCode + " " + message));
+							return;
+						}
+						
+						if (connected) {
+							if (reconnectAttempts >= reconnectMaxAttempts) {
+								connected = false;
+								if (isStarted())
+									stop();
+								
+								channel.onError(transportMessage, new RuntimeException(message + " (code=" + closeCode + ")"));
+								getStatusHandler().handleException(new TransportException("Transport disconnected"));
+								return;
+							}
+							
+							if (waitBeforeReconnect) {
+								try {
+									waitBeforeReconnect = false;
+									Thread.sleep(reconnectIntervalMillis);
+								}
+								catch (InterruptedException e) {
+								}
+							}
+							
+							reconnectAttempts++;
+							
+							// If the channel should be connected, try to reconnect
+							log.info("Connection lost (code %d, msg %s), reconnect channel (retry #%d)", closeCode, message, reconnectAttempts);
+							connect(channel, connectMessage);
+						}
 					}
 				}
 			});
+			
+			return connectionFuture;
 		}
 		catch (Exception e) {
 			getStatusHandler().handleException(new TransportException("Could not connect to uri " + channel.getUri(), e));
@@ -176,7 +253,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 		}
 	}
 	
-	private static class ChannelData {
+	private static class TransportData {
 		
 		private final LinkedList<TransportMessage> pendingMessages = new LinkedList<TransportMessage>();
 		private Connection connection = null;
@@ -187,7 +264,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 		if (webSocketClientFactory == null)
 			return;
 		
-		log.info("Stopping Jetty WebSocketClient engine...");
+		log.info("Stopping Jetty WebSocketClient transport...");
 		
 		super.stop();
 		
@@ -203,6 +280,6 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 			webSocketClientFactory = null;
 		}
 		
-		log.info("Jetty WebSocketClient engine stopped.");
+		log.info("Jetty WebSocketClient transport stopped.");
 	}
 }

@@ -8,6 +8,12 @@ public interface TransportMessage {
 
 	String getId();
 	
+	boolean isConnect();
+	
+	String getClientId();
+	
+	String getSessionId();
+	
 	String getContentType();
 	
 	void encode(OutputStream os) throws IOException;

@@ -23,8 +23,9 @@ import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
-import org.granite.client.messaging.transport.HTTPTransport;
+import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportMessage;
+import org.granite.logging.Logger;
 import org.granite.util.UUIDUtil;
 
 import flex.messaging.messages.AcknowledgeMessage;
@@ -34,8 +35,11 @@ import flex.messaging.messages.Message;
 
 public class AMFMessagingChannel extends AbstractAMFChannel implements MessagingChannel {
 	
+	private static final Logger log = Logger.getLogger(AMFMessagingChannel.class);
+	
 	private final AMF3MessagingCodec codec;
 	
+	private String sessionId = null;
 	private final ConcurrentMap<String, Consumer> consumersMap = new ConcurrentHashMap<String, Consumer>();	
 	private final AtomicReference<String> connectMessageId = new AtomicReference<String>(null);
 	private final AtomicReference<ReconnectTimerTask> reconnectTimerTask = new AtomicReference<ReconnectTimerTask>();
@@ -44,14 +48,21 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	private volatile long reconnectMaxAttempts = 60L;
 	private volatile long reconnectAttempts = 0L;
 	
-	public AMFMessagingChannel(HTTPTransport transport, String id, URI uri) {
+	public AMFMessagingChannel(Transport transport, String id, URI uri) {
 		this(transport, DefaultConfiguration.getInstance(), id, uri);
 	}
 	
-	public AMFMessagingChannel(HTTPTransport transport, Configuration configuration, String id, URI uri) {
+	public AMFMessagingChannel(Transport transport, Configuration configuration, String id, URI uri) {
 		super(transport, id, uri, 1);
 		
 		this.codec = new AMF3MessagingCodec(configuration);
+	}
+	
+	public void setSessionId(String sessionId) {
+		if ((sessionId == null && this.sessionId != null) || !sessionId.equals(this.sessionId)) {
+			this.sessionId = sessionId;
+			log.info("Received sessionId %s", sessionId);
+		}				
 	}
 
 	private boolean connect() {
@@ -68,6 +79,8 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 		if (!connectMessageId.compareAndSet(null, id))
 			return false;
 		
+		log.debug("Connecting channel with clientId %s", clientId);
+		
 		// Create and try to send the connect message.
 		CommandMessage connectMessage = new CommandMessage();
 		connectMessage.setOperation(CommandMessage.CONNECT_OPERATION);
@@ -76,7 +89,7 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 		connectMessage.setClientId(clientId);
 
 		try {
-			transport.send(this, new DefaultTransportMessage<Message[]>(id, new Message[]{connectMessage}, codec));
+			transport.send(this, new DefaultTransportMessage<Message[]>(id, true, clientId, sessionId, new Message[]{connectMessage}, codec));
 			
 			return true;
 		}
@@ -104,7 +117,7 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	@Override
 	protected TransportMessage createTransportMessage(AsyncToken token) throws UnsupportedEncodingException {
 		Message[] messages = convertToAmf(token.getRequest());
-		return new DefaultTransportMessage<Message[]>(token.getId(), messages, codec);
+		return new DefaultTransportMessage<Message[]>(token.getId(), false, clientId, sessionId, messages, codec);
 	}
 
 	@Override
