@@ -20,9 +20,11 @@
 
 package org.granite.client.tide.collections.javafx;
 
+import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
-import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.Initializable;
@@ -33,8 +35,9 @@ import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideResultEvent;
 import org.granite.logging.Logger;
+import org.granite.tide.data.model.Page;
+import org.granite.tide.data.model.PageInfo;
 import org.granite.util.TypeUtil;
-    
     	
 
 /**
@@ -57,7 +60,7 @@ import org.granite.util.TypeUtil;
 public class PagedQuery<E> extends PagedCollection<E> implements Component, PropertyHolder, NameAware, ContextAware, Initializable {
     
     @SuppressWarnings("unused")
-	private static Logger log = Logger.getLogger("org.granite.tide.collections.javafx.PagedQuery");
+	private static Logger log = Logger.getLogger("org.granite.client.tide.collections.javafx.PagedQuery");
 	
     protected ComponentImpl component = null;
     
@@ -67,6 +70,8 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 	
     protected String methodName = "find";
     protected boolean methodNameSet = false;
+    
+    protected boolean usePage = false;
     
     private Object filter = null;
 	
@@ -97,6 +102,7 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 	}
 	public void setFilter(Object filter) {
 		this.filter = filter;
+		
 //		if (_filter != null)
 //			_filter.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, filterChangedHandler);
 //		
@@ -111,7 +117,7 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 //		_filter.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, filterChangedHandler, false, 0, true);
 	}
 	public void setFilterClass(Class<?> filterClass) throws IllegalAccessException, InstantiationException {
-		filter = TypeUtil.newInstance(filterClass, Object.class);
+		setFilter(TypeUtil.newInstance(filterClass, Object.class));
 	}
 
 
@@ -145,6 +151,10 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 		this.methodNameSet = true;
 	}
 	
+	public void setUsePage(boolean usePage) {
+		this.usePage = usePage;
+	}
+	
 	
 	/**
 	 *	Trigger a results query for the current filter
@@ -163,43 +173,57 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 		PagedCollectionResponder findResponder = new PagedCollectionResponder(serverSession, first, max);		
 		Object filter = this.filter;
 		
-		doFind(filter, first, max, null, findResponder);
+		doFind(filter, first, max, findResponder);
 	}
 	
-	protected void doFind(Object filter, int first, int max, Object sort, PagedCollectionResponder findResponder) { 			
+	protected void doFind(Object filter, int first, int max, PagedCollectionResponder findResponder) { 			
 		// Force evaluation of max, results and count
 		String[] order = new String[0];
 		boolean[] desc = new boolean[0];
-//		if (this.multipleSort) {
-//			if (sort != null) {
-//				order = new Array();
-//				desc = new Array();
-//				for each (var s:SortField in sort.fields) {
-//					order.push(s.name);
-//					desc.push(s.descending);
-//				}
-//			}
-//		}
-//		else {
-//			order = sort != null && sort.fields.length > 0 ? sort.fields[0].name : null;
-//			desc = sort != null && sort.fields.length > 0 ? sort.fields[0].descending : false;
-//		}
+		if (sort != null) {
+			sort.build();
+			order = sort.getOrder();
+			desc = sort.getDesc();
+			if (order.length == 0)
+				order = null;
+			if (desc.length == 0)
+				desc = null;
+		}
 		
-		component.call(methodName, new Object[] { 
-			filter, first, max, order, desc, 
-			findResponder }
-		);
+		boolean usePage = this.usePage;
+		try {
+			for (Method m : component.getClass().getMethods()) {
+				if (m.getName().equals(methodName) && m.getParameterTypes().length >= 2 
+						&& PageInfo.class.isAssignableFrom(m.getParameterTypes()[1])) {
+					usePage = true;
+					break;
+				}
+			}
+		}
+		catch (Exception e) {
+			// Untyped component proxy
+		}
+		
+		if (usePage) {
+			PageInfo pageInfo = new PageInfo(first, max, order, desc);
+			component.call(methodName, new Object[] { filter, pageInfo, findResponder });
+		}
+		else {
+			component.call(methodName, new Object[] { filter, first, max, order, desc, findResponder });
+		}
 	}
 	
 	@Override
-	protected Map<String, Object> getResult(TideResultEvent<?> event, int first, int max) {
-		@SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
+	protected Page<E> getResult(TideResultEvent<?> event, int first, int max) {
+		if (event.getResult() instanceof Page<?>)
+			return (Page<E>)event.getResult();
+		
 		Map<String, Object> result = (Map<String, Object>)event.getResult();
-    	if (!result.containsKey("firstResult"))
-    		result.put("firstResult", first);
-    	if (!result.containsKey("maxResults"))
-    		result.put("maxResults", max);
-	    return result;
+		Page<E> page = new Page<E>(result.containsKey("firstResult") ? (Integer)result.get("firstResult") : first, 
+				result.containsKey("maxResults") ? (Integer)result.get("maxResults") : max,
+				((Number)result.get("resultCount")).intValue(), (List<E>)result.get("resultList"));
+	    return page;
 	}
 	
 	
@@ -225,7 +249,7 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 
 	
 	@Override
-	public ResponseMessageFuture call(String operation, Object... args) {
+	public <T> Future<T> call(String operation, Object... args) {
 		throw new UnsupportedOperationException();
 	}
 	

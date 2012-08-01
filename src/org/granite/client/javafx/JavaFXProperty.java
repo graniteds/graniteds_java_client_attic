@@ -56,7 +56,7 @@ public class JavaFXProperty extends Property {
 		if (setter != null)
 			return setter.getDeclaringClass();
 		
-		throw new RuntimeException("Could not determine declaring class type for property " + getName());
+		throw new RuntimeException("Could not determine declaring class for property " + getName());
 	}
 
 	@Override
