@@ -1,4 +1,4 @@
-package org.granite.websocket.client.test;
+package org.granite.client.test.websocket;
 
 import java.net.URI;
 
