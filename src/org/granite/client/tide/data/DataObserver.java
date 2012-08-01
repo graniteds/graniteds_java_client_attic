@@ -59,15 +59,17 @@ public class DataObserver implements ContextAware {
 	 * 	Subscribe the data topic
 	 */
 	public void subscribe() {
-		consumer.addMessageListener(new MessageListenerImpl());
+		consumer.addMessageListener(messageListener);
 	    consumer.subscribe(subscriptionListener);
 	    serverSession.checkWaitForLogout();
 	}
 	
 	public void unsubscribe() {
-		consumer.unsubscribe(unsubscriptionListener);
-		consumer.removeMessageListener(messageListener);
-	    serverSession.checkWaitForLogout();
+		if (consumer.isSubscribed()) {
+			consumer.removeMessageListener(messageListener);
+			consumer.unsubscribe(unsubscriptionListener);
+		    serverSession.checkWaitForLogout();
+		}
 	}
 	
 	private ResponseListener subscriptionListener = new SubscriptionListenerImpl(); 
