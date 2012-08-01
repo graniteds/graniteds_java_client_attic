@@ -8,6 +8,8 @@ public interface Configuration {
 	GraniteConfig getGraniteConfig();
 	ServicesConfig getServicesConfig();
 	
+	void load();
+	
 	void addConfigurator(Configurator configurator);
 	
 	static interface Configurator {		

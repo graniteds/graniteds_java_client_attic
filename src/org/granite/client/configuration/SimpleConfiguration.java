@@ -41,10 +41,10 @@ public class SimpleConfiguration implements Configuration {
 	public void load() {
 		InputStream is = null;
 		try {
-			is = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/granite/messaging/engine/granite-config.xml");
+			is = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/granite/client/configuration/granite-config.xml");
 			if (graniteConfigPath != null)
 				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(graniteConfigPath);
-			GraniteConfig graniteConfig = new GraniteConfig(graniteStdConfigPath, is, null, null);
+			graniteConfig = new GraniteConfig(graniteStdConfigPath, is, null, null);
 			for (Configurator configurator : configurators)
 				configurator.configure(graniteConfig);
 			servicesConfig = new ServicesConfig(null, null, false);
@@ -52,6 +52,7 @@ public class SimpleConfiguration implements Configuration {
 		catch (Exception e) {
 			graniteConfig = null;
 			servicesConfig = null;
+			throw new RuntimeException("Cannot load configuration", e);
 		}
 		finally {
 			if (is != null) try {
