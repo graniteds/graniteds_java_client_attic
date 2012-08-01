@@ -48,7 +48,7 @@ public interface TransportStatusHandler {
 
 		@Override
 		public void handleIO(boolean active) {
-			log.info(active ? "Sarting IO" : "IO completed");
+			log.info(active ? "Starting IO" : "IO completed");
 		}
 
 		@Override

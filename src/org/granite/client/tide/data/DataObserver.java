@@ -3,17 +3,16 @@ package org.granite.client.tide.data;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 
 import org.granite.client.messaging.Consumer;
+import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
-import org.granite.client.messaging.messages.requests.SubscribeMessage;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.data.EntityManager.UpdateKind;
@@ -60,47 +59,65 @@ public class DataObserver implements ContextAware {
 	 * 	Subscribe the data topic
 	 */
 	public void subscribe() {
-		consumer.addMessageListener(new MessageListenerImpl());
-	    consumer.subscribe(new SubscriptionListenerImpl());
+		consumer.addMessageListener(messageListener);
+	    consumer.subscribe(subscriptionListener);
 	    serverSession.checkWaitForLogout();
 	}
 	
 	public void unsubscribe() {
-		consumer.unsubscribe();
-		consumer.removeMessageListener(messageListener);
-	    serverSession.checkWaitForLogout();
+		if (consumer.isSubscribed()) {
+			consumer.removeMessageListener(messageListener);
+			consumer.unsubscribe(unsubscriptionListener);
+		    serverSession.checkWaitForLogout();
+		}
 	}
 	
+	private ResponseListener subscriptionListener = new SubscriptionListenerImpl(); 
+	private ResponseListener unsubscriptionListener = new UnsubscriptionListenerImpl(); 
 	
 	private class SubscriptionListenerImpl extends ResultFaultIssuesResponseListener {
 		@Override
 		public void onResult(ResultEvent event) {
-			if (event.getRequest() instanceof SubscribeMessage)
-				log.info("Destination %s subscribed", destination);
-			else {
-				log.info("Destination %s unsubscribed", destination);
-				serverSession.tryLogout();
-			}
+			log.info("Destination %s subscribed", destination);
+			
+			serverSession.tryLogout();
 		}
 
 		@Override
 		public void onFault(FaultEvent event) {
-			if (event.getRequest() instanceof SubscribeMessage)
-				log.error("Destination %s could not be subscribed: %s", destination, event.getCode());
-			else {
-				log.error("Destination %s could not be unsubscribed: %s", destination, event.getCode());
-				serverSession.tryLogout();
-			}
+			log.error("Destination %s could not be subscribed: %s", destination, event.getCode());
+			
+			serverSession.tryLogout();
 		}
 
 		@Override
 		public void onIssue(IssueEvent event) {
-			if (event.getRequest() instanceof SubscribeMessage)
-				log.error("Destination %s could not be subscribed: %s", destination, event.getType());
-			else {
-				log.error("Destination %s could not be unsubscribed: %s", destination, event.getType());
-				serverSession.tryLogout();
-			}
+			log.error("Destination %s could not be subscribed: %s", destination, event.getType());
+			
+			serverSession.tryLogout();
+		}
+	}
+	
+	private class UnsubscriptionListenerImpl extends ResultFaultIssuesResponseListener {
+		@Override
+		public void onResult(ResultEvent event) {
+			log.info("Destination %s unsubscribed", destination);
+			
+			serverSession.tryLogout();
+		}
+
+		@Override
+		public void onFault(FaultEvent event) {
+			log.error("Destination %s could not be unsubscribed: %s", destination, event.getCode());
+			
+			serverSession.tryLogout();
+		}
+
+		@Override
+		public void onIssue(IssueEvent event) {
+			log.error("Destination %s could not be unsubscribed: %s", destination, event.getType());
+			
+			serverSession.tryLogout();
 		}
 	}
 
@@ -138,8 +155,8 @@ public class DataObserver implements ContextAware {
 			        	entityManager.handleUpdates(mergeContext, receivedSessionId, upds);
 			        	entityManager.raiseUpdateEvents(context, upds);
 			        }
-			        catch (JMSException e) {
-			        	// Ignored: should never happen
+			        catch (Exception e) {
+			        	log.error(e, "Error during received message processing");
 			        }
 			        finally {
 			        	MergeContext.destroy(entityManager);

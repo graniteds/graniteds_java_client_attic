@@ -35,7 +35,7 @@ public class JavaFXPlatform implements org.granite.client.tide.Platform {
 		if (instance instanceof ServerSession) {
 			ServerSession serverSession = (ServerSession)instance;
 			
-			Configuration configuration = new SimpleConfiguration("org/granite/tide/javafx/granite-config-javafx.xml", null);
+			Configuration configuration = new SimpleConfiguration("org/granite/client/tide/javafx/granite-config-javafx.xml", null);
 			configuration.addConfigurator(new Configuration.Configurator() {
 				@Override
 				public void configure(GraniteConfig graniteConfig) {

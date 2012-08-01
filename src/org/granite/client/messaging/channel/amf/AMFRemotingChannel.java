@@ -13,7 +13,7 @@ import org.granite.client.messaging.codec.AMF0MessagingCodec;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
-import org.granite.client.messaging.transport.HTTPTransport;
+import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportMessage;
 import org.granite.messaging.amf.AMF0Body;
 import org.granite.messaging.amf.AMF0Message;
@@ -27,15 +27,15 @@ public class AMFRemotingChannel extends AbstractAMFChannel implements RemotingCh
 	private final AMF0MessagingCodec codec;
 	private volatile int index = 1;
 	
-	public AMFRemotingChannel(HTTPTransport transport, String id, URI uri) {
+	public AMFRemotingChannel(Transport transport, String id, URI uri) {
 		this(transport, id, uri, 5);
 	}
 	
-	public AMFRemotingChannel(HTTPTransport transport, String id, URI uri, int maxConcurrentRequests) {
+	public AMFRemotingChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
 		this(transport, DefaultConfiguration.getInstance(), id, uri, maxConcurrentRequests);
 	}
 	
-	public AMFRemotingChannel(HTTPTransport transport, Configuration configuration, String id, URI uri, int maxConcurrentRequests) {
+	public AMFRemotingChannel(Transport transport, Configuration configuration, String id, URI uri, int maxConcurrentRequests) {
 		super(transport, id, uri, maxConcurrentRequests);
 		
 		this.codec = new AMF0MessagingCodec(configuration);
@@ -49,7 +49,7 @@ public class AMFRemotingChannel extends AbstractAMFChannel implements RemotingCh
 		    AMF0Body body = new AMF0Body("", "/" + (index++), new Object[]{data}, AMF0Body.DATA_TYPE_AMF3_OBJECT);
 		    amf0Message.addBody(body);
 		}
-		return new DefaultTransportMessage<AMF0Message>(token.getId(), amf0Message, codec);
+		return new DefaultTransportMessage<AMF0Message>(token.getId(), false, clientId, null, amf0Message, codec);
 	}
 
 	@Override

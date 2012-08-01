@@ -51,7 +51,7 @@ public class AMF3MessagingCodec implements MessagingCodec<Message[]> {
 				System.arraycopy(objects, 0, messages, 0, objects.length);
 				
 				for (Message message : messages) {
-					if (Boolean.TRUE.equals(message.getHeader(Channel.BYTEARRAY_BODY_HEADER))) {
+					if (message != null && Boolean.TRUE.equals(message.getHeader(Channel.BYTEARRAY_BODY_HEADER))) {
 						byte[] body = (byte[])message.getBody();
 						message.setBody(new AMF3Deserializer(new ByteArrayInputStream(body)).readObject());
 					}

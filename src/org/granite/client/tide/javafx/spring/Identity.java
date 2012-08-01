@@ -28,7 +28,7 @@ import org.granite.client.util.WeakIdentityHashMap;
 import org.granite.messaging.amf.RemoteClass;
 
 
-@RemoteClass("org.granite.client.tide.spring.security.Identity")
+@RemoteClass("org.granite.tide.spring.security.Identity")
 public class Identity extends ComponentImpl implements ExceptionHandler {
 	
 	private BooleanProperty loggedIn = new SimpleBooleanProperty(this, "loggedIn");

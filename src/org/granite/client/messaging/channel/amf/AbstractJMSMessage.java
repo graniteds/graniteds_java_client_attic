@@ -1,6 +1,7 @@
 package org.granite.client.messaging.channel.amf;
 
 import java.util.Enumeration;
+import java.util.Hashtable;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -149,102 +150,102 @@ public abstract class AbstractJMSMessage implements Message {
 	}
 
 	@Override
-	public boolean getBooleanProperty(String arg0) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public boolean getBooleanProperty(String name) throws JMSException {
+		return (Boolean)message.getHeader(name);
 	}
 
 	@Override
-	public byte getByteProperty(String arg0) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public byte getByteProperty(String name) throws JMSException {
+		return (Byte)message.getHeader(name);
 	}
 
 	@Override
-	public double getDoubleProperty(String arg0) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public double getDoubleProperty(String name) throws JMSException {
+		return (Double)message.getHeader(name);
 	}
 
 	@Override
-	public float getFloatProperty(String arg0) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public float getFloatProperty(String name) throws JMSException {
+		return (Float)message.getHeader(name);
 	}
 
 	@Override
-	public int getIntProperty(String arg0) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public int getIntProperty(String name) throws JMSException {
+		return (Byte)message.getHeader(name);
 	}
 
 	@Override
 	public long getLongProperty(String name) throws JMSException {
-		throw new JMSException("Unsupported operation");
+		return (Long)message.getHeader(name);
 	}
 
 	@Override
 	public Object getObjectProperty(String name) throws JMSException {
-		throw new JMSException("Unsupported operation");
-	}
-
-	@Override
-	public Enumeration<?> getPropertyNames() throws JMSException {
-		return null;
+		return message.getHeader(name);
 	}
 
 	@Override
 	public short getShortProperty(String name) throws JMSException {
-		throw new JMSException("Unsupported operation");
+		return (Short)message.getHeader(name);
 	}
 
 	@Override
 	public String getStringProperty(String name) throws JMSException {
-		throw new JMSException("Unsupported operation");
+		return (String)message.getHeader(name);
+	}
+
+	@Override
+	public Enumeration<?> getPropertyNames() throws JMSException {
+		return new Hashtable<String, Object>(message.getHeaders()).keys();
 	}
 
 	@Override
 	public boolean propertyExists(String name) throws JMSException {
-		return false;
+		return message.getHeaders().containsKey(name);
 	}
 
 	@Override
 	public void setBooleanProperty(String name, boolean value) throws JMSException {
-		throw new JMSException("Unsupported operation");
+		message.setHeader(name, value);
 	}
 
 	@Override
 	public void setByteProperty(String name, byte value) throws JMSException {
-		throw new JMSException("Unsupported operation");
+		message.setHeader(name, value);
 	}
 
 	@Override
 	public void setDoubleProperty(String name, double value) throws JMSException {
-		throw new JMSException("Unsupported operation");
+		message.setHeader(name, value);
 	}
 
 	@Override
 	public void setFloatProperty(String name, float value) throws JMSException {
-		throw new JMSException("Unsupported operation");
+		message.setHeader(name, value);
 	}
 
 	@Override
 	public void setIntProperty(String name, int value) throws JMSException {
-		throw new JMSException("Unsupported operation");
+		message.setHeader(name, value);
 	}
 
 	@Override
-	public void setLongProperty(String arg0, long arg1) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public void setLongProperty(String name, long value) throws JMSException {
+		message.setHeader(name, value);
 	}
 
 	@Override
-	public void setObjectProperty(String arg0, Object arg1) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public void setObjectProperty(String name, Object value) throws JMSException {
+		message.setHeader(name, value);
 	}
 
 	@Override
-	public void setShortProperty(String arg0, short arg1) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public void setShortProperty(String name, short value) throws JMSException {
+		message.setHeader(name, value);
 	}
 
 	@Override
-	public void setStringProperty(String arg0, String arg1) throws JMSException {
-		throw new JMSException("Unsupported operation");
+	public void setStringProperty(String name, String value) throws JMSException {
+		message.setHeader(name, value);
 	}
 }

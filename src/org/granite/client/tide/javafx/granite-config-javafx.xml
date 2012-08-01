@@ -8,8 +8,8 @@
 	<class-getter type="org.granite.messaging.amf.io.util.DefaultClassGetter"/>
     
     <externalizers>
-    	<externalizer type="org.granite.javafx.JavaFXExternalizer">
-    		<include annotated-with="org.granite.javafx.JavaFXObject"/>
+    	<externalizer type="org.granite.client.javafx.JavaFXExternalizer">
+    		<include annotated-with="org.granite.client.javafx.JavaFXObject"/>
     	</externalizer>
     </externalizers>
 

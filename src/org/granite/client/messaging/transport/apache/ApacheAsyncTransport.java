@@ -77,7 +77,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 		
 		stop();
 		
-		log.info("Starting Apache HttpAsyncClient engine...");
+		log.info("Starting Apache HttpAsyncClient transport...");
 		
 		try {
 			httpClient = new DefaultHttpAsyncClient();
@@ -96,7 +96,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 				Thread.sleep(100);
 			}
 			
-			log.info("Apache HttpAsyncClient started.");
+			log.info("Apache HttpAsyncClient transport started.");
 			return true;
 		}
 		catch (Exception e) {
@@ -204,7 +204,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 		if (httpClient == null)
 			return;
 		
-		log.info("Stopping Apache HttpAsyncClient engine...");
+		log.info("Stopping Apache HttpAsyncClient transport...");
 
 		super.stop();
 		
@@ -220,7 +220,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 			httpClient = null;
 		}
 		
-		log.info("Apache HttpAsyncClient engine stopped.");
+		log.info("Apache HttpAsyncClient transport stopped.");
 	}
 	
 //	static class DeferredInputStreamEntity extends BasicHttpEntity {

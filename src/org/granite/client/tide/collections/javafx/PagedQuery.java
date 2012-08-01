@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.Initializable;
@@ -56,7 +59,7 @@ import org.granite.util.TypeUtil;
  * 
  * 	@author William DRAI
  */
-public class PagedQuery<E> extends PagedCollection<E> implements Component, PropertyHolder, NameAware, ContextAware, Initializable {
+public class PagedQuery<E, F> extends PagedCollection<E> implements Component, PropertyHolder, NameAware, ContextAware, Initializable {
     
     @SuppressWarnings("unused")
 	private static Logger log = Logger.getLogger("org.granite.client.tide.collections.javafx.PagedQuery");
@@ -72,7 +75,7 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
     
     protected boolean usePage = false;
     
-    private Object filter = null;
+    private ObjectProperty<F> filter = new SimpleObjectProperty<F>();
 	
     
     public PagedQuery(ServerSession serverSession) {
@@ -93,30 +96,20 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 		component = new ComponentImpl(serverSession);
 		component.setName(remoteComponentName);
 		component.setContext(context);
-		// filter.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, filterChangedHandler);
 	}
 	
-	public Object getFilter() {
+	public ObjectProperty<F> filterProperty() {
 		return filter;
 	}
-	public void setFilter(Object filter) {
-		this.filter = filter;
-		
-//		if (_filter != null)
-//			_filter.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, filterChangedHandler);
-//		
-//		if (filter is IPropertyChangeNotifier) {
-//			_internalFilter = filter;
-//			_filter = IPropertyChangeNotifier(filter);
-//		}
-//		else {
-//			_internalFilter = filter;
-//			_filter = new ObjectProxy(_internalFilter);
-//		}
-//		_filter.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, filterChangedHandler, false, 0, true);
+	public F getFilter() {
+		return filter.get();
 	}
-	public void setFilterClass(Class<?> filterClass) throws IllegalAccessException, InstantiationException {
-		setFilter(TypeUtil.newInstance(filterClass, Object.class));
+	public void setFilter(F filter) {
+		this.filter.set(filter);
+	}
+	@SuppressWarnings("unchecked")
+	public void setFilterClass(Class<F> filterClass) throws IllegalAccessException, InstantiationException {
+		setFilter((F)TypeUtil.newInstance(filterClass, Object.class));
 	}
 
 
@@ -170,12 +163,12 @@ public class PagedQuery<E> extends PagedCollection<E> implements Component, Prop
 		    max = last-first;
 		
 		PagedCollectionResponder findResponder = new PagedCollectionResponder(serverSession, first, max);		
-		Object filter = this.filter;
+		F filter = getFilter();
 		
 		doFind(filter, first, max, findResponder);
 	}
 	
-	protected void doFind(Object filter, int first, int max, PagedCollectionResponder findResponder) { 			
+	protected void doFind(F filter, int first, int max, PagedCollectionResponder findResponder) { 			
 		// Force evaluation of max, results and count
 		String[] order = new String[0];
 		boolean[] desc = new boolean[0];

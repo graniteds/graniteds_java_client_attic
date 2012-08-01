@@ -18,7 +18,7 @@ import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 import org.granite.client.messaging.messages.responses.ResultMessage;
-import org.granite.client.messaging.transport.HTTPTransport;
+import org.granite.client.messaging.transport.Transport;
 import org.granite.messaging.service.security.SecurityServiceException;
 
 import flex.messaging.messages.AcknowledgeMessage;
@@ -30,11 +30,11 @@ import flex.messaging.messages.RemotingMessage;
 
 public abstract class AbstractAMFChannel extends AbstractHTTPChannel {
 
-	public AbstractAMFChannel(HTTPTransport transport, String id, URI uri) {
+	public AbstractAMFChannel(Transport transport, String id, URI uri) {
 		super(transport, id, uri);
 	}
 	
-	public AbstractAMFChannel(HTTPTransport transport, String id, URI uri, int maxConcurrentRequests) {
+	public AbstractAMFChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
 		super(transport, id, uri, maxConcurrentRequests);
 	}
 
