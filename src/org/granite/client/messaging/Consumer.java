@@ -111,6 +111,10 @@ public class Consumer extends AbstractTopicAgent implements MessageListener {
 	public boolean removeMessageListener(MessageListener listener) {
 		return listeners.remove(listener) != null;
 	}
+	
+	public void onDisconnect() {
+		subscriptionId = null;
+	}
 
 	@Override
 	public void onMessage(Message message) {

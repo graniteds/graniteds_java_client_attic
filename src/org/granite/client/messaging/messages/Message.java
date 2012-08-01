@@ -21,8 +21,7 @@ public interface Message extends Externalizable, Cloneable {
 		FAULT,
 		
 		// Push types.
-		POLL,
-		PUSH
+		DISCONNECT
 	}
     
     Type getType();

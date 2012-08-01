@@ -14,17 +14,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.granite.client.configuration.Configuration;
 import org.granite.client.configuration.DefaultConfiguration;
 import org.granite.client.messaging.Consumer;
+import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.channel.AsyncToken;
 import org.granite.client.messaging.channel.Channel;
 import org.granite.client.messaging.channel.MessagingChannel;
+import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.codec.AMF3MessagingCodec;
 import org.granite.client.messaging.messages.RequestMessage;
 import org.granite.client.messaging.messages.ResponseMessage;
+import org.granite.client.messaging.messages.requests.DisconnectMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportMessage;
+import org.granite.logging.Logger;
 import org.granite.util.UUIDUtil;
 
 import flex.messaging.messages.AcknowledgeMessage;
@@ -33,6 +37,8 @@ import flex.messaging.messages.CommandMessage;
 import flex.messaging.messages.Message;
 
 public class AMFMessagingChannel extends AbstractAMFChannel implements MessagingChannel {
+	
+	private static final Logger log = Logger.getLogger(AMFMessagingChannel.class);
 	
 	private final AMF3MessagingCodec codec;
 	
@@ -100,6 +106,20 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	public boolean removeConsumer(Consumer consumer) {
 		return (consumersMap.remove(consumer.getSubscriptionId()) != null);
 	}
+	
+	public synchronized ResponseMessageFuture disconnect(ResponseListener...listeners) {
+		cancelReconnectTimerTask();
+		
+		connectMessageId.set(null);
+		reconnectAttempts = 0L;
+		
+		for (Consumer consumer : consumersMap.values())
+			consumer.onDisconnect();
+		
+		consumersMap.clear();	
+		
+		return send(new DisconnectMessage(clientId), listeners);
+	}
 
 	@Override
 	protected TransportMessage createTransportMessage(AsyncToken token) throws UnsupportedEncodingException {
@@ -110,11 +130,15 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	@Override
 	protected ResponseMessage decodeResponse(InputStream is) throws IOException {
 		boolean reconnect = true;
+		
 		try {
 			if (is.available() > 0) {
 				final Message[] messages = codec.decode(is);
 				
 				if (messages.length > 0 && messages[0] instanceof AcknowledgeMessage) {
+					
+					reconnect = false;
+
 					final AbstractResponseMessage response = convertFromAmf((AcknowledgeMessage)messages[0]);
 		
 					if (response instanceof ResultMessage) {
@@ -122,9 +146,7 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 						if (request != null) {
 							ResultMessage result = (ResultMessage)response;
 							switch (request.getType()) {
-							case SUBSCRIBE:
-								result.setResult(messages[0].getHeader(AsyncMessage.DESTINATION_CLIENT_ID_HEADER));
-								break;
+
 							case PING:
 								if (messages[0].getBody() instanceof Map) {
 									Map<?, ?> advices = (Map<?, ?>)messages[0].getBody();
@@ -135,6 +157,10 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 									if (reconnectMaxAttempts instanceof Number)
 										this.reconnectMaxAttempts = ((Number)reconnectMaxAttempts).longValue();
 								}
+								break;
+							
+							case SUBSCRIBE:
+								result.setResult(messages[0].getHeader(AsyncMessage.DESTINATION_CLIENT_ID_HEADER));
 								break;
 							}
 						}
@@ -150,8 +176,6 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 						current = next;
 					}
 					
-					reconnect = false;
-					
 					return response;
 				}
 				
@@ -161,7 +185,10 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 					
 					String subscriptionId = (String)message.getHeader(AsyncMessage.DESTINATION_CLIENT_ID_HEADER);
 					Consumer consumer = consumersMap.get(subscriptionId);
-					consumer.onMessage(new JMSObjectMessage((AsyncMessage)message));
+					if (consumer != null)
+						consumer.onMessage(new JMSObjectMessage((AsyncMessage)message));
+					else
+						log.warn("No consumer for subscriptionId: %s", subscriptionId);
 				}
 			}
 		}

@@ -138,6 +138,16 @@ public abstract class AbstractAMFChannel extends AbstractHTTPChannel {
 				messages = remotingMessages.toArray(new Message[remotingMessages.size()]);
 				break;
 			}
+			case DISCONNECT: {
+				CommandMessage commandMessage = new CommandMessage();
+				commandMessage.setOperation(CommandMessage.DISCONNECT_OPERATION);
+				commandMessage.setMessageId(request.getId());
+				commandMessage.setTimestamp(request.getTimestamp());
+				commandMessage.setTimeToLive(request.getTimeToLive());
+				commandMessage.setHeaders(request.getHeaders());
+				messages = new Message[]{commandMessage};
+				break;
+			}
 			default:
 				throw new IllegalArgumentException("Unsupported message type: " + request);
 		}
