@@ -21,6 +21,7 @@ public interface Message extends Externalizable, Cloneable {
 		FAULT,
 		
 		// Push types.
+		TOPIC,
 		DISCONNECT
 	}
     

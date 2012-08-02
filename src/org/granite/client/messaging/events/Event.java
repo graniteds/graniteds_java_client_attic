@@ -7,7 +7,9 @@ public interface Event {
 		FAULT,
 		FAILURE,
 		TIMEOUT,
-		CANCELLED
+		CANCELLED,
+		
+		TOPIC
 	}
 	
 	Type getType();

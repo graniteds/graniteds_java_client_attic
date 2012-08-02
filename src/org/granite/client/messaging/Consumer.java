@@ -2,22 +2,21 @@ package org.granite.client.messaging;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.jms.Message;
-import javax.jms.MessageListener;
-
 import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.events.TopicMessageEvent;
+import org.granite.client.messaging.messages.push.TopicMessage;
 import org.granite.client.messaging.messages.requests.SubscribeMessage;
 import org.granite.client.messaging.messages.requests.UnsubscribeMessage;
 import org.granite.logging.Logger;
 
-public class Consumer extends AbstractTopicAgent implements MessageListener {
+public class Consumer extends AbstractTopicAgent {
 	
 	private static final Logger log = Logger.getLogger(Consumer.class);
 
-	private final ConcurrentHashMap<MessageListener, Boolean> listeners = new ConcurrentHashMap<MessageListener, Boolean>();
+	private final ConcurrentHashMap<TopicMessageListener, Boolean> listeners = new ConcurrentHashMap<TopicMessageListener, Boolean>();
 	
 	private String subscriptionId = null;
 	private String selector = null;
@@ -104,11 +103,11 @@ public class Consumer extends AbstractTopicAgent implements MessageListener {
 		return channel.send(unsubscribeMessage, listeners);
 	}
 
-	public void addMessageListener(MessageListener listener) {
+	public void addMessageListener(TopicMessageListener listener) {
 		listeners.putIfAbsent(listener, Boolean.TRUE);
 	}
 	
-	public boolean removeMessageListener(MessageListener listener) {
+	public boolean removeMessageListener(TopicMessageListener listener) {
 		return listeners.remove(listener) != null;
 	}
 	
@@ -116,11 +115,10 @@ public class Consumer extends AbstractTopicAgent implements MessageListener {
 		subscriptionId = null;
 	}
 
-	@Override
-	public void onMessage(Message message) {
-		for (MessageListener listener : listeners.keySet()) {
+	public void onMessage(TopicMessage message) {
+		for (TopicMessageListener listener : listeners.keySet()) {
 			try {
-				listener.onMessage(message);
+				listener.onMessage(new TopicMessageEvent(this, message));
 			}
 			catch (Exception e) {
 				log.error(e, "Consumer listener threw an exception: ", listener);

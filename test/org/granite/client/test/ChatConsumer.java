@@ -23,18 +23,15 @@ package org.granite.client.test;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
+import org.granite.client.messaging.TopicMessageListener;
 import org.granite.client.messaging.channel.amf.AMFMessagingChannel;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.events.TopicMessageEvent;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
@@ -106,14 +103,10 @@ public class ChatConsumer {
 		
 		final CountDownLatch countDown = new CountDownLatch(10);
 		
-		c.addMessageListener(new MessageListener() {
+		c.addMessageListener(new TopicMessageListener() {
 			@Override
-			public void onMessage(Message message) {
-				try {
-					System.out.println(((ObjectMessage)message).getObject());
-				} catch (JMSException e) {
-					e.printStackTrace();
-				}
+			public void onMessage(TopicMessageEvent event) {
+				System.out.println(event.getData());
 				countDown.countDown();
 			}
 		});

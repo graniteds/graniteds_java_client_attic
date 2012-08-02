@@ -3,16 +3,15 @@ package org.granite.client.tide.data;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
+import org.granite.client.messaging.TopicMessageListener;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.events.TopicMessageEvent;
+import org.granite.client.messaging.messages.push.TopicMessage;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.data.EntityManager.UpdateKind;
@@ -122,7 +121,7 @@ public class DataObserver implements ContextAware {
 	}
 
 	
-	private MessageListener messageListener = new MessageListenerImpl();
+	private TopicMessageListener messageListener = new TopicMessageListenerImpl();
 	
 	/**
 	 * 	Message handler that merges data from the JMS topic in the current context.<br/>
@@ -130,24 +129,24 @@ public class DataObserver implements ContextAware {
 	 * 
 	 *  @param event message event from the Consumer
 	 */
-    public class MessageListenerImpl implements MessageListener {
+    public class TopicMessageListenerImpl implements TopicMessageListener {
 		@Override
-		public void onMessage(Message msg) {
-	        log.debug("Destination %s message received %s", destination, msg.toString());
+		public void onMessage(TopicMessageEvent event) {
+	        log.debug("Destination %s message event received %s", destination, event.toString());
 	        
-	        final ObjectMessage message = (ObjectMessage)msg;
+	        final TopicMessage message = event.getMessage();
 	        
 	        context.callLater(new Runnable() {
 				@Override
 				public void run() {
 			        try {
-				        String receivedSessionId = (String)message.getStringProperty("GDSSessionID");
+				        String receivedSessionId = (String)message.getHeader("GDSSessionID");
 				        if (receivedSessionId != null && receivedSessionId.equals(serverSession.getSessionId()))
 				        	receivedSessionId = null;
 				        
 			        	MergeContext mergeContext = entityManager.initMerge();
 			        	
-				        Object[] updates = (Object[])message.getObject();
+				        Object[] updates = (Object[])message.getData();
 				        List<EntityManager.Update> upds = new ArrayList<EntityManager.Update>();
 				        for (Object update : updates)
 				        	upds.add(new EntityManager.Update(UpdateKind.forName(((Object[])update)[0].toString().toUpperCase()), ((Object[])update)[1]));

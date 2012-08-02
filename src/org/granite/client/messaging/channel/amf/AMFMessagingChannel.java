@@ -196,7 +196,7 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 					String subscriptionId = (String)message.getHeader(AsyncMessage.DESTINATION_CLIENT_ID_HEADER);
 					Consumer consumer = consumersMap.get(subscriptionId);
 					if (consumer != null)
-						consumer.onMessage(new JMSObjectMessage((AsyncMessage)message));
+						consumer.onMessage(convertFromAmf((AsyncMessage)message));
 					else
 						log.warn("No consumer for subscriptionId: %s", subscriptionId);
 				}

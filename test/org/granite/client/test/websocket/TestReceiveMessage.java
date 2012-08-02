@@ -4,18 +4,15 @@ import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
+import org.granite.client.messaging.TopicMessageListener;
 import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.channel.amf.AMFMessagingChannel;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.events.TopicMessageEvent;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.junit.Test;
@@ -30,15 +27,10 @@ public class TestReceiveMessage {
 		transport.start();
 		try {
 			Consumer consumer = new Consumer(channel, "wineshopTopic", "tideDataTopic");
-			consumer.addMessageListener(new MessageListener() {
+			consumer.addMessageListener(new TopicMessageListener() {
 				@Override
-				public void onMessage(Message message) {
-					if (message instanceof ObjectMessage) try {
-						System.out.println(((ObjectMessage)message).getObject());
-					}
-					catch (JMSException e) {
-						e.printStackTrace();
-					}
+				public void onMessage(TopicMessageEvent event) {
+					System.out.println(event.getData());
 				}
 			});
 			

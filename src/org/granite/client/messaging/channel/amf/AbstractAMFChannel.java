@@ -9,6 +9,7 @@ import org.granite.client.messaging.channel.AbstractHTTPChannel;
 import org.granite.client.messaging.channel.Credentials;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
 import org.granite.client.messaging.messages.RequestMessage;
+import org.granite.client.messaging.messages.push.TopicMessage;
 import org.granite.client.messaging.messages.requests.InvocationMessage;
 import org.granite.client.messaging.messages.requests.LoginMessage;
 import org.granite.client.messaging.messages.requests.PublishMessage;
@@ -158,6 +159,17 @@ public abstract class AbstractAMFChannel extends AbstractHTTPChannel {
 		}
 		
 		return messages;
+	}
+	
+	protected TopicMessage convertFromAmf(AsyncMessage message) {
+		return new TopicMessage(
+			message.getMessageId(),
+			(String)message.getClientId(),
+			message.getTimestamp(),
+			message.getTimeToLive(),
+			message.getHeaders(),
+			message.getBody()
+		);
 	}
 	
 	protected AbstractResponseMessage convertFromAmf(AcknowledgeMessage message) {
