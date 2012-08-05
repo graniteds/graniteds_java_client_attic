@@ -57,7 +57,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 	private Future<Connection> connectionFuture = null;
 	private boolean connected = false;
 	
-	private int maxIdleTime = 30000;
+	private int maxIdleTime = 3000000;
 	private int reconnectMaxAttempts = 5;
 	private int reconnectIntervalMillis = 60000;
 	
@@ -164,7 +164,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 			WebSocketClient webSocketClient = webSocketClientFactory.newWebSocketClient();
 			webSocketClient.setMaxIdleTime(maxIdleTime);
 			webSocketClient.setMaxTextMessageSize(1024);
-			webSocketClient.setProtocol("gravity");
+			webSocketClient.setProtocol("org.granite.gravity");
 			
 			String u = uri.toString();
 			u += "?connectId=" + transportMessage.getId();
