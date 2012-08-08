@@ -1,6 +1,6 @@
 /*
   GRANITE DATA SERVICES
-  Copyright (C) 2011 GRANITE DATA SERVICES S.A.S.
+  Copyright (C) 2012 GRANITE DATA SERVICES S.A.S.
 
   This file is part of Granite Data Services.
 
@@ -42,7 +42,7 @@ import org.granite.util.PublicByteArrayOutputStream;
 
 
 /**
- * @author Franck WOLFF
+ * @author William DRAI
  */
 public class JettyWebSocketTransport extends AbstractTransport implements WebSocketTransport {
 	

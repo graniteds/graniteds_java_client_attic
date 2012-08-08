@@ -1,6 +1,6 @@
 /*
   GRANITE DATA SERVICES
-  Copyright (C) 2011 GRANITE DATA SERVICES S.A.S.
+  Copyright (C) 2012 GRANITE DATA SERVICES S.A.S.
 
   This file is part of Granite Data Services.
 
