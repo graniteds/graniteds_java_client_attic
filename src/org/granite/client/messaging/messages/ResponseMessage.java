@@ -7,4 +7,6 @@ public interface ResponseMessage extends Message, MessageChain<ResponseMessage> 
 	void setCorrelationId(String correlationId);
 	
 	ResponseMessage copy(String correlationId);
+	
+	Object getData();
 }

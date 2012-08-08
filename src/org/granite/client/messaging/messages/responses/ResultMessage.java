@@ -37,6 +37,11 @@ public final class ResultMessage extends AbstractResponseMessage {
 		return Type.RESULT;
 	}
 
+	@Override
+	public Object getData() {
+		return result;
+	}
+
 	public Object getResult() {
 		return result;
 	}

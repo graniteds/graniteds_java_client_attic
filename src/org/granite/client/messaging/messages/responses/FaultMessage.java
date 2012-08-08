@@ -92,6 +92,11 @@ public final class FaultMessage extends AbstractResponseMessage {
 		return false;
 	}
 
+	@Override
+	public Object getData() {
+		return toString();
+	}
+
 	public Code getCode() {
 		return code;
 	}
