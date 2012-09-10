@@ -41,7 +41,8 @@ public final class FaultMessage extends AbstractResponseMessage {
 	    SESSION_EXPIRED,
 	    ACCESS_DENIED,
 	    
-	    VALIDATION_FAILED
+	    VALIDATION_FAILED,
+	    OPTIMISTIC_LOCK
 	}
 	
     private Code code;

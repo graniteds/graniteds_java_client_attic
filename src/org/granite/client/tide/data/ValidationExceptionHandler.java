@@ -47,7 +47,7 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 
 	@Override
 	public void handle(Context context, FaultMessage emsg, TideFaultEvent faultEvent) {
-		Object[] invalidValues = (Object[])emsg.getExtended().get("invalidValues");
+		Object[] invalidValues = emsg.getExtended() != null ? (Object[])emsg.getExtended().get("invalidValues") : null;
 		if (invalidValues != null) {
 			Map<Object, Set<ConstraintViolation<?>>> violationsMap = new HashMap<Object, Set<ConstraintViolation<?>>>();
 			for (Object v : invalidValues) {

@@ -224,7 +224,7 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
 		public boolean get(TideResponder<Boolean> tideResponder) {
 			if (hasRole != null) {
 		    	if (tideResponder != null) {
-		    		TideResultEvent<Boolean> event = new TideResultEvent<Boolean>(getContext(), null, hasRole);
+		    		TideResultEvent<Boolean> event = new TideResultEvent<Boolean>(getContext(), getServerSession(), null, hasRole);
 		    		tideResponder.result(event);
 		    	}
 		    	return hasRole;
@@ -313,7 +313,7 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
 		public boolean get(TideResponder<Boolean> tideResponder) {
 			if (hasPermission != null) {
 		    	if (tideResponder != null) {
-		    		TideResultEvent<Boolean> event = new TideResultEvent<Boolean>(getContext(), null, hasPermission);
+		    		TideResultEvent<Boolean> event = new TideResultEvent<Boolean>(getContext(), getServerSession(), null, hasPermission);
 		    		tideResponder.result(event);
 		    	}
 		    	return hasPermission;

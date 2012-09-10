@@ -224,6 +224,8 @@ public abstract class AbstractAMFChannel extends AbstractHTTPChannel {
 			}
 			else if ("Validation.Failed".equals(flexCode))
 				code = Code.VALIDATION_FAILED;
+			else if ("Persistence.OptimisticLock".equals(flexCode))
+				code = Code.OPTIMISTIC_LOCK;
 				
 			FaultMessage fault = new FaultMessage( 
 				errorMessage.getMessageId(),

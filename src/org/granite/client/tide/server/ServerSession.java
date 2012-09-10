@@ -496,7 +496,7 @@ public class ServerSession implements ContextAware {
 							handleResult(context, null, "logout", null, null, null);
 							context.getContextManager().destroyContexts(false);
 							
-							logoutState.loggedOut(new TideResultEvent<Object>(context, null, event.getResult()));
+							logoutState.loggedOut(new TideResultEvent<Object>(context, ServerSession.this, null, event.getResult()));
 						}
 					});
 				}
@@ -512,7 +512,7 @@ public class ServerSession implements ContextAware {
 					        Fault fault = new Fault(event.getCode(), event.getDescription(), event.getDetails());
 					        fault.setContent(event.getMessage());
 					        fault.setCause(event.getCause());				        
-							logoutState.loggedOut(new TideFaultEvent(context, null, fault, event.getExtended()));
+							logoutState.loggedOut(new TideFaultEvent(context, ServerSession.this, null, fault, event.getExtended()));
 						}
 					});
 				}
@@ -526,7 +526,7 @@ public class ServerSession implements ContextAware {
 							handleFault(context, null, "logout", null);
 							
 					        Fault fault = new Fault(Code.SERVER_CALL_FAILED, event.getType().name(), "");
-							logoutState.loggedOut(new TideFaultEvent(context, null, fault, null));
+							logoutState.loggedOut(new TideFaultEvent(context, ServerSession.this, null, fault, null));
 						}
 					});
 				}

@@ -115,7 +115,7 @@ public class FaultHandler<T> implements Runnable {
         fault.setContent(event.getMessage());
         fault.setCause(event.getCause());
         
-        TideFaultEvent faultEvent = new TideFaultEvent(context, componentResponder, fault, extendedData);
+        TideFaultEvent faultEvent = new TideFaultEvent(context, serverSession, componentResponder, fault, extendedData);
         if (tideResponder != null) {
             tideResponder.fault(faultEvent);
             if (faultEvent.isDefaultPrevented())

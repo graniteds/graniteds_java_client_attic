@@ -31,8 +31,8 @@ public class TideResultEvent<T> extends TideRpcEvent {
     
     private T result;
 
-    public TideResultEvent(Context context, ComponentListener componentResponder, T result) {
-        super(context, componentResponder);
+    public TideResultEvent(Context context, ServerSession serverSession, ComponentListener componentResponder, T result) {
+        super(context, serverSession, componentResponder);
         this.result = result;
     }
     

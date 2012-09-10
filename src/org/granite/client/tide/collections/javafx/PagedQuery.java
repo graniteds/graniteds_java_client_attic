@@ -21,6 +21,7 @@
 package org.granite.client.tide.collections.javafx;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -75,7 +76,8 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
     
     protected boolean usePage = false;
     
-    private ObjectProperty<F> filter = new SimpleObjectProperty<F>();
+    private Map<String, Object> filterMap = new HashMap<String, Object>();
+    private ObjectProperty<F> filter = null;
 	
     
     public PagedQuery(ServerSession serverSession) {
@@ -102,13 +104,17 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 		return filter;
 	}
 	public F getFilter() {
-		return filter.get();
+		return filter != null ? filter.get() : null;
+	}
+	public Map<String, Object> getFilterMap() {
+		return filterMap;
 	}
 	public void setFilter(F filter) {
 		this.filter.set(filter);
 	}
 	@SuppressWarnings("unchecked")
 	public void setFilterClass(Class<F> filterClass) throws IllegalAccessException, InstantiationException {
+		this.filter = new SimpleObjectProperty<F>(this, "filter");
 		setFilter((F)TypeUtil.newInstance(filterClass, Object.class));
 	}
 
@@ -163,12 +169,12 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 		    max = last-first;
 		
 		PagedCollectionResponder findResponder = new PagedCollectionResponder(serverSession, first, max);		
-		F filter = getFilter();
+		Object filter = this.filter != null ? getFilter() : filterMap;
 		
 		doFind(filter, first, max, findResponder);
 	}
 	
-	protected void doFind(F filter, int first, int max, PagedCollectionResponder findResponder) { 			
+	protected void doFind(Object filter, int first, int max, PagedCollectionResponder findResponder) { 			
 		// Force evaluation of max, results and count
 		String[] order = new String[0];
 		boolean[] desc = new boolean[0];

@@ -92,7 +92,7 @@ public class ResultHandler<T> implements Runnable {
 		boolean handled = false;
         if (tideResponder != null) {
             @SuppressWarnings("unchecked")
-            TideResultEvent<T> resultEvent = new TideResultEvent<T>(context, componentResponder, (T)result);
+            TideResultEvent<T> resultEvent = new TideResultEvent<T>(context, serverSession, componentResponder, (T)result);
             tideResponder.result(resultEvent);
             if (resultEvent.isDefaultPrevented())
                 handled = true;

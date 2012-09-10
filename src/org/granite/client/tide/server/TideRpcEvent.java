@@ -30,17 +30,23 @@ import org.granite.client.tide.Context;
 public class TideRpcEvent {
     
     private Context context;
+    private ServerSession serverSession;
     private ComponentListener componentResponder;
     private boolean defaultPrevented = false;
 
     
-    public TideRpcEvent(Context context, ComponentListener componentResponder) {
+    public TideRpcEvent(Context context, ServerSession serverSession, ComponentListener componentResponder) {
         this.context = context;
+        this.serverSession = serverSession;
         this.componentResponder = componentResponder;
     }
     
     public Context getContext() {
         return context;
+    }
+    
+    public ServerSession getServerSession() {
+    	return serverSession;
     }
     
     public ComponentListener getComponentResponder() {

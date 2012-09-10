@@ -40,6 +40,9 @@ import org.granite.client.tide.impl.DefaultPlatform;
 import org.granite.client.tide.impl.SimpleContextManager;
 import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ServerSession;
+import org.granite.client.tide.server.TideFaultEvent;
+import org.granite.client.tide.server.TideResponder;
+import org.granite.client.tide.server.TideResultEvent;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -101,7 +104,17 @@ public class TestSimpleCall {
             }
         });
         
-        Future<List<Person>> fpersons = personService.call("findAllPersons");
+        Future<List<Person>> fpersons = personService.call("findAllPersons", new TideResponder<Person>() {
+			@Override
+			public void result(TideResultEvent<Person> event) {
+			}
+
+			@Override
+			public void fault(TideFaultEvent event) {
+				event.getFault();
+			}
+        });
+        
         List<Person> persons = fpersons.get();
         
         System.out.println("findAllPersons result: " + persons);
