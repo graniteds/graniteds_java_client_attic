@@ -45,6 +45,8 @@ public interface ManagedPersistentAssociation extends LazyableCollection {
         public void uninitialized(ManagedPersistentAssociation collection);
     }
     
+    public void withInitialized(InitializationCallback callback);
+    
     public interface InitializationCallback {
         
         public void call(ManagedPersistentAssociation collection);

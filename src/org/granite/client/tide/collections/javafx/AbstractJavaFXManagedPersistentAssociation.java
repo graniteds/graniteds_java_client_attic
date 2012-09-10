@@ -155,6 +155,15 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
         for (InitializationListener listener : listeners)
             listener.uninitialized(this);
     }
+    
+    public void withInitialized(InitializationCallback callback) {
+        if (isInitialized())
+            initializationCallback.call(this);
+        else {
+            initializationCallback = callback;
+            requestInitialization();
+        }
+    }
         
     @Override
     public String toString() {
@@ -175,14 +184,5 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
         int hashCode = entity.hashCode();
         hashCode = 37 * hashCode + propertyName.hashCode();
         return hashCode;
-    }
-    
-    public void withInitialized(InitializationCallback callback) {
-        if (isInitialized())
-            initializationCallback.call(this);
-        else {
-            initializationCallback = callback;
-            requestInitialization();
-        }
     }
 }
