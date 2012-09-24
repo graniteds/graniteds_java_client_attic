@@ -24,6 +24,8 @@
  -->
 
 <granite-config scan="true">
+    
+    <amf3-deserializer-securizer type="org.granite.client.configuration.NoopAMF3DeserializerSecurizer"/>
 
     <descriptors>
     	<descriptor

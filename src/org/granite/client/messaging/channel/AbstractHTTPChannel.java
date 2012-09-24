@@ -119,7 +119,7 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 	@Override
 	public synchronized boolean start() {
 		if (senderThread == null) {
-			log.info("Starting channel '%s'...", id);
+			log.info("Starting channel %s...", id);
 			senderThread = new Thread(this);
 			try {
 				timer = new Timer(id + "_timer", true);
@@ -128,7 +128,7 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 				
 				transport.addStopListener(this);
 				
-				log.info("Channel '%s' started.", id);
+				log.info("Channel %s started.", id);
 			}
 			catch (Exception e) {
 				if (timer != null) {
@@ -137,7 +137,7 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 				}
 				connections = null;
 				senderThread = null;
-				log.error(e, "Channel '%s' failed to start.", id);
+				log.error(e, "Channel %s failed to start.", id);
 				return false;
 			}
 		}
@@ -152,14 +152,14 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 	@Override
 	public synchronized boolean stop() {
 		if (senderThread != null) {
-			log.info("Stopping channel '%s'...", id);
+			log.info("Stopping channel %s...", id);
 			
 			if (timer != null) {
 				try {
 					timer.cancel();
 				}
 				catch (Exception e) {
-					log.error(e, "Channel '%s' timer failed to stop.", id);
+					log.error(e, "Channel %s timer failed to stop.", id);
 				}
 				finally {
 					timer = null;
@@ -215,11 +215,11 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 				sendToken(token);
 			}
 			catch (InterruptedException e) {
-				log.info("Channel '%s' stopped.", id);
+				log.info("Channel %s stopped.", id);
 				break;
 			}
 			catch (Exception e) {
-				log.error(e, "Channel '%s' got an unexepected exception.", id);
+				log.error(e, "Channel %s got an unexepected exception.", id);
 			}
 		}
 	}
