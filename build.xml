@@ -52,9 +52,6 @@
             <fileset dir="libs">
                 <include name="*.jar"/>
         	</fileset>
-        	<fileset dir="distclientjars">
-                <include name="*.jar"/>
-        	</fileset>
         </path>
 
         <javac destdir="bin" srcdir="src" classpathref="gds.classpath"
