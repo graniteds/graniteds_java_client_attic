@@ -64,6 +64,129 @@
             </fileset>
         </copy>
     </target>
+
+    <!--
+     ! Build GDS maven extra jars (sources & javadoc).
+     !-->
+	<target name="build.maven.extra" depends="build.maven.source.jar,build.maven.javadoc.jar"/>
+	
+    <!--
+     ! Build GDS maven source jars.
+     !-->
+  	<target name="build.maven.source.jar"> 
+	    <mkdir dir="build/sources/java"/> 
+
+	    <jar destfile="build/sources/java/granite-java-client-sources.jar"> 
+	      	<fileset dir="src"> 
+				<include name="**.java"/>
+				<exclude name="**/examples/**"/>
+				<exclude name="**/javafx/**"/>
+			</fileset> 
+	    </jar>
+        <jar destfile="build/sources/java/granite-javafx-client-sources.jar">
+            <fileset dir="src">
+				<include name="**/javafx/**/*.java"/>
+				<exclude name="**/examples/**"/>
+            </fileset>
+        </jar>
+	</target> 
+
+	
+    <!--
+     ! Build GDS maven javadoc jars.
+     !-->
+	<target name="build.maven.javadoc.jar" depends="build.javac">
+        <mkdir dir="build/docs/javadoc"/>
+
+        <mkdir dir="build/docs/javadoc/granite-java-client-javadoc"/>
+        <javadoc
+        	useexternalfile="true"
+            source="1.5"
+            destdir="build/docs/javadoc/granite-java-client-javadoc"
+            version="true"
+            author="true"
+            use="true"
+            linksource="true"
+            protected="true"
+            stylesheetfile="jdstyle.css"
+            windowtitle="Granite Data Services API Documentation - ${GDS_VERSION}">
+
+            <doctitle><![CDATA[<h1>Granite Data Services API Documentation (${GDS_VERSION})</h1>]]></doctitle>
+
+            <classpath>
+	            <fileset dir="libs">
+	                <include name="*.jar"/>
+	        	</fileset>
+	            <pathelement path="bin"/>
+            </classpath>
+
+	      	<fileset dir="src"> 
+				<include name="**/*.java"/>
+				<exclude name="**/examples/**"/>
+				<exclude name="**/javafx/**"/>
+	      	</fileset> 
+
+            <link href="http://download.oracle.com/javase/1.5.0/docs/api/"/>
+            <link href="http://download.oracle.com/javaee/6/api/"/>
+            <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
+            <link href="http://logging.apache.org/log4j/1.2/apidocs/"/>
+            <link href="http://tomcat.apache.org/tomcat-6.0-doc/api/"/>
+            <link href="http://docs.jboss.org/hibernate/stable/core/api/"/>
+            <link href="http://docs.jboss.com/seam/2.2.0.GA/api/"/>
+            <link href="http://static.springsource.org/spring/docs/3.0.x/api/"/>
+            <link href="http://jetty.codehaus.org/jetty/jetty-6/apidocs/"/>
+
+        </javadoc>
+	    <jar destfile="build/docs/javadoc/granite-java-client-javadoc.jar"> 
+	      <fileset dir="build/docs/javadoc/granite-java-client-javadoc"> 
+	        <include name="**"/> 
+	      </fileset> 
+	    </jar>
+		
+        <mkdir dir="build/docs/javadoc/granite-javafx-client-javadoc"/>
+        <javadoc
+        	useexternalfile="true"
+            source="1.5"
+            destdir="build/docs/javadoc/granite-client-javadoc"
+            version="true"
+            author="true"
+            use="true"
+            linksource="true"
+            protected="true"
+            stylesheetfile="jdstyle.css"
+            windowtitle="Granite Data Services API Documentation - ${GDS_VERSION}">
+
+            <doctitle><![CDATA[<h1>Granite Data Services API Documentation (${GDS_VERSION})</h1>]]></doctitle>
+
+            <classpath>
+                <fileset dir="lib/">
+                    <include name="**/*.jar"/>
+                </fileset>
+	            <pathelement path="bin"/>
+            </classpath>
+
+            <fileset dir="src">
+				<include name="**/javafx/**/*.java"/>
+				<exclude name="**/examples/**"/>
+            </fileset>
+
+            <link href="http://download.oracle.com/javase/1.5.0/docs/api/"/>
+            <link href="http://download.oracle.com/javaee/6/api/"/>
+            <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
+            <link href="http://logging.apache.org/log4j/1.2/apidocs/"/>
+            <link href="http://tomcat.apache.org/tomcat-6.0-doc/api/"/>
+            <link href="http://docs.jboss.org/hibernate/stable/core/api/"/>
+            <link href="http://docs.jboss.com/seam/2.2.0.GA/api/"/>
+            <link href="http://static.springsource.org/spring/docs/3.0.x/api/"/>
+            <link href="http://jetty.codehaus.org/jetty/jetty-6/apidocs/"/>
+
+        </javadoc>
+	    <jar destfile="build/docs/javadoc/granite-javafx-client-javadoc.jar"> 
+	      <fileset dir="build/docs/javadoc/granite-javafx-client-javadoc"> 
+	        <include name="**"/> 
+	      </fileset> 
+	    </jar>
+    </target>
     
     <target name="platform">
     	<copy todir="distclientjars">
