@@ -95,7 +95,7 @@
     <!--
      ! Build GDS maven javadoc jars.
      !-->
-	<target name="build.maven.javadoc.jar" depends="build.javac">
+	<target name="build.maven.javadoc.jar" depends="compile">
         <mkdir dir="build/docs/javadoc"/>
 
         <mkdir dir="build/docs/javadoc/granite-java-client-javadoc"/>
