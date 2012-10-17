@@ -33,6 +33,7 @@ import java.util.Set;
 import org.granite.logging.Logger;
 import org.granite.client.tide.collections.javafx.Sort;
 import org.granite.client.tide.data.EntityManager;
+import org.granite.client.tide.data.EntityManager.UpdateKind;
 import org.granite.tide.data.model.Page;
 import org.granite.client.tide.events.TideEvent;
 import org.granite.client.tide.events.TideEventObserver;
@@ -157,8 +158,8 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 
 	@Override
 	public void handleEvent(TideEvent event) {
-		if (event.getType().startsWith("org.granite.client.tide.data.refresh.")) {
-			String entityName = event.getType().substring("org.granite.client.tide.data.refresh.".length());
+		if (event.getType().startsWith(UpdateKind.REFRESH.eventName() + ".")) {
+			String entityName = event.getType().substring(UpdateKind.REFRESH.eventName().length()+1);
 			if (entityNames.contains(entityName))
 				fullRefresh();
 		}

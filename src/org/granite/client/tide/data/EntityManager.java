@@ -286,7 +286,11 @@ public interface EntityManager {
     public static enum UpdateKind {
         PERSIST,
         UPDATE,
-        REMOVE;
+        REMOVE,
+        REFRESH,
+        CONFLICT;
+        
+        private static final String DATA_EVENT_PREFIX = "org.granite.client.tide.data.";
         
         public static UpdateKind forName(String kind) {
             if ("PERSIST".equals(kind))
@@ -296,6 +300,14 @@ public interface EntityManager {
             else if ("REMOVE".equals(kind))
                 return REMOVE;
             throw new IllegalArgumentException("Unknown update kind " + kind);
+        }
+        
+        public String eventName() {
+        	return DATA_EVENT_PREFIX + name().toLowerCase();
+        }
+        
+        public <T> String eventName(Class<T> entityClass) {
+        	return DATA_EVENT_PREFIX + name().toLowerCase() + "." + entityClass.getSimpleName();
         }
     }
     

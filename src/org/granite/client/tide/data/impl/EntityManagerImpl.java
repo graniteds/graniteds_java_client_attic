@@ -2179,7 +2179,7 @@ public class EntityManagerImpl implements EntityManager {
 			
 			if (entity != null) {
 				String entityName = entity instanceof EntityRef ? getUnqualifiedClassName(((EntityRef)entity).getClassName()) : entity.getClass().getSimpleName();
-				String eventType = "org.granite.client.tide.data." + update.getKind().name().toLowerCase() + "." + entityName;
+				String eventType = update.getKind().eventName() + "." + entityName;
 				context.getEventBus().raiseEvent(context, eventType, entity);
 				
 				if (UpdateKind.PERSIST.equals(update.getKind()) || UpdateKind.REMOVE.equals(update.getKind())) {
@@ -2190,7 +2190,7 @@ public class EntityManagerImpl implements EntityManager {
 		}
 		
 		for (String refresh : refreshes)
-			context.getEventBus().raiseEvent(context, "org.granite.client.tide.data.refresh." + refresh);
+			context.getEventBus().raiseEvent(context, UpdateKind.REFRESH.eventName() + "." + refresh);
 	}
     
 	private static String getUnqualifiedClassName(String className) {

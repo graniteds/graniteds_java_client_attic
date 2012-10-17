@@ -27,6 +27,7 @@ import org.granite.client.tide.PlatformConfigurable;
 import org.granite.client.tide.data.Conflicts;
 import org.granite.client.tide.data.DataConflictListener;
 import org.granite.client.tide.data.EntityManager;
+import org.granite.client.tide.data.EntityManager.UpdateKind;
 import org.granite.client.tide.impl.SimpleContextManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -80,7 +81,7 @@ public class SpringContextManager extends SimpleContextManager implements Applic
 	private final class SpringDataConflictListener implements DataConflictListener {
 		@Override
 		public void onConflict(EntityManager entityManager, Conflicts conflicts) {
-			TideApplicationEvent event = new TideApplicationEvent(getContext(null), "org.granite.client.tide.data.conflict", conflicts);
+			TideApplicationEvent event = new TideApplicationEvent(getContext(null), UpdateKind.CONFLICT.eventName(), conflicts);
 			applicationContext.publishEvent(event);
 		}
 	}
