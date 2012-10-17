@@ -147,7 +147,7 @@
         <javadoc
         	useexternalfile="true"
             source="1.5"
-            destdir="build/docs/javadoc/granite-client-javadoc"
+            destdir="build/docs/javadoc/granite-javafx-client-javadoc"
             version="true"
             author="true"
             use="true"
@@ -189,10 +189,18 @@
     </target>
     
     <target name="platform">
+        <mkdir dir="distclientjars"/>
+        <mkdir dir="graniteds/libraries/java-client"/>
+        
     	<copy todir="distclientjars">
     		<fileset dir="build">
     			<include name="*-client.jar"/>
     		</fileset>
     	</copy>
+        <copy todir="graniteds/libraries/java-client">
+            <fileset dir="distclientjars">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
     </target>
 </project>
