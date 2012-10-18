@@ -63,6 +63,7 @@ import org.granite.client.util.WeakIdentityHashMap;
 import org.granite.logging.Logger;
 import org.granite.tide.Expression;
 import org.granite.util.TypeUtil;
+import org.granite.util.UUIDUtil;
 
 /**
  * @author William DRAI
@@ -354,7 +355,7 @@ public class EntityManagerImpl implements EntityManager {
     public Object getCachedObject(Object object, boolean nullIfAbsent) {
         Object entity = null;
         if (object instanceof Identifiable) {
-            entity = entitiesByUid.get(object.getClass().getName() + ":" + ((Identifiable)object).getUid());
+            entity = entitiesByUid.get(object.getClass().getName() + ":" + getUid((Identifiable)object));
         }
         else if (object instanceof EntityRef) {
             entity = entitiesByUid.get(((EntityRef)object).getClassName() + ":" + ((EntityRef)object).getUid());
@@ -776,7 +777,7 @@ public class EntityManagerImpl implements EntityManager {
             }
         }
         else if (obj instanceof Identifiable) {
-            p = entitiesByUid.get(obj.getClass().getName() + ":" + ((Identifiable)obj).getUid());
+            p = entitiesByUid.get(obj.getClass().getName() + ":" + getUid((Identifiable)obj));
             if (p != null) {
                 // Trying to merge an entity that is already cached with itself: stop now, this is not necessary to go deeper in the object graph
                 // it should be already instrumented and tracked
@@ -1499,7 +1500,17 @@ public class EntityManagerImpl implements EntityManager {
         return dirtyCheckContext.getSavedProperties(entity) != null;
     }
     
+    
+    private String getUid(Identifiable uidObject) {
+    	String uid = uidObject.getUid();
+    	if (uid == null) {
+    		uid = UUIDUtil.randomUUID();
+    		uidObject.setUid(uid);
+    	}
+    	return uid;
+    }
 
+    
     /**
      *  Remove elements from cache and managed collections
      *
