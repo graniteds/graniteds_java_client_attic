@@ -37,9 +37,14 @@ public class TableViewSort<S> implements Sort {
 	private String[] order = new String[0];
 	private boolean[] desc = new boolean[0];
 
-	public TableViewSort(final TableView<S> tableView, final S exampleData) {
+	public TableViewSort(final TableView<S> tableView, final Class<S> exampleDataClass) {
 		this.tableView = tableView;
-		this.exampleData = exampleData;
+		try {
+			this.exampleData = exampleDataClass.newInstance();
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Could not instantiate example data class " + exampleDataClass, e);
+		}
 	}
 	
 	public void build() {
