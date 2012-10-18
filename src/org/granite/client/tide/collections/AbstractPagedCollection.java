@@ -30,17 +30,17 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.granite.logging.Logger;
 import org.granite.client.tide.collections.javafx.Sort;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.UpdateKind;
-import org.granite.tide.data.model.Page;
 import org.granite.client.tide.events.TideEvent;
 import org.granite.client.tide.events.TideEventObserver;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
+import org.granite.logging.Logger;
+import org.granite.tide.data.model.Page;
 
 /**
  * @author William DRAI
@@ -82,14 +82,6 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	 * 	@private
 	 */
 	protected boolean filterRefresh = false;
-	
-	// GDS-523
-	@SuppressWarnings("unused")
-	private String uidProperty = "uid";
-	
-	public void setUidProperty(String uidProperty) {
-		this.uidProperty = uidProperty;
-	}
 	
 
 	protected Sort sort = null;
