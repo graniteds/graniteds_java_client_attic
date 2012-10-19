@@ -360,11 +360,17 @@ public class FormValidator {
 			Object changeListeners = fcl.get(helper);
 			if (changeListeners != null && Array.getLength(changeListeners) > 0) {
 				ChangeListener<?> cl = (ChangeListener<?>)Array.get(changeListeners, 0);
-				Field fpr = cl.getClass().getDeclaredField("propertyRef2");
-				fpr.setAccessible(true);
-				WeakReference<?> ref= (WeakReference<?>)fpr.get(cl);
-				Property<?> p = (Property<?>)ref.get();
-				return p;
+				try {
+					Field fpr = cl.getClass().getDeclaredField("propertyRef2");
+					fpr.setAccessible(true);
+					WeakReference<?> ref= (WeakReference<?>)fpr.get(cl);
+					Property<?> p = (Property<?>)ref.get();
+					return p;
+				}
+				catch (NoSuchFieldException e) {
+					log.debug("Field propertyRef2 not found on " + cl + ", probably not a standard binding", e);
+					return null;
+				}
 			}
 			log.debug("Could not find target binding for property %s", inputProperty);
 			return null;
@@ -413,10 +419,12 @@ public class FormValidator {
 					javax.validation.Path.Node n = in.next();
 					property = n.getName();
 				}
+				String[] path = property.split("\\.");
+				property = path[path.length-1];
 				
 				Node input = null;
 				for (Entry<Node, Property<?>> me : entityProperties.entrySet()) {
-					if (leafBean.equals(me.getValue().getBean()) && me.getValue().getName().equals(property)) {
+					if (leafBean != null && leafBean.equals(me.getValue().getBean()) && me.getValue().getName().equals(property)) {
 						input = me.getKey();
 						break;
 					}
