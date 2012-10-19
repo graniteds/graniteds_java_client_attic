@@ -25,9 +25,12 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import org.granite.messaging.amf.RemoteClass;
+
 /**
  * @author William DRAI
  */
+@RemoteClass("org.granite.tide.validators.InvalidValue")
 public class InvalidValue implements Externalizable {
 
 	private Object rootBean;
@@ -77,9 +80,7 @@ public class InvalidValue implements Externalizable {
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     	rootBean = in.readObject();
     	bean = in.readObject();
-    	String beanClassName = (String)in.readObject();
-    	if (beanClassName != null)
-    		beanClass = Thread.currentThread().getContextClassLoader().loadClass(beanClassName);
+    	in.readObject();
     	path = (String)in.readObject();
     	value = in.readObject();
     	message = (String)in.readObject();

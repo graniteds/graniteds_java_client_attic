@@ -32,6 +32,7 @@ import org.granite.client.tide.EventBus;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.impl.SimpleEventBus;
 import org.granite.client.tide.server.ServerSession;
+import org.granite.client.validation.InvalidValue;
 import org.granite.config.GraniteConfig;
 
 /**
@@ -65,8 +66,9 @@ public class JavaFXPlatform implements org.granite.client.tide.Platform {
 					graniteConfig.registerClassAlias(PersistentBag.class);
 					graniteConfig.registerClassAlias(PersistentList.class);
 					graniteConfig.registerClassAlias(PersistentMap.class);
+					graniteConfig.registerClassAlias(InvalidValue.class);
 				}
-			});			
+			});
 			serverSession.setConfiguration(configuration);
 			
 			serverSession.setStatus(serverSessionStatus);
