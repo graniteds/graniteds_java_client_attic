@@ -196,6 +196,10 @@
     		<fileset dir="build">
     			<include name="*-client.jar"/>
     		</fileset>
+    		<fileset dir="libs">
+    		    <include name="*.jar"/>
+    		    <exclude name="jfxrt.jar"/>
+    		</fileset>
     	</copy>
         <copy todir="graniteds/libraries/java-client">
             <fileset dir="distclientjars">
