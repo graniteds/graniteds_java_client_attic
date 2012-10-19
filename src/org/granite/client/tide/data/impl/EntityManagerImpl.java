@@ -304,8 +304,10 @@ public class EntityManagerImpl implements EntityManager {
         }
         
         PersistenceManager.setEntityManager(entity, this);
-        if (putInCache)
-            entitiesByUid.put(entity);         
+        if (putInCache) {
+        	getUid(entity);
+            entitiesByUid.put(entity);
+        }
     }
     
     /**
