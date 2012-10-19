@@ -53,7 +53,18 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 			for (Object v : invalidValues) {
 				InvalidValue iv = (InvalidValue)v;
 				Object rootBean = context.getEntityManager().getCachedObject(iv.getRootBean(), true);
-				Object leafBean = iv.getBean() != null ? context.getEntityManager().getCachedObject(iv.getBean(), true) : null;
+				Object leafBean = null;
+				if (iv.getBean() != null) {
+					leafBean = context.getEntityManager().getCachedObject(iv.getBean(), true);
+					if (leafBean == null) {
+						// Embedded ?
+						Object bean = rootBean;
+						String[] path = iv.getPath().split("\\.");
+						for (int i = 0; i < path.length-1; i++)
+							bean = context.getDataManager().getProperty(bean, path[i]);
+						leafBean = bean;
+					}
+				}
 				Object bean = leafBean != null ? leafBean : rootBean;
 				
 				Set<ConstraintViolation<?>> violations = violationsMap.get(bean);
