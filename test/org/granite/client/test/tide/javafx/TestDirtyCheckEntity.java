@@ -623,6 +623,63 @@ public class TestDirtyCheckEntity {
          
          Assert.assertFalse("Context dirty", entityManager.isDirty());
          Assert.assertFalse("Person not dirty", person.isDirty());
+         Assert.assertFalse("Person not dirty", personDirty.get());         
+     }
+     
+     @Test
+     public void testDirtyCheckEntityEmbedded2() {
+         PersonEmbed person = new PersonEmbed(1L, 0L, "P1", null, null);
+         person.setAddress(new EmbeddedAddress("toto"));
+         
+         BooleanProperty ctxDirty = new SimpleBooleanProperty();
+         ctxDirty.bind(dataManager.dirtyProperty());
+         BooleanProperty personDirty = new SimpleBooleanProperty();
+         personDirty.bind(person.dirtyProperty());
+         
+         person = (PersonEmbed)entityManager.mergeExternalData(person);
+         
+         person.getAddress().setAddress("tutu");
+         
+         Assert.assertTrue("Context dirty", entityManager.isDirty());
+         Assert.assertTrue("Person dirty", person.isDirty());
+         Assert.assertTrue("Person dirty 2", personDirty.get());
+         
+         PersonEmbed person2 = new PersonEmbed(1L, 1L, "P1", null, null);
+         person2.setAddress(new EmbeddedAddress("tutu"));
+         
+         entityManager.mergeExternalData(person2);
+         
+         Assert.assertFalse("Context dirty", entityManager.isDirty());
+         Assert.assertFalse("Person not dirty", person.isDirty());         
+         Assert.assertFalse("Person not dirty", personDirty.get());         
+     }
+     
+     @Test
+     public void testDirtyCheckEntityEmbedded3() {
+         PersonEmbed person = new PersonEmbed(1L, 0L, "P1", null, null);
+         person.setAddress(new EmbeddedAddress("toto"));
+         
+         BooleanProperty ctxDirty = new SimpleBooleanProperty();
+         ctxDirty.bind(dataManager.dirtyProperty());
+         BooleanProperty personDirty = new SimpleBooleanProperty();
+         personDirty.bind(person.dirtyProperty());
+         
+         person = (PersonEmbed)entityManager.mergeExternalData(person);
+         
+         person.getAddress().setAddress("tutu");
+         
+         Assert.assertTrue("Context dirty", entityManager.isDirty());
+         Assert.assertTrue("Person dirty", person.isDirty());
+         Assert.assertTrue("Person dirty 2", personDirty.get());
+         
+         PersonEmbed person2 = new PersonEmbed(1L, 0L, "P1", null, null);
+         person2.setAddress(new EmbeddedAddress("tutu"));
+         
+         entityManager.mergeExternalData(person2);
+         
+         Assert.assertFalse("Context dirty", entityManager.isDirty());
+         Assert.assertFalse("Person not dirty", person.isDirty());         
+         Assert.assertFalse("Person not dirty", personDirty.get());         
      }
      
      @Test
@@ -648,6 +705,7 @@ public class TestDirtyCheckEntity {
          
          Assert.assertFalse("Context dirty", entityManager.isDirty());
          Assert.assertFalse("Person not dirty", person.isDirty());
+         Assert.assertFalse("Person not dirty", personDirty.get());         
      }
      
      @Test

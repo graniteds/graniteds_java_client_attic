@@ -80,7 +80,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     }
     
     public boolean notifyEntityDirtyChange(Object entity, Object object, boolean oldDirtyEntity) {
-        boolean newDirtyEntity = isEntityChanged(object);
+        boolean newDirtyEntity = isEntityChanged(entity);
         if (newDirtyEntity != oldDirtyEntity)
             dataManager.notifyEntityDirtyChange(entity, oldDirtyEntity, newDirtyEntity);
         return newDirtyEntity;
@@ -133,7 +133,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     
     
     public boolean isEntityChanged(Object entity) {
-        return isEntityChanged(entity, null, null);
+        return isEntityChanged(entity, null, null, null);
     }
     
     /**
@@ -146,12 +146,15 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
      *  @return entity is dirty
      */ 
     @SuppressWarnings("unchecked")
-	public boolean isEntityChanged(Object entity, String propName, Object value) {
+	public boolean isEntityChanged(Object entity, Object embedded, String propName, Object value) {
         boolean saveTracking = trackingContext.isEnabled();
         try {
             trackingContext.setEnabled(false);
             
             boolean dirty = false;
+            
+            if (embedded == null)
+            	embedded = entity;
             
             Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
             
@@ -164,7 +167,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 if (p.equals(versionPropertyName) || p.equals(dirtyPropertyName))
                     continue;
                 
-                Object val = p.equals(propName) ? value : pval.get(p);
+                Object val = (entity == embedded && p.equals(propName)) ? value : pval.get(p);
                 Object saveval = save != null ? save.get(p) : null;
                 
                 if (save != null && ((val != null && (ObjectUtil.isSimple(val) || val instanceof byte[]))
@@ -193,7 +196,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 }
                 else if (val != null
                     && !(val instanceof Identifiable || val instanceof Enum || val instanceof Value || val instanceof byte[]) 
-                    && isEntityChanged(val)) {
+                    && isEntityChanged(val, embedded, propName, value)) {
                     dirty = true;
                     break;
                 }
@@ -351,7 +354,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         boolean diff = !isSame(oldValue, newValue);
         
         if (diff) {
-            boolean oldDirtyEntity = isEntityChanged(object, propName, oldValue);
+            boolean oldDirtyEntity = isEntityChanged(entity, object, propName, oldValue);
             
             EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
             Map<String, Object> save = savedProperties.get(object);
@@ -658,17 +661,18 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
      *
      *  @param entity merged entity
      *  @param source source entity
+     *  @param owner owner entity for embedded objects
      *  @return true if the entity is still dirty after comparing with incoming object
      */ 
-    public boolean checkAndMarkNotDirty(Identifiable entity, Identifiable source) {
+    public boolean checkAndMarkNotDirty(Object entity, Object source, Identifiable owner) {
         Map<String, Object> save = savedProperties.get(entity);
         if (save == null)
             return false;
         
         boolean oldDirty = isDirty();
-        boolean oldDirtyEntity = isEntityChanged(entity);
+        boolean oldDirtyEntity = isEntityChanged(owner);
         
-        EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
+        EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
         List<String> merged = new ArrayList<String>();
         
         for (String propName : save.keySet()) {
@@ -696,7 +700,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             dirtyCount--;
         }
         
-        boolean newDirtyEntity = notifyEntityDirtyChange(entity, entity, oldDirtyEntity);
+        boolean newDirtyEntity = notifyEntityDirtyChange(owner, entity, oldDirtyEntity);
         
         notifyDirtyChange(oldDirty);
         

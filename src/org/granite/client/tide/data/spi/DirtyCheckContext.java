@@ -38,7 +38,7 @@ public interface DirtyCheckContext {
 
     public void markNotDirty(Object object, Identifiable entity);
 
-    public boolean checkAndMarkNotDirty(Identifiable local, Identifiable received);
+    public boolean checkAndMarkNotDirty(Object local, Object received, Identifiable owner);
 
     public boolean isEntityChanged(Object entity);
 

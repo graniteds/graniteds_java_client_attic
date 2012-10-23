@@ -870,7 +870,7 @@ public class EntityManagerImpl implements EntityManager {
                                 dest.toString(), oldVersion, newVersion);
                             
                             // Check incoming values and local values
-                            if (dirtyCheckContext.checkAndMarkNotDirty((Identifiable)dest, (Identifiable)obj)) {
+                            if (dirtyCheckContext.checkAndMarkNotDirty(dest, obj, (Identifiable)dest)) {
                                 // Incoming data is different from local data
                                 mergeContext.addConflict((Identifiable)dest, (Identifiable)obj);
                                 
@@ -915,8 +915,8 @@ public class EntityManagerImpl implements EntityManager {
             if (mergeContext.isMergeUpdate() && ((dest instanceof Identifiable && mergeContext.hasVersionChanged(dest)) 
             		|| (!(dest instanceof Identifiable) && parent instanceof Identifiable && mergeContext.hasVersionChanged(parent))))
                 dirtyCheckContext.markNotDirty(dest, dest instanceof Identifiable ? null : (Identifiable)parent);
-            else if (dest instanceof Identifiable && obj instanceof Identifiable)
-                dirtyCheckContext.checkAndMarkNotDirty((Identifiable)dest, (Identifiable)obj);
+            else if ((dest instanceof Identifiable && obj instanceof Identifiable) || (!(dest instanceof Identifiable && parent instanceof Identifiable)))
+                dirtyCheckContext.checkAndMarkNotDirty(dest, obj, dest instanceof Identifiable ? (Identifiable)dest : (Identifiable)parent);
         }
         
         if (dest != null)
