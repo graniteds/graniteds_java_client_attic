@@ -49,6 +49,9 @@ public class RemoteClassScanner implements Configuration.Configurator {
 	}
 	
 	public void configure(GraniteConfig graniteConfig) {
+		if (packageNames.isEmpty())
+			return;
+		
 		ComponentScanner scanner = new ComponentScanner();
 		
 		final String[] basePackageNames = packageNames.toArray(new String[packageNames.size()]);

@@ -23,6 +23,12 @@
 
 	<property name="jarFile" value="granite-java-client.jar"/>
 
+    <path id="gds.classpath">
+        <fileset dir="libs">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
 	<target name="jar">
 		<echo message="Building ${zipFile}" />
 		
@@ -47,12 +53,6 @@
      !-->
     <target name="compile">
         <mkdir dir="bin"/>
-
-        <path id="gds.classpath">
-            <fileset dir="libs">
-                <include name="*.jar"/>
-        	</fileset>
-        </path>
 
         <javac destdir="bin" srcdir="src" classpathref="gds.classpath"
             target="1.5" source="1.5" debug="true">
@@ -187,6 +187,51 @@
 	      </fileset> 
 	    </jar>
     </target>
+    
+        
+    <!--
+     ! Compile Java test sources
+     !-->
+    <target name="compile.tests">
+        <mkdir dir="bin-test"/>
+        <javac destdir="bin-test" srcdir="test" debug="true"
+            target="1.5" source="1.5">
+            <exclude name="org/granite/client/test/*.java"/>
+            <classpath>
+                <pathelement path="bin"/>
+                <path refid="gds.classpath"/>
+            </classpath>            
+        </javac>
+    </target>
+    
+    <target name="tests" depends="compile, compile.tests">
+        <mkdir dir="test-reports"/>
+        
+        <junit printsummary="yes" showoutput="false">
+            <classpath>
+                <path refid="gds.classpath"/>
+                <pathelement path="bin"/>
+                <pathelement path="bin-test"/>
+            </classpath>
+            
+            <formatter type="xml"/>
+            
+            <batchtest todir="test-reports" fork="true">
+                <fileset dir="test">
+                    <include name="**/Test*.java"/>
+                    <exclude name="org/granite/client/test/websocket/**"/>
+                </fileset>
+            </batchtest>
+        </junit>
+        
+        <junitreport todir="test-reports">
+            <fileset dir="./test-reports">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report todir="test-reports"/>
+        </junitreport>  
+    </target>
+
     
     <target name="platform">
         <mkdir dir="distclientjars"/>

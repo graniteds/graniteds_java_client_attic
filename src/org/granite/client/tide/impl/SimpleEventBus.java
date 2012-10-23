@@ -39,6 +39,9 @@ public class SimpleEventBus implements EventBus {
     
     protected void raiseEvent(TideEvent event) {
     	TideEventObserver[] observers = event.getContext().allByType(TideEventObserver.class);
+    	if (observers == null)
+    		return;
+    	
     	for (TideEventObserver observer : observers)
     		observer.handleEvent(event);
     }

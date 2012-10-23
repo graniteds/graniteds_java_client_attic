@@ -1,2 +1,6 @@
 /build
 /bin
+/bin-test
+/test-reports
+junit*.properties
+

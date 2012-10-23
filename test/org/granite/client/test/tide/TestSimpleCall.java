@@ -59,7 +59,7 @@ public class TestSimpleCall {
     @Before
     public void setup() throws Exception {
         contextManager = new SimpleContextManager(new DefaultPlatform());
-        contextManager.setInstanceStoreFactory(new TestInstanceStoreFactory());
+        contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext();
         serverSession = new ServerSession("test", "/test", "localhost", 8080);
         serverSession.setServiceFactory(new MockServiceFactory());

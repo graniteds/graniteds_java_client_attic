@@ -33,7 +33,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.persistence.javafx.PersistentMap;
 import org.granite.client.persistence.javafx.PersistentSet;
-import org.granite.client.test.tide.TestInstanceStoreFactory;
+import org.granite.client.test.tide.MockInstanceStoreFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
 import org.granite.client.tide.data.impl.DirtyCheckContextImpl.Change;
@@ -60,7 +60,7 @@ public class TestDirtyCheckEntity {
     @Before
     public void setup() throws Exception {
         contextManager = new SimpleContextManager(new JavaFXPlatform());
-        contextManager.setInstanceStoreFactory(new TestInstanceStoreFactory());
+        contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext("");
         entityManager = ctx.getEntityManager();
         dataManager = (JavaFXDataManager)ctx.getDataManager();
