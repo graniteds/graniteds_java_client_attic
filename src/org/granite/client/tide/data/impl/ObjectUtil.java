@@ -58,7 +58,7 @@ public class ObjectUtil {
                 // Compare with identifier for uninitialized entities
                 EntityDescriptor edesc = dataManager.getEntityDescriptor(obj1);
                 if (edesc.getIdPropertyName() != null)
-                    return dataManager.getProperty(obj1, edesc.getIdPropertyName()).equals(dataManager.getProperty(obj2, edesc.getIdPropertyName()));
+                    return objectEquals(dataManager, dataManager.getProperty(obj1, edesc.getIdPropertyName()), dataManager.getProperty(obj2, edesc.getIdPropertyName()));
             }
             return ((Identifiable)obj1).getUid().equals(((Identifiable)obj2).getUid());
         }

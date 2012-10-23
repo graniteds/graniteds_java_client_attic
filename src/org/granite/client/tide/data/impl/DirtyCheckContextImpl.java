@@ -246,6 +246,9 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             return true;
         }
         else if (val1 instanceof Set<?> && val2 instanceof Set<?>) {
+			if ((val1 instanceof LazyableCollection && !((LazyableCollection)val1).isInitialized()) 
+					|| (val2 instanceof LazyableCollection && !((LazyableCollection)val2).isInitialized()))
+				return false;
             Collection<?> coll1 = (Collection<?>)val1;
             Collection<?> coll2 = (Collection<?>)val2;
             if (coll1.size() != coll2.size())
@@ -275,6 +278,9 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             return true;
         }
         else if (val1 instanceof List<?> && val2 instanceof List<?>) {
+			if ((val1 instanceof LazyableCollection && !((LazyableCollection)val1).isInitialized()) 
+					|| (val2 instanceof LazyableCollection && !((LazyableCollection)val2).isInitialized()))
+				return false;
             List<?> list1 = (List<?>)val1;
             List<?> list2 = (List<?>)val2;
             if (list1.size() != list2.size())
@@ -286,6 +292,9 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             return true;
         }
         else if (val1 instanceof Map<?, ?> && val2 instanceof Map<?, ?>) {
+			if ((val1 instanceof LazyableCollection && !((LazyableCollection)val1).isInitialized()) 
+					|| (val2 instanceof LazyableCollection && !((LazyableCollection)val2).isInitialized()))
+				return false;
             Map<?, ?> map1 = (Map<?, ?>)val1;
             Map<?, ?> map2 = (Map<?, ?>)val2;
             if (map1.size() != map2.size())
@@ -430,20 +439,32 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             || (esave.get(desc.getVersionPropertyName()) == null && dataManager.getProperty(owner, desc.getVersionPropertyName()) == null))) {
             
             boolean found = false;
+			
+			int[] actualLocations = new int[save.size()];
+			for (int i = 0; i < save.size(); i++) {
+				actualLocations[i] = save.get(i).location;
+                for (int j = 0; j < i; j++) {
+                    if (save.get(j).kind == ChangeKind.REMOVE && actualLocations[i] <= save.get(j).location)
+                        actualLocations[j]--;
+					else if (save.get(j).kind == ChangeKind.ADD && actualLocations[i] <= save.get(j).location)
+						actualLocations[j]++;
+				}
+			}
 
             for (int i = 0; i < save.size(); i++) {                     
                 if (((kind == ChangeKind.ADD && save.get(i).getKind() == ChangeKind.REMOVE)
                     || (kind == ChangeKind.REMOVE && save.get(i).getKind() == ChangeKind.ADD))
                     && items.length == 1 && save.get(i).getItems().length == 1 
-                    && isSame(items[0], save.get(i).getItems()[0]) && location == save.get(i).getLocation()) {
+                    && isSame(items[0], save.get(i).getItems()[0]) && location == actualLocations[i]) {
                     
                     save.remove(i);
                     // Adjust location of other saved events because an element added/removed locally has been removed/added
-                    for (Change ce : save) {
-                        if (kind == ChangeKind.REMOVE && ce.getKind() == ChangeKind.ADD && ce.getLocation() > location)
-                            ce.moveLocation(-1);
-                        else if (kind == ChangeKind.ADD && ce.getKind() == ChangeKind.REMOVE && ce.location > location)
-                            ce.moveLocation(1);
+                    for (int j = i; j < save.size(); j++) {
+                    	Change c = save.get(j);
+                        if (kind == ChangeKind.REMOVE && c.kind == ChangeKind.ADD && c.location > location)
+                            c.moveLocation(-1);
+                        else if (kind == ChangeKind.ADD && c.kind == ChangeKind.REMOVE && c.location > location)
+                            c.moveLocation(1);
                     }
                     
                     if (save.size() == 0) {
@@ -463,7 +484,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 }
                 else if (kind == ChangeKind.REPLACE && save.get(i).getKind() == ChangeKind.REPLACE
                     && items.length == 1 && save.get(i).getItems().length == 1
-                    && location == save.get(i).getLocation()) {
+                    && location == actualLocations[i]) {
                     
                     if (isSame(((Object[])items[0])[0], ((Object[])save.get(i).getItems()[0])[1])
                         && isSame(((Object[])items[0])[1], ((Object[])save.get(i).getItems()[0])[0])) {
@@ -489,17 +510,8 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                     found = true;
                 }
             }
-            if (!found) {
-                // Adjust location of previously saved events because a local change has moved collection content
-                for (int j = 0; j < save.size(); j++) {
-                    if (kind == ChangeKind.REMOVE && save.get(j).getKind() == ChangeKind.REMOVE && location <= save.get(j).getLocation() && save.get(j).getLocation() > 0)
-                        save.get(j).moveLocation(-1);
-                    else if (kind == ChangeKind.ADD && save.get(j).getKind() == ChangeKind.ADD && location <= save.get(j).getLocation())
-                        save.get(j).moveLocation(1);
-                }
-
+            if (!found)
                 save.add(new Change(kind, location, items));
-            }
         }
         
         notifyEntityDirtyChange(owner, owner, oldDirtyEntity);

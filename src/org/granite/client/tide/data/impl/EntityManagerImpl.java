@@ -768,7 +768,7 @@ public class EntityManagerImpl implements EntityManager {
                 p = entitiesByUid.find(new Matcher() {
                     public boolean match(Object o) {
                         return o.getClass().getName().equals(obj.getClass().getName()) && 
-                            dataManager.getProperty(obj, desc.getIdPropertyName()).equals(dataManager.getProperty(o, desc.getIdPropertyName()));
+                        	ObjectUtil.objectEquals(dataManager, dataManager.getProperty(obj, desc.getIdPropertyName()), dataManager.getProperty(o, desc.getIdPropertyName()));
                     }
                 });
 
@@ -811,14 +811,11 @@ public class EntityManagerImpl implements EntityManager {
         }
 
         if (obj instanceof Lazyable && !((Lazyable)obj).isInitialized() && ObjectUtil.objectEquals(dataManager, previous, obj)) {
-            EntityDescriptor desc = dataManager.getEntityDescriptor(obj);
             // Don't overwrite existing entity with an uninitialized proxy when optimistic locking is defined
-            if (desc.getVersionPropertyName() != null) {
-                log.debug("ignored received uninitialized proxy");
-                // Should we mark the object not dirty as we only received a proxy ??
-                dirtyCheckContext.markNotDirty(previous, null);
-                return previous;
-            }
+            log.debug("ignored received uninitialized proxy");
+            // Don't mark the object not dirty as we only received a proxy
+            // dirtyCheckContext.markNotDirty(previous, null);
+            return previous;
         }
         
         if (dest instanceof Lazyable && !((Lazyable)dest).isInitialized())
@@ -969,8 +966,10 @@ public class EntityManagerImpl implements EntityManager {
     private List<?> mergeCollection(MergeContext mergeContext, List<Object> coll, Object previous, Expression expr, Object parent, String propertyName) {
         log.debug("mergeCollection: %s previous %s", ObjectUtil.toString(coll), ObjectUtil.toString(previous));
         
-        if (mergeContext.isUninitializing() && parent instanceof Identifiable && propertyName != null && dataManager.getEntityDescriptor(parent).isLazy(propertyName)) {
-            if (previous instanceof LazyableCollection && ((LazyableCollection)previous).isInitialized()) {
+        if (mergeContext.isUninitializing() && parent instanceof Identifiable && propertyName != null) {
+        	EntityDescriptor desc = dataManager.getEntityDescriptor(parent);
+        	if (desc.getVersionPropertyName() != null && dataManager.getProperty(parent, desc.getVersionPropertyName()) != null
+        		&& desc.isLazy(propertyName) && previous instanceof LazyableCollection && ((LazyableCollection)previous).isInitialized()) {
                 log.debug("uninitialize lazy collection %s", ObjectUtil.toString(previous));
                 mergeContext.putInCache(coll, previous);
                 ((LazyableCollection)previous).uninitialize();
@@ -1164,8 +1163,10 @@ public class EntityManagerImpl implements EntityManager {
     private Map<?, ?> mergeMap(MergeContext mergeContext, Map<Object, Object> map, Object previous, Expression expr, Object parent, String propertyName) {
         log.debug("mergeMap: %s previous %s", ObjectUtil.toString(map), ObjectUtil.toString(previous));
         
-        if (mergeContext.isUninitializing() && parent instanceof Identifiable && propertyName != null && dataManager.getEntityDescriptor(parent).isLazy(propertyName)) {
-            if (previous instanceof LazyableCollection && ((LazyableCollection)previous).isInitialized()) {
+        if (mergeContext.isUninitializing() && parent instanceof Identifiable && propertyName != null) {
+        	EntityDescriptor desc = dataManager.getEntityDescriptor(parent);
+        	if (desc.getVersionPropertyName() != null && dataManager.getProperty(parent, desc.getVersionPropertyName()) != null
+        		&& desc.isLazy(propertyName) && previous instanceof LazyableCollection && ((LazyableCollection)previous).isInitialized()) {
                 log.debug("uninitialize lazy map %s", ObjectUtil.toString(previous));
                 mergeContext.putInCache(map, previous);
                 ((LazyableCollection)previous).uninitialize();
