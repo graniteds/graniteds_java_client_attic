@@ -210,7 +210,7 @@
             <doctitle><![CDATA[<h1>Granite Data Services Client API Documentation (${GDS_VERSION})</h1>]]></doctitle>
 
             <classpath>
-                <fileset dir="lib/">
+                <fileset dir="libs/">
                     <include name="**/*.jar"/>
                 </fileset>
                 <pathelement path="bin/"/>
