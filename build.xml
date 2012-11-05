@@ -78,7 +78,7 @@
 
 	    <jar destfile="build/sources/java/granite-java-client-sources.jar"> 
 	      	<fileset dir="src"> 
-				<include name="**.java"/>
+				<include name="**/*.java"/>
 				<exclude name="**/examples/**"/>
 				<exclude name="**/javafx/**"/>
 			</fileset> 
