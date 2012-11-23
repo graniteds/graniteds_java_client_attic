@@ -26,9 +26,12 @@
 <project name="graniteds-client-maven" default="deploy.GDS" xmlns:artifact="urn:maven-artifact-ant"
          xmlns:openpgp="antlib:org.apache.commons.openpgp.ant">
 
-  <property file="../project.properties"/>
+  <!--property file="../project.properties"/>
   <property file="../env.properties"/>
-  <property file="auth.properties"/>
+  <property file="auth.properties"/-->
+
+  <property file="../../graniteds/project.properties"/>
+  <property file="../../graniteds/maven/auth.properties"/>
 
   <!-- TODO: change the version before releasing, defined in ../project.properties file-->
   <property name="release.version" value="${GDS_VERSION}"/>
@@ -42,6 +45,9 @@
   <property name="remote.repo.user" value="${username}"/>
   <property name="remote.repo.password" value="${password}"/>
 
+	  <path id="maven-ant-tasks.classpath" path="../../graniteds/lib/maven-ant-tasks.jar"/>
+	  <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant"
+	           classpathref="maven-ant-tasks.classpath"/>
 
   <target name="load.poms">
 
@@ -64,10 +70,6 @@
     <artifact:pom id="granite-java-client" file="${build.pom.dir}/java-client.pom.xml"/>
     <artifact:pom id="granite-javafx-client" file="${build.pom.dir}/javafx-client.pom.xml"/>
   </target>
-
-  <path id="maven-ant-tasks.classpath" path="../lib/maven-ant-tasks.jar"/>
-  <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant"
-           classpathref="maven-ant-tasks.classpath"/>
 
   <property name="build.pom.dir" value="../build/poms"/>
 
@@ -118,7 +120,7 @@
 
   <target name="sign.GDS.artifacts">
     <path id="openpgpg-tasks.classpath">
-      <fileset dir="../lib">
+      <fileset dir="../../graniteds/lib">
         <include name="commons-openpgp*.jar"/>
         <include name="bcpg-*.jar"/>
         <include name="bcprov-*.jar"/>
