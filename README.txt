@@ -9,7 +9,7 @@ Granite Data Services Java Client (http://www.graniteds.org)
 
 * Requirements:
 
-  JDK 5+, JavaFx 2+ (optional).
+  JDK 6+, JavaFx 2+ (optional).
   
 * Build:
 
