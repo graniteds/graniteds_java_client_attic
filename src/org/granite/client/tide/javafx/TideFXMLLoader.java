@@ -38,6 +38,7 @@ public class TideFXMLLoader {
         try {
             fxmlStream = controllerClass.getResourceAsStream(url);
             FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(controllerClass.getResource(url));
             loader.setControllerFactory(new Callback<Class<?>, Object>() {
 				@Override
 				public Object call(Class<?> type) {
@@ -60,6 +61,7 @@ public class TideFXMLLoader {
         try {
             fxmlStream = controller.getClass().getResourceAsStream(url);
             FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(controller.getClass().getResource(url));
             loader.setControllerFactory(new Callback<Class<?>, Object>() {
 				@Override
 				public Object call(Class<?> type) {
