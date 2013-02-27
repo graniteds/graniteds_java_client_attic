@@ -47,6 +47,10 @@ public class TableViewSort<S> implements Sort {
 		}
 	}
 	
+	public void setTableView(TableView<S> tableView) {
+		this.tableView = tableView;
+	}
+	
 	public void build() {
 		int i = 0;
 		order = new String[tableView.getSortOrder().size()];
@@ -55,7 +59,7 @@ public class TableViewSort<S> implements Sort {
 			ObservableValue<?> property = column.getCellObservableValue(exampleData);
 			if (property instanceof ReadOnlyProperty<?>) {
 				order[i] = ((ReadOnlyProperty<?>)property).getName();
-				desc[i] = column.getSortType() == SortType.ASCENDING;
+				desc[i] = column.getSortType() == SortType.DESCENDING;
 				i++;
 			}
 			else
