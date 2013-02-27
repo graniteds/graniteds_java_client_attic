@@ -19,12 +19,17 @@
   You should have received a copy of the GNU Library General Public License
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 -->
-<project name="graniteds-java-client" default="jar">
+<project name="graniteds-java-client" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
 
 	<property name="jarFile" value="granite-java-client.jar"/>
 
     <path id="gds.classpath">
         <fileset dir="libs">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+    <path id="gds.test.classpath">
+        <fileset dir="libs/test">
             <include name="*.jar"/>
         </fileset>
     </path>
@@ -51,7 +56,7 @@
     <!--
      ! Compile GDS client
      !-->
-    <target name="compile">
+    <target name="compile" depends="resolve">
         <mkdir dir="bin"/>
 
         <javac destdir="bin" srcdir="src" classpathref="gds.classpath"
@@ -237,16 +242,23 @@
     <!--
      ! Compile Java test sources
      !-->
-    <target name="compile.tests">
+    <target name="compile.tests" depends="resolve">
         <mkdir dir="bin-test"/>
+        
         <javac destdir="bin-test" srcdir="test" debug="true"
             target="1.5" source="1.5">
             <exclude name="org/granite/client/test/*.java"/>
             <classpath>
                 <pathelement path="bin"/>
                 <path refid="gds.classpath"/>
+                <path refid="gds.test.classpath"/>
             </classpath>            
-        </javac>
+        </javac>        
+        <copy todir="bin-test">
+            <fileset dir="test">
+                <include name="**/*.xml"/>
+            </fileset>
+        </copy>
     </target>
     
     <target name="tests" depends="compile, compile.tests">
@@ -255,6 +267,7 @@
         <junit printsummary="yes" showoutput="false">
             <classpath>
                 <path refid="gds.classpath"/>
+                <path refid="gds.test.classpath"/>
                 <pathelement path="bin"/>
                 <pathelement path="bin-test"/>
             </classpath>
@@ -308,5 +321,11 @@
                 <include name="java-client/**"/>
             </fileset>
         </copy>
+    </target>
+    
+    <target name="resolve">
+        <ivy:resolve/>
+        
+        <ivy:retrieve pattern="libs/[conf]/[artifact].[ext]" type="jar"/>
     </target>
 </project>
