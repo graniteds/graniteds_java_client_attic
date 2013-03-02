@@ -212,20 +212,29 @@ public class PersistentMap<K, V> implements ObservableMap<K, V>, LazyableCollect
 
     @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput input) throws IOException, ClassNotFoundException {
-        initialized = input.readBoolean();
+        initialized = ((Boolean)input.readObject()).booleanValue();
         metadata = (String)input.readObject();
         if (initialized) {
-            dirty = input.readBoolean();
-            omap = FXCollections.observableMap((Map<K, V>)input.readObject());
+            dirty = ((Boolean)input.readObject()).booleanValue();
+            Object[] array = (Object[])input.readObject();
+            omap = FXCollections.observableMap(new HashMap<K, V>(array.length));
+            for (Object element : array) {
+            	Object[] entry = (Object[])element;
+            	omap.put((K)entry[0], (V)entry[1]);
+            }
         }
     }
 
     public void writeExternal(ObjectOutput output) throws IOException {
-        output.writeBoolean(initialized);
+        output.writeObject(Boolean.valueOf(initialized));
         output.writeObject(metadata);
         if (initialized) {
-            output.writeBoolean(dirty);
-            output.writeObject(new HashMap<K, V>(omap));
+            output.writeObject(Boolean.valueOf(dirty));
+            Object[] array = new Object[omap.size()];
+            int idx = 0;
+            for (Entry<K, V> entry : omap.entrySet())
+            	array[idx++] = new Object[] { entry.getKey(), entry.getValue() };
+            output.writeObject(array);
         }
     }
 }

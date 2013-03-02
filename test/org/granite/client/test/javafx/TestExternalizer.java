@@ -13,6 +13,7 @@ import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
 import org.granite.context.SimpleGraniteContext;
 import org.hibernate.collection.PersistentList;
+import org.hibernate.collection.PersistentMap;
 import org.hibernate.collection.PersistentSet;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,8 +35,11 @@ public class TestExternalizer {
 		graniteConfigJavaFX.registerClassAlias(FXEntity2.class);
 		graniteConfigJavaFX.registerClassAlias(FXEntity1b.class);
 		graniteConfigJavaFX.registerClassAlias(FXEntity2b.class);
+		graniteConfigJavaFX.registerClassAlias(FXEntity1c.class);
+		graniteConfigJavaFX.registerClassAlias(FXEntity2c.class);
 		graniteConfigJavaFX.registerClassAlias(org.granite.client.persistence.javafx.PersistentList.class);
 		graniteConfigJavaFX.registerClassAlias(org.granite.client.persistence.javafx.PersistentSet.class);
+		graniteConfigJavaFX.registerClassAlias(org.granite.client.persistence.javafx.PersistentMap.class);
 		is = getClass().getClassLoader().getResourceAsStream("org/granite/client/test/javafx/granite-config-hibernate.xml");
 		graniteConfigHibernate = new GraniteConfig(null, is, null, null);
 	}
@@ -69,6 +73,31 @@ public class TestExternalizer {
 	@Test
 	public void testExternalizationSetClientToServer() throws Exception {
 		FXEntity1b entity1 = new FXEntity1b();
+		entity1.setName("Test");
+		FXEntity2b entity2 = new FXEntity2b();
+		entity2.setName("Test2");
+		entity1.getList().add(entity2);
+		entity2.setEntity1(entity1);
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>());
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
+		ObjectOutput out = graniteConfigJavaFX.newAMF3Serializer(baos);
+		out.writeObject(entity1);
+		
+		byte[] buf = baos.toByteArray();
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>());
+		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
+		Object entity = in.readObject();
+		
+		Assert.assertTrue("Entity type", entity instanceof Entity1b);
+	}
+
+	@Test
+	public void testExternalizationPersistentSetClientToServer() throws Exception {
+		FXEntity1b entity1 = new FXEntity1b();
+		entity1.setList(new org.granite.client.persistence.javafx.PersistentSet<FXEntity2b>());
 		entity1.setName("Test");
 		FXEntity2b entity2 = new FXEntity2b();
 		entity2.setName("Test2");
@@ -138,5 +167,80 @@ public class TestExternalizer {
 		Object entity = in.readObject();
 		
 		Assert.assertTrue("Entity type", entity instanceof Entity1);
+	}
+
+	@Test
+	public void testExternalizationPersistentListClientToServer() throws Exception {
+		FXEntity1 entity1 = new FXEntity1();
+		entity1.setList(new org.granite.client.persistence.javafx.PersistentList<FXEntity2>());
+		entity1.setName("Test");
+		FXEntity2 entity2 = new FXEntity2();
+		entity2.setName("Test2");
+		entity1.getList().add(entity2);
+		entity2.setEntity1(entity1);
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>());
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
+		ObjectOutput out = graniteConfigJavaFX.newAMF3Serializer(baos);
+		out.writeObject(entity1);
+		
+		byte[] buf = baos.toByteArray();
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>());
+		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
+		Object entity = in.readObject();
+		
+		Assert.assertTrue("Entity type", entity instanceof Entity1);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testExternalizationMapServerToClient() throws Exception {
+		Entity1c entity1 = new Entity1c();
+		entity1.setName("Test");
+		entity1.setMap(new PersistentMap(null, new HashMap<String, Entity2c>()));
+		Entity2c entity2 = new Entity2c();
+		entity2.setName("Test2");
+		entity1.getMap().put("test", entity2);
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>());
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
+		ObjectOutput out = graniteConfigHibernate.newAMF3Serializer(baos);
+		out.writeObject(entity1);
+		
+		byte[] buf = baos.toByteArray();
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>());
+		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+		ObjectInput in = graniteConfigJavaFX.newAMF3Deserializer(bais);
+		Object entity = in.readObject();
+		
+		Assert.assertTrue("Entity type", entity instanceof FXEntity1c);
+		Assert.assertEquals("Entity2 value", "Test2", ((FXEntity1c)entity).getMap().get("test").getName());
+	}
+
+	@Test
+	public void testExternalizationMapClientToServer() throws Exception {
+		FXEntity1c entity1 = new FXEntity1c();
+		entity1.setName("Test");
+		FXEntity2c entity2 = new FXEntity2c();
+		entity2.setName("Test2");
+		entity1.getMap().put("test", entity2);
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>());
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
+		ObjectOutput out = graniteConfigJavaFX.newAMF3Serializer(baos);
+		out.writeObject(entity1);
+		
+		byte[] buf = baos.toByteArray();
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>());
+		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
+		Object entity = in.readObject();
+		
+		Assert.assertTrue("Entity type", entity instanceof Entity1c);
+		Assert.assertEquals("Entity2 value", "Test2", ((Entity1c)entity).getMap().get("test").getName());
 	}
 }

@@ -24,7 +24,6 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -38,9 +37,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
+import org.granite.client.persistence.LazyableCollection;
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
-import org.granite.client.persistence.LazyableCollection;
 
 /**
  * @author William DRAI
@@ -285,20 +284,21 @@ public class PersistentBag<T> implements Set<T>, ObservableList<T>, LazyableColl
 
     @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput input) throws IOException, ClassNotFoundException {
-        initialized = input.readBoolean();
+        initialized = ((Boolean)input.readObject()).booleanValue();
         metadata = (String)input.readObject();
         if (initialized) {
-            dirty = input.readBoolean();
-            oset = FXCollections.observableArrayList((Collection<? extends T>)input.readObject());
+            dirty = ((Boolean)input.readObject()).booleanValue();
+            T[] array = (T[])input.readObject();
+            oset = FXCollections.observableArrayList(array);
         }
     }
 
     public void writeExternal(ObjectOutput output) throws IOException {
-        output.writeBoolean(initialized);
+        output.writeObject(Boolean.valueOf(initialized));
         output.writeObject(metadata);
         if (initialized) {
-            output.writeBoolean(dirty);
-            output.writeObject(new ArrayList<T>(oset));
+            output.writeObject(Boolean.valueOf(dirty));
+            output.writeObject(oset.toArray());
         }
     }
 }
