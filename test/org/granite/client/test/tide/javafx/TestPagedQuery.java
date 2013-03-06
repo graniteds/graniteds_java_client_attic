@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.messages.Message;
