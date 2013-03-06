@@ -65,7 +65,7 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
     @SuppressWarnings("unused")
 	private static Logger log = Logger.getLogger("org.granite.client.tide.collections.javafx.PagedQuery");
 	
-    protected ComponentImpl component = null;
+    protected Component component = null;
     
     private final ServerSession serverSession;
     private String remoteComponentName = null;
@@ -90,14 +90,14 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
     
     public void setContext(Context context) {
     	this.context = context;
-    	if (component != null)
-    		component.setContext(context);
+    	if (component instanceof ContextAware)
+    		((ContextAware)component).setContext(context);
     }
     
 	public void init() {
 		component = new ComponentImpl(serverSession);
-		component.setName(remoteComponentName);
-		component.setContext(context);
+		((ComponentImpl)component).setName(remoteComponentName);
+		((ComponentImpl)component).setContext(context);
 	}
 	
 	public ObjectProperty<F> filterProperty() {
@@ -117,7 +117,7 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 		this.filter = new SimpleObjectProperty<F>(this, "filter");
 		setFilter((F)TypeUtil.newInstance(filterClass, Object.class));
 	}
-
+	
 
 	public String getName() {
 	    return remoteComponentName;
@@ -128,15 +128,15 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 			Object component = context.byName(remoteComponentName);
 			if (component == null || !(component instanceof ComponentImpl)) {
 				this.component = new ComponentImpl(serverSession);
-				this.component.setName(remoteComponentName);
-				this.component.setContext(context);
+				((ComponentImpl)this.component).setName(remoteComponentName);
+				((ComponentImpl)this.component).setContext(context);
 				context.set(remoteComponentName, component);
 			}
 		}
 		else {
 			this.component = new ComponentImpl(serverSession);
-			this.component.setName(remoteComponentName);
-			this.component.setContext(context);
+			((ComponentImpl)this.component).setName(remoteComponentName);
+			((ComponentImpl)this.component).setContext(context);
 		}
 	}
 	

@@ -39,6 +39,7 @@ import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
+import org.granite.client.tide.server.TideRpcEvent;
 import org.granite.logging.Logger;
 import org.granite.tide.data.model.Page;
 
@@ -88,6 +89,10 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	
 	public void setSort(Sort sort) {
 		this.sort = sort;
+	}
+	
+	public Sort getSort() {
+		return sort;
 	}
 	
 	
@@ -169,6 +174,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		clearLocalIndex();
 		first = 0;
 		last = first+max;
+		// sort = null;
 	}
 	
 	
@@ -243,6 +249,15 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	 */
 	protected abstract Page<E> getResult(TideResultEvent<?> event, int first, int max);
 	
+	
+	/**
+	 *  Notify listeners of remote page result
+	 *  
+	 *  @param event the remote event (ResultEvent or FaultEvent)
+	 */
+	protected abstract void firePageChange(TideRpcEvent event);
+	
+	
 	/**
 	 * 	@private
 	 *  Initialize collection after first find
@@ -286,8 +301,8 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		}
 		
 		if (initializing && event != null) {
-			if (max == 0 && result.getMaxResults() > 0)
-		    	max = result.getMaxResults();
+			if (this.max == 0 && result.getMaxResults() > 0)
+		    	this.max = result.getMaxResults();
 		    initialize(event);
 		}
 		
@@ -328,6 +343,8 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		this.last = nextLast;
 	    
 		pendingRanges.clear();
+		
+		firePageChange(event);
 	}
 	
 	/**
@@ -359,7 +376,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 			}
 		}
 	    
-//    	dispatchEvent(new CollectionEvent(COLLECTION_PAGE_CHANGE, false, false, FAULT, -1, -1, [ event ]));
+		firePageChange(event);
 	}
 	
 	
@@ -393,7 +410,10 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 
 		if (localIndex != null && index >= first && index < last) {	// Local data available for index
 		    int j = index-first;
-			return localIndex[j];
+		    if (j >= 0 && j < localIndex.length)
+		    	return localIndex[j];
+		    // Index not in current loaded range, max is more than last page size
+		    return null;
 		}
 		
 		// If already in a pending range, return null

@@ -30,7 +30,9 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
 import org.granite.client.tide.collections.AbstractPagedCollection;
+import org.granite.client.tide.server.TideRpcEvent;
 import org.granite.client.util.javafx.ListListenerHelper;
+import org.granite.client.util.javafx.ListenerHelper;
 
 /**
  * @author William DRAI
@@ -39,6 +41,8 @@ public abstract class PagedCollection<E> extends AbstractPagedCollection<E> impl
 	
     private List<E> internalWrappedList = new ArrayList<E>();
     protected ObservableList<E> wrappedList;
+    
+    private ListenerHelper<PageChangeListener<E>> pageChangeHelper = new ListenerHelper<PageChangeListener<E>>(PageChangeListener.class);
     
     
     @Override
@@ -83,6 +87,19 @@ public abstract class PagedCollection<E> extends AbstractPagedCollection<E> impl
 	public void removeListener(InvalidationListener listener) {
 		helper.removeListener(listener);
     }
+	
+	public void addListener(PageChangeListener<E> listener) {
+		pageChangeHelper.addListener(listener);
+	}
+	
+	public void removeListener(PageChangeListener<E> listener) {
+		pageChangeHelper.removeListener(listener);
+	}
+	
+	public void firePageChange(TideRpcEvent event) {
+		pageChangeHelper.fireEvent(this, event);
+	}
+	
 	
 	public class WrappedListListChangeListener implements ListChangeListener<E> {		
 	    @Override
