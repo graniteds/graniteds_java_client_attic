@@ -160,6 +160,7 @@ public class Context {
     }
     
     public void clear(boolean force) {
+    	entityManager.clear();
         instanceStore.clear();
     }
     
@@ -172,8 +173,7 @@ public class Context {
     		((Initializable)instance).init();
     	if (instance.getClass().isAnnotationPresent(PlatformConfigurable.class))
     		platform.configure(instance);
-    }
-    
+    }   
     
     
     public void checkValid() {
