@@ -21,9 +21,9 @@
 package org.granite.client.tide.collections.javafx;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 import javafx.beans.property.ObjectProperty;
@@ -41,7 +41,7 @@ import org.granite.client.tide.server.TideResultEvent;
 import org.granite.logging.Logger;
 import org.granite.tide.data.model.Page;
 import org.granite.tide.data.model.PageInfo;
-import org.granite.util.TypeUtil;    	
+import org.granite.util.TypeUtil;
 
 /**
  * 	Implementation of the Tide paged collection with an generic service backend.<br/>
@@ -76,7 +76,7 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
     
     protected boolean usePage = false;
     
-    private Map<String, Object> filterMap = new HashMap<String, Object>();
+    private Map<String, Object> filterMap = new ConcurrentHashMap<String, Object>();
     private ObjectProperty<F> filter = null;
 	
     

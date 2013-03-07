@@ -23,6 +23,7 @@ package org.granite.client.test.tide.javafx;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -118,6 +119,63 @@ public class TestPagedQuery {
         personList.get(3);	// Trigger loading
         
         if (!sem.tryAcquire(500000, TimeUnit.MILLISECONDS)) {
+        	Assert.fail("Timeout on find");
+        	return;
+        }
+        
+        Assert.assertEquals("Persons count", 2, personList.size());
+        Assert.assertNull("Person element", personList.get(3));
+    }
+
+    @Test
+    public void testPagedQueryConcurrent() throws Exception {        
+        PagedQuery<Person, Map<String, Object>> personList = new PagedQuery<Person, Map<String, Object>>(serverSession);
+        ctx.set("personList", personList);
+        
+        MockRemoteService.setResponseBuilder(new ResponseBuilder() {
+            @Override
+            public Message buildResponseMessage(RemoteService service, RequestMessage request) {
+            	InvocationMessage invocation = (InvocationMessage)request;
+            	
+                if (!invocation.getParameters()[0].equals("personList"))
+                    return new FaultMessage();
+                
+                String method = (String)invocation.getParameters()[2];
+                // Object[] args = ((Object[])invocation.getParameters()[3]);
+                
+                if (method.equals("find")) {
+                    List<Person> list = new ArrayList<Person>();
+                    list.add(new Person());
+                    list.add(new Person());
+                    java.util.Map<String, Object> result = new HashMap<String, Object>();
+                    result.put("firstResult", 0);
+                    result.put("maxResults", 12);
+                    result.put("resultCount", 2);
+                    result.put("resultList", list);
+                    return new ResultMessage(null, null, result);
+                }
+                return null;
+            }
+        });
+        
+        final Semaphore sem = new Semaphore(1);
+        sem.acquire();
+        
+        personList.addListener(new PageChangeListener<Person>() {
+			@Override
+			public void pageChanged(PagedCollection<Person> collection, TideRpcEvent event) {
+				sem.release();
+			}        	
+        });
+        
+        personList.get(3);	// Trigger loading
+        
+        for (int i = 0; i < 500; i++) {
+        	Thread.sleep(1);
+        	personList.getFilterMap().put("lastName" + i, "Test");
+        }
+        
+        if (!sem.tryAcquire(500, TimeUnit.MILLISECONDS)) {
         	Assert.fail("Timeout on find");
         	return;
         }

@@ -20,6 +20,7 @@
 
 package org.granite.client.test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +34,9 @@ import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.messages.requests.InvocationMessage;
 import org.granite.client.messaging.messages.responses.ResultMessage;
+import org.granite.client.messaging.transport.TransportException;
+import org.granite.client.messaging.transport.TransportMessage;
+import org.granite.util.PublicByteArrayOutputStream;
 
 
 public class MockRemoteService extends RemoteService {
@@ -40,6 +44,8 @@ public class MockRemoteService extends RemoteService {
     private static ResponseBuilder responseBuilder = null;
     
     private static Executor executor = Executors.newSingleThreadExecutor();
+    
+    private MockAMFRemotingChannel mockChannel = new MockAMFRemotingChannel();
     
     public MockRemoteService(RemotingChannel remotingChannel, String destination) {
     	super(remotingChannel, destination);
@@ -87,6 +93,16 @@ public class MockRemoteService extends RemoteService {
 			executor.execute(new Runnable() {
 				@Override
 				public void run() {
+					PublicByteArrayOutputStream os = new PublicByteArrayOutputStream(512);
+					TransportMessage message = null;
+					try {
+						message = mockChannel.createMessage(token);
+						message.encode(os);
+					}
+					catch (IOException e) {
+						throw new TransportException("Message serialization failed: " + message.getId(), e);
+					}
+					
 					ResultMessage result = (ResultMessage)responseBuilder.buildResponseMessage(MockRemoteService.this, request);
 					token.dispatchResult(result);
 				}
