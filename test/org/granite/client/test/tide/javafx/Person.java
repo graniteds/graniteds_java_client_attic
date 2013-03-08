@@ -121,7 +121,7 @@ public class Person extends AbstractEntity {
         super.writeExternal(output);
         
         if (isInitialized()) {
-            output.writeObject(((PropertyHolder)this.contacts).getObject());
+            output.writeObject(this.contacts != null ? ((PropertyHolder)this.contacts).getObject() : null);
             output.writeObject(firstName.getValue());
             output.writeObject(lastName.getValue());
             output.writeObject(salutation.getValue());

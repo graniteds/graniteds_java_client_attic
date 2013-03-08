@@ -18,7 +18,7 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.test.tide;
+package org.granite.client.test.tide.javafx;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,8 @@ import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.test.MockRemoteService;
 import org.granite.client.test.ResponseBuilder;
-import org.granite.client.test.tide.javafx.Person;
+import org.granite.client.test.tide.MockInstanceStoreFactory;
+import org.granite.client.test.tide.MockServiceFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
 import org.granite.client.tide.impl.ComponentImpl;
@@ -61,7 +62,7 @@ public class TestSimpleCall {
         contextManager = new SimpleContextManager(new DefaultPlatform());
         contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext();
-        serverSession = new ServerSession("test", "/test", "localhost", 8080);
+        serverSession = new ServerSession("spring", "/test", "localhost", 8080);
         serverSession.setServiceFactory(new MockServiceFactory());
         ctx.set(serverSession);
         serverSession.start();
