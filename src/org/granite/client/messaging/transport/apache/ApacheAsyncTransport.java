@@ -124,6 +124,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 		    HttpPost request = new HttpPost(channel.getUri());
 			request.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
 			request.setHeader("Content-Type", message.getContentType());
+			request.setHeader("GDSClientType", "java");	// Notify the server that we expect Java serialization mode
 			
 			PublicByteArrayOutputStream os = new PublicByteArrayOutputStream(512);
 			try {

@@ -167,7 +167,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 			webSocketClient.setProtocol("org.granite.gravity");
 			
 			String u = uri.toString();
-			u += "?connectId=" + transportMessage.getId();
+			u += "?connectId=" + transportMessage.getId() + "&GDSClientType=java";
 			if (transportMessage.getClientId() != null)
 				u += "&GDSClientId=" + transportMessage.getClientId();
 			else if (channel.getClientId() != null)

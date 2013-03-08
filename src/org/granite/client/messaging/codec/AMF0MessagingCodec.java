@@ -50,7 +50,7 @@ public class AMF0MessagingCodec implements MessagingCodec<AMF0Message> {
 
 	@Override
 	public void encode(AMF0Message message, OutputStream output) throws IOException {
-		SimpleGraniteContext.createThreadInstance(config.getGraniteConfig(), config.getServicesConfig(), new HashMap<String, Object>(0));
+		SimpleGraniteContext.createThreadInstance(config.getGraniteConfig(), config.getServicesConfig(), new HashMap<String, Object>(0), "java");
 		try {
 			AMF0Serializer serializer = new AMF0Serializer(output);
 			serializer.serializeMessage(message);
@@ -62,7 +62,7 @@ public class AMF0MessagingCodec implements MessagingCodec<AMF0Message> {
 
 	@Override
 	public AMF0Message decode(InputStream input) throws IOException {
-		SimpleGraniteContext.createThreadInstance(config.getGraniteConfig(), config.getServicesConfig(), new HashMap<String, Object>(0));
+		SimpleGraniteContext.createThreadInstance(config.getGraniteConfig(), config.getServicesConfig(), new HashMap<String, Object>(0), "java");
 		try {
 			AMF0Deserializer deserializer = new AMF0Deserializer(input);
 			return deserializer.getAMFMessage();
