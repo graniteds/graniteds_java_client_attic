@@ -166,14 +166,15 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 			webSocketClient.setMaxTextMessageSize(1024);
 			webSocketClient.setProtocol("org.granite.gravity");
 			
+			if (transportMessage.getSessionId() != null)
+				webSocketClient.getCookies().put("JSESSIONID", transportMessage.getSessionId());
+			
 			String u = uri.toString();
 			u += "?connectId=" + transportMessage.getId() + "&GDSClientType=java";
 			if (transportMessage.getClientId() != null)
 				u += "&GDSClientId=" + transportMessage.getClientId();
 			else if (channel.getClientId() != null)
 				u += "&GDSClientId=" + channel.getClientId();
-			if (transportMessage.getSessionId() != null)
-				u += "&GDSSessionId=" + transportMessage.getSessionId();
 			
 			connectionFuture = webSocketClient.open(new URI(u), new OnBinaryMessage() {
 				
