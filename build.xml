@@ -64,8 +64,8 @@
         </javac>
         <copy todir="bin">
             <fileset dir="src">
-                <include name="org/granite/config/*.xml"/>
-                <include name="org/granite/client/configuration/*.xml"/>
+                <include name="org/granite/**/*.xml"/>
+                <include name="org/granite/client/**/*.xml"/>
             </fileset>
         </copy>
     </target>
