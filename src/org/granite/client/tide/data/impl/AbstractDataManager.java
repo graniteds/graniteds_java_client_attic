@@ -20,18 +20,23 @@
 
 package org.granite.client.tide.data.impl;
 
+import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.granite.messaging.amf.RemoteClass;
+import javax.validation.Path;
+import javax.validation.Path.Node;
+import javax.validation.TraversableResolver;
+
 import org.granite.client.tide.data.Dirty;
 import org.granite.client.tide.data.Id;
 import org.granite.client.tide.data.Lazy;
 import org.granite.client.tide.data.Version;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.EntityDescriptor;
+import org.granite.messaging.amf.RemoteClass;
 import org.granite.util.Introspector;
 
 /**
@@ -100,5 +105,24 @@ public abstract class AbstractDataManager implements DataManager {
         entityDescriptors.put(entity.getClass(), desc);
 
         return desc;
+    }
+    
+    
+    private TraversableResolver traversableResolver = new TraversableResolverImpl();
+    
+    public TraversableResolver getTraversableResolver() {
+    	return traversableResolver;
+    }
+    
+    public class TraversableResolverImpl implements TraversableResolver {
+    	
+    	public boolean isReachable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
+    		return true;
+    	}
+    	
+    	public boolean isCascadable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
+    		return true;
+    	}
+
     }
 }

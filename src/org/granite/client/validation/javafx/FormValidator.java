@@ -52,13 +52,14 @@ import javafx.scene.control.Skinnable;
 import javafx.scene.control.TextInputControl;
 
 import javax.validation.ConstraintViolation;
+import javax.validation.TraversableResolver;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import javax.validation.groups.Default;
 
-import org.granite.logging.Logger;
 import org.granite.client.util.javafx.DataNotifier;
 import org.granite.client.validation.ValidationResult;
+import org.granite.logging.Logger;
 
 /**
  * @author William DRAI
@@ -88,6 +89,10 @@ public class FormValidator {
 	
 	public FormValidator() {
 		this.validatorFactory = Validation.buildDefaultValidatorFactory();
+	}
+	
+	public FormValidator(TraversableResolver traversableResolver) {
+		this.validatorFactory = Validation.byDefaultProvider().configure().traversableResolver(traversableResolver).buildValidatorFactory();
 	}
 	
 	public FormValidator(ValidatorFactory validatorFactory) {

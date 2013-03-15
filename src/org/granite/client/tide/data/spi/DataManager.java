@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.validation.ConstraintViolation;
+import javax.validation.TraversableResolver;
 
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.tide.collections.ManagedPersistentCollection;
@@ -94,6 +95,8 @@ public interface DataManager {
 
     public void notifyEntityDirtyChange(Object entity, boolean oldDirtyEntity, boolean newDirtyEntity);
     
+    
+    public TraversableResolver getTraversableResolver();
     
     public void notifyConstraintViolations(Object entity, Set<ConstraintViolation<?>> violation);
     

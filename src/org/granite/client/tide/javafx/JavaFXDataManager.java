@@ -21,6 +21,7 @@
 package org.granite.client.tide.javafx;
 
 import java.beans.Introspector;
+import java.lang.annotation.ElementType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +47,9 @@ import javafx.collections.ObservableMap;
 import javafx.event.Event;
 
 import javax.validation.ConstraintViolation;
+import javax.validation.Path;
+import javax.validation.TraversableResolver;
+import javax.validation.Path.Node;
 
 import org.granite.logging.Logger;
 import org.granite.client.persistence.LazyableCollection;
@@ -54,6 +58,7 @@ import org.granite.client.tide.collections.ManagedPersistentMap;
 import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentCollection;
 import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentMap;
 import org.granite.client.tide.data.Identifiable;
+import org.granite.client.tide.data.Lazyable;
 import org.granite.client.tide.data.Transient;
 import org.granite.client.tide.data.impl.AbstractDataManager;
 import org.granite.client.tide.data.spi.EntityDescriptor;
@@ -432,13 +437,40 @@ public class JavaFXDataManager extends AbstractDataManager {
             }
         }
     }
-
-
+    
+    
     public void notifyConstraintViolations(Object entity, Set<ConstraintViolation<?>> violations) {
 		if (!(entity instanceof DataNotifier))
 			return;
 		ConstraintViolationEvent event = new ConstraintViolationEvent(ConstraintViolationEvent.CONSTRAINT_VIOLATION, violations);
 		Event.fireEvent((DataNotifier)entity, event);
+    }
+    
+    
+    private TraversableResolver traversableResolver = new TraversableResolverImpl();
+    
+    @Override
+    public TraversableResolver getTraversableResolver() {
+    	return traversableResolver;
+    }
+
+    public class TraversableResolverImpl implements TraversableResolver {
+    	
+    	public boolean isReachable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
+    		if (bean == null || propertyPath.getName() == null || ElementType.TYPE.equals(elementType))
+    			return true;
+    		Object value = getProperty(bean, propertyPath.getName());
+    		if (value instanceof LazyableCollection)
+    			return ((LazyableCollection)value).isInitialized();
+    		if (value instanceof Lazyable)
+    			return ((Lazyable)value).isInitialized();
+    		return true;
+    	}
+    	
+    	public boolean isCascadable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
+    		return true;
+    	}
+
     }
 
 }
