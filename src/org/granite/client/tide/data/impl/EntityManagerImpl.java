@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import org.granite.client.tide.data.Conflict;
 import org.granite.client.tide.data.DataConflictListener;
 import org.granite.client.tide.data.DataMerger;
 import org.granite.client.tide.data.EntityManager;
+import org.granite.client.tide.data.EntityProxy;
 import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.Lazyable;
 import org.granite.client.tide.data.PersistenceManager;
@@ -306,20 +308,11 @@ public class EntityManagerImpl implements EntityManager {
         PersistenceManager.setEntityManager(entity, this);
         if (putInCache) {
         	getUid(entity);
-            entitiesByUid.put(entity);
+            if (entitiesByUid.put(entity) == null)
+				dirtyCheckContext.addUnsaved(entity);
         }
     }
-    
-    /**
-     *  @private
-     *  Detach an entity from this context only if it's not persistent
-     * 
-     *  @param entity an entity
-     */
-    public void detachEntity(Identifiable entity) {
-        detachEntity(entity, true);
-    }
-        
+       
     
     /**
      *  @private
@@ -328,7 +321,13 @@ public class EntityManagerImpl implements EntityManager {
      *  @param entity an entity
      *  @param removeFromCache remove entity from cache
      */
-    public void detachEntity(Identifiable entity, boolean removeFromCache) {
+    public void detachEntity(Identifiable entity, boolean removeFromCache, boolean forceRemove) {
+		if (!forceRemove) {
+			String versionPropName = dataManager.getEntityDescriptor(entity).getVersionPropertyName();
+			if (versionPropName == null || dataManager.getProperty(entity, versionPropName) != null)
+				return;
+		}
+		
         dirtyCheckContext.markNotDirty(entity, entity);
         
         PersistenceManager.setEntityManager(entity, null);
@@ -346,7 +345,64 @@ public class EntityManagerImpl implements EntityManager {
             return true;
         return false;
     }
-
+    
+    
+	/**
+	 *	@private
+	 *  Internal implementation of object detach
+	 * 
+	 *  @param object object
+	 *  @param cache internal cache to avoid graph loops
+	 */ 
+	public void detach(Object object, IdentityHashMap<Object, Object> cache, boolean forceRemove) {
+		if (object == null || ObjectUtil.isSimple(object))
+			return;
+		
+		if (cache.containsKey(object))
+			return;
+		cache.put(object, object);
+		
+		List<String> excludes = new ArrayList<String>();
+		excludes.add("uid");
+		
+		if (object instanceof Identifiable) {
+			EntityDescriptor desc = dataManager.getEntityDescriptor(object);
+			if (desc.getIdPropertyName() != null)
+				excludes.add(desc.getIdPropertyName());
+			if (desc.getVersionPropertyName() != null)
+				excludes.add(desc.getVersionPropertyName());
+		}
+		
+		Map<String, Object> values = dataManager.getPropertyValues(object, excludes, false, false);
+		
+		if (object instanceof Identifiable && entityReferences.containsKey(object)) {
+			detachEntity((Identifiable)object, true, forceRemove);
+			
+			for (Entry<String, Object> me : values.entrySet())
+				removeReference(me.getValue(), object, me.getKey(), null);
+		}
+		
+		for (Entry<String, Object> me : values.entrySet()) {
+			Object val = me.getValue();
+			
+			if (val instanceof Collection && !(val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())) {
+				Collection<?> coll = (Collection<?>)val;
+				for (Object o : coll)
+					detach(o, cache, forceRemove);
+			}
+			else if (val instanceof Map<?, ?> && !(val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())) {
+				Map<?, ?> map = (Map<?, ?>)val;
+				for (Entry<?, ?> entry : map.entrySet()) {
+					detach(entry.getKey(), cache, forceRemove);
+					detach(entry.getValue(), cache, forceRemove);
+				}
+			}
+			else if (val != null && !ObjectUtil.isSimple(val)) {
+				detach(val, cache, forceRemove);
+			}
+		}
+	}
+    
     /**
      *  @private 
      *  Retrives an entity in the cache from its uid
@@ -361,6 +417,9 @@ public class EntityManagerImpl implements EntityManager {
         }
         else if (object instanceof EntityRef) {
             entity = entitiesByUid.get(((EntityRef)object).getClassName() + ":" + ((EntityRef)object).getUid());
+        }
+        else if (object instanceof String) {
+        	entity = entitiesByUid.get((String)object);
         }
 
         if (entity != null)
@@ -548,13 +607,13 @@ public class EntityManagerImpl implements EntityManager {
      *  @param propName name of the parent entity property that references the entity
      *  @param res expression to remove
      */ 
-    public void removeReference(Object obj, Object parent, String propName, Expression res) {
+    public boolean removeReference(Object obj, Object parent, String propName, Expression res) {
         if (obj instanceof ManagedPersistentAssociation)
             obj = ((ManagedPersistentAssociation)obj).getCollection();
         
         List<Object> refs = entityReferences.get(obj);
         if (refs == null)
-            return;
+            return true;
         
         int idx = -1;
         if (parent instanceof Identifiable) {
@@ -584,14 +643,19 @@ public class EntityManagerImpl implements EntityManager {
         if (idx >= 0)
             refs.remove(idx);
         
+        boolean removed = false;
         if (refs.size() == 0) {
             entityReferences.remove(obj);
+            removed = true;
             
             if (obj instanceof Identifiable)
-                detachEntity((Identifiable)obj, true);
+                detachEntity((Identifiable)obj, true, false);
             
             dataManager.stopTracking(obj, parent);
         }
+        
+        if (obj instanceof LazyableCollection && !((LazyableCollection)obj).isInitialized())
+        	return removed;
         
         if (obj instanceof Iterable<?>) {
             for (Object elt : (Iterable<?>)obj)
@@ -607,6 +671,8 @@ public class EntityManagerImpl implements EntityManager {
                 removeReference(me.getValue(), parent, propName, null);
             }
         }
+        
+        return removed;
     }
     
     
@@ -637,6 +703,7 @@ public class EntityManagerImpl implements EntityManager {
         
         try {
             mergeContext.setMerging(true);
+            int stackSize = mergeContext.getMergeStackSize();
             
             boolean addRef = false;
             boolean fromCache = false;
@@ -648,31 +715,29 @@ public class EntityManagerImpl implements EntityManager {
             }
             else {
                 // Give a chance to intercept received value so we can apply changes on private values
-                // TODO: differential updates
-//                if (_mergeContext.proxyGetter != null && parent != null && propertyName != null)
-//                    next = obj = _mergeContext.proxyGetter(obj, parent, propertyName);
+				Object currentMerge = mergeContext.getCurrentMerge();
+				if (currentMerge instanceof EntityProxy) {
+					if (!((EntityProxy)currentMerge).hasProperty(propertyName))
+						return previous;
+					next = obj = ((EntityProxy)currentMerge).getProperty(propertyName);
+				}
 
                 // Clear change tracking
+				dataManager.stopTracking(previous, parent);
+				
                 if (obj == null) {
                     next = null;
                 }
                 else if (((obj instanceof LazyableCollection && !((LazyableCollection)obj).isInitialized()) 
                     || (obj instanceof LazyableCollection && !(previous instanceof LazyableCollection))) && parent instanceof Identifiable && propertyName != null) {
-                    dataManager.stopTracking(previous, parent); 
                     next = mergePersistentCollection(mergeContext, (LazyableCollection)obj, previous, null, (Identifiable)parent, propertyName);
                     addRef = true;
                 }
                 else if (obj instanceof List<?>) {
-                    dataManager.stopTracking(previous, parent); 
                     next = mergeCollection(mergeContext, (List<Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
-//                else if (obj != null && obj.getClass().isArray()) {
-//                    next = mergeArray(mergeContext, obj, previous, parent == null ? expr : null, parent, propertyName);
-//                    addRef = true;
-//                }
                 else if (obj instanceof Map<?, ?>) {
-                    dataManager.stopTracking(previous, parent); 
                     next = mergeMap(mergeContext, (Map<Object, Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
@@ -685,8 +750,6 @@ public class EntityManagerImpl implements EntityManager {
                     if (customMergers != null) {
                         for (DataMerger merger : customMergers) {
                             if (merger.accepts(obj)) {
-                                dataManager.stopTracking(previous, parent);
-                                
                                 next = merger.merge(mergeContext, obj, previous, parent == null ? expr : null, parent, propertyName);
 
                                 // Keep notified of collection updates to notify the server at next remote call
@@ -731,6 +794,9 @@ public class EntityManagerImpl implements EntityManager {
                 });
             }
             
+			if (mergeContext.getMergeStackSize() > stackSize)
+				mergeContext.popMerge();
+			
             return next;
         }
         catch (Exception e) {
@@ -779,7 +845,10 @@ public class EntityManagerImpl implements EntityManager {
             }
         }
         else if (obj instanceof Identifiable) {
-            p = entitiesByUid.get(obj.getClass().getName() + ":" + getUid((Identifiable)obj));
+        	if (obj instanceof EntityProxy)
+                p = entitiesByUid.get(((EntityProxy)obj).getClassName() + ":" + getUid((Identifiable)obj));
+        	else
+        		p = entitiesByUid.get(obj.getClass().getName() + ":" + getUid((Identifiable)obj));
             if (p != null) {
                 // Trying to merge an entity that is already cached with itself: stop now, this is not necessary to go deeper in the object graph
                 // it should be already instrumented and tracked
@@ -790,8 +859,6 @@ public class EntityManagerImpl implements EntityManager {
                 dest = previous;
             }
         }
-        
-        dataManager.stopTracking(previous, parent);
         
         if (dest != previous && previous != null && (ObjectUtil.objectEquals(dataManager, previous, obj)
             || (parent != null && !(previous instanceof Identifiable))))    // GDS-649 Case of embedded objects 
@@ -830,7 +897,7 @@ public class EntityManagerImpl implements EntityManager {
         if (!fromCache && dest instanceof Identifiable)
             entitiesByUid.put((Identifiable)dest);            
         
-        mergeContext.putInCache(obj, dest);
+        mergeContext.pushMerge(obj, dest);
         
         boolean ignore = false;
         if (dest instanceof Identifiable) {
@@ -864,13 +931,14 @@ public class EntityManagerImpl implements EntityManager {
                         // Handle changes when version number is increased
                         mergeContext.markVersionChanged(dest);
                         
-                        if (mergeContext.getExternalDataSessionId() != null && dirtyCheckContext.isEntityChanged((Identifiable)dest)) {
+						boolean entityChanged = dirtyCheckContext.isEntityChanged((Identifiable)dest);
+                		if (mergeContext.getExternalDataSessionId() != null && entityChanged) {
                             // Conflict between externally received data and local modifications
                             log.error("conflict with external data detected on %s (current: %d, received: %d)",
                                 dest.toString(), oldVersion, newVersion);
                             
                             // Check incoming values and local values
-                            if (dirtyCheckContext.checkAndMarkNotDirty(dest, obj, (Identifiable)dest)) {
+                            if (dirtyCheckContext.checkAndMarkNotDirty(mergeContext, dest, obj)) {
                                 // Incoming data is different from local data
                                 mergeContext.addConflict((Identifiable)dest, (Identifiable)obj);
                                 
@@ -896,28 +964,20 @@ public class EntityManagerImpl implements EntityManager {
             else
                 mergeContext.markVersionChanged(dest);
             
-            if (!ignore)
-                defaultMerge(mergeContext, obj, dest, expr, parent, propertyName);
+            if (!ignore) {
+				if (obj instanceof EntityProxy) {
+					mergeContext.setCurrentMerge(obj);
+					defaultMerge(mergeContext, ((EntityProxy)obj).getWrappedObject(), dest, expr, parent, propertyName);
+				}
+				else
+					defaultMerge(mergeContext, obj, dest, expr, parent, propertyName);
+            }
         }
         else
             defaultMerge(mergeContext, obj, dest, expr, parent, propertyName);
         
-        /*  GDS-863
-        if (previous && obj !== previous && previous is Identifiable && _dirtyCheckContext.isSaved(previous)) {
-            var pce:PropertyChangeEvent = new PropertyChangeEvent(PropertyChangeEvent.PROPERTY_CHANGE,
-                false, false, PropertyChangeEventKind.UPDATE, null, previous, previous);
-            previous.dispatchEvent(pce);
-        }
-        */
-
-        if (dest != null && !ignore && !mergeContext.isResolvingConflict()) {
-            // Force or check non-dirty state of local entity that has just been merged
-            if (mergeContext.isMergeUpdate() && ((dest instanceof Identifiable && mergeContext.hasVersionChanged(dest)) 
-            		|| (!(dest instanceof Identifiable) && parent instanceof Identifiable && mergeContext.hasVersionChanged(parent))))
-                dirtyCheckContext.markNotDirty(dest, dest instanceof Identifiable ? null : (Identifiable)parent);
-            else if ((dest instanceof Identifiable && obj instanceof Identifiable) || (!(dest instanceof Identifiable && parent instanceof Identifiable)))
-                dirtyCheckContext.checkAndMarkNotDirty(dest, obj, dest instanceof Identifiable ? (Identifiable)dest : (Identifiable)parent);
-        }
+        if (dest != null && !ignore && !mergeContext.isSkipDirtyCheck() && !mergeContext.isResolvingConflict())
+            dirtyCheckContext.checkAndMarkNotDirty(mergeContext, dest, obj);
         
         if (dest != null)
             log.debug("mergeEntity result: %s", dest.toString());
@@ -971,7 +1031,8 @@ public class EntityManagerImpl implements EntityManager {
         	if (desc.getVersionPropertyName() != null && dataManager.getProperty(parent, desc.getVersionPropertyName()) != null
         		&& desc.isLazy(propertyName) && previous instanceof LazyableCollection && ((LazyableCollection)previous).isInitialized()) {
                 log.debug("uninitialize lazy collection %s", ObjectUtil.toString(previous));
-                mergeContext.putInCache(coll, previous);
+                mergeContext.pushMerge(coll, previous);
+                
                 ((LazyableCollection)previous).uninitialize();
                 return (List<?>)previous;
             }
@@ -979,7 +1040,7 @@ public class EntityManagerImpl implements EntityManager {
 
         if (previous != null && previous instanceof LazyableCollection && !((LazyableCollection)previous).isInitialized()) {
             log.debug("initialize lazy collection %s", ObjectUtil.toString(previous));
-            mergeContext.putInCache(coll, previous);
+            mergeContext.pushMerge(coll, previous);
             
             ((LazyableCollection)previous).initializing();
             
@@ -1017,7 +1078,7 @@ public class EntityManagerImpl implements EntityManager {
         else
             list = (List<Object>)coll;
                         
-        mergeContext.putInCache(coll, list);
+        mergeContext.pushMerge(coll, list);
 
         List<Object> prevColl = list != coll ? list : null;
         List<Object> destColl = prevColl;
@@ -1089,11 +1150,14 @@ public class EntityManagerImpl implements EntityManager {
             }
         }
         if (destColl != null && mergeContext.isMergeUpdate()) {
-            if (!mergeContext.isResolvingConflict())
+            if (!mergeContext.isResolvingConflict() && !mergeContext.isSkipDirtyCheck())
                 dirtyCheckContext.markNotDirty(previous, (Identifiable)parent);
             
             nextList = prevColl;
         }
+        else if (prevColl instanceof LazyableCollection && !mergeContext.isMergeUpdate()) {
+			nextList = prevColl;
+		}
         else
             nextList = coll;
         
@@ -1106,47 +1170,13 @@ public class EntityManagerImpl implements EntityManager {
         else
             log.debug("mergeCollection result: %s", ObjectUtil.toString(nextList));
         
-        mergeContext.putInCache(coll, nextList);
+        mergeContext.pushMerge(coll, nextList, false);
         
         if (!tracking)
             dataManager.startTracking(nextList, parent);
 
         return nextList;
     }
-    
-//    /**
-//     *  @private 
-//     *  Merge an array coming from the server in the context
-//     *
-//     *  @param array external collection
-//     *  @param previous previously existing array in the context (can be null if no existing array)
-//     *  @param expr current path from the context
-//     *  @param parent owner objects
-//     *  @param propertyName property name in owner object
-//     * 
-//     *  @return merged array
-//     */ 
-//    private Object mergeArray(MergeContext mergeContext, Object array, Object previous, Expression expr, Object parent, String propertyName) {
-//        log.debug("mergeArray: %s previous %s", ObjectUtil.toString(array), ObjectUtil.toString(previous));
-//        
-//        Object prevArray = previous.getClass().isArray() && Array.getLength(array) == Array.getLength(previous) && mergeContext.getSourceEntityManager() == null 
-//            ? previous : Array.newInstance(previous.getClass().getComponentType(), Array.getLength(array));
-////        if (Array.getLength(prevArray) > 0 && prevArray !== array)
-////            Arrays.prevArray.splice(0, prevArray.length);
-//        mergeContext.putInCache(array, prevArray);
-//        
-//        for (int i = 0; i < Array.getLength(array); i++) {
-//            Object obj = Array.get(array, i);
-//            obj = mergeExternal(mergeContext, obj, null, propertyName != null ? expr : null, propertyName != null ? parent : null, propertyName, null, false);
-//            
-//            if (mergeContext.isMergeUpdate())
-//                Array.set(prevArray, i, obj);
-//        }
-//        
-//        log.debug("mergeArray result: %s", ObjectUtil.toString(prevArray));
-//        
-//        return prevArray;
-//    }
 
     /**
      *  @private 
@@ -1168,7 +1198,8 @@ public class EntityManagerImpl implements EntityManager {
         	if (desc.getVersionPropertyName() != null && dataManager.getProperty(parent, desc.getVersionPropertyName()) != null
         		&& desc.isLazy(propertyName) && previous instanceof LazyableCollection && ((LazyableCollection)previous).isInitialized()) {
                 log.debug("uninitialize lazy map %s", ObjectUtil.toString(previous));
-                mergeContext.putInCache(map, previous);
+                
+                mergeContext.pushMerge(map, previous);
                 ((LazyableCollection)previous).uninitialize();
                 return (Map<?, ?>)previous;
             }
@@ -1176,7 +1207,7 @@ public class EntityManagerImpl implements EntityManager {
 
         if (previous != null && previous instanceof LazyableCollection && !((LazyableCollection)previous).isInitialized()) {
             log.debug("initialize lazy map %s", ObjectUtil.toString(previous));
-            mergeContext.putInCache(map, previous);
+            mergeContext.pushMerge(map, previous);
             
             ((LazyableCollection)previous).initializing();
             
@@ -1210,7 +1241,7 @@ public class EntityManagerImpl implements EntityManager {
         }
         else
             m = map;
-        mergeContext.putInCache(map, m);
+        mergeContext.pushMerge(map, m);
         
         Map<Object, Object> prevMap = m != map ? m : null;
         
@@ -1246,7 +1277,7 @@ public class EntityManagerImpl implements EntityManager {
                 }
             }
             
-            if (mergeContext.isMergeUpdate() && !mergeContext.isResolvingConflict())
+            if (mergeContext.isMergeUpdate() && !mergeContext.isResolvingConflict() && !mergeContext.isSkipDirtyCheck())
                 dirtyCheckContext.markNotDirty(previous, (Identifiable)parent);
             
             nextMap = prevMap;
@@ -1267,10 +1298,13 @@ public class EntityManagerImpl implements EntityManager {
             
         if (parent instanceof Identifiable && propertyName != null && nextMap instanceof LazyableCollection && !(nextMap instanceof ManagedPersistentMap)) {
             log.debug("create initialized persistent map from %s", ObjectUtil.toString(nextMap));
+            
             nextMap = dataManager.newPersistentMap((Identifiable)parent, propertyName, (LazyableCollection)nextMap);
         }
         else
             log.debug("mergeMap result: %s", ObjectUtil.toString(nextMap));
+        
+        mergeContext.pushMerge(map, nextMap, false);
         
         if (!tracking)
             dataManager.startTracking(nextMap, parent);
@@ -1293,7 +1327,7 @@ public class EntityManagerImpl implements EntityManager {
      */ 
     protected Object mergePersistentCollection(MergeContext mergeContext, LazyableCollection coll, Object previous, Expression expr, Identifiable parent, String propertyName) {
         if (previous instanceof ManagedPersistentCollection<?>) {
-            mergeContext.putInCache(coll, previous);
+            mergeContext.pushMerge(coll, previous);
             if (((LazyableCollection)previous).isInitialized()) {
                 if (mergeContext.isUninitializeAllowed() && mergeContext.hasVersionChanged(parent)) {
                     log.debug("uninitialize lazy collection %s", ObjectUtil.toString(previous));
@@ -1306,7 +1340,7 @@ public class EntityManagerImpl implements EntityManager {
             return previous;
         }
         else if (previous instanceof ManagedPersistentMap<?, ?>) {
-            mergeContext.putInCache(coll, previous);
+            mergeContext.pushMerge(coll, previous);
             if (((LazyableCollection)previous).isInitialized()) {
                 if (mergeContext.isUninitializeAllowed() && mergeContext.hasVersionChanged(parent)) {
                     log.debug("uninitialize lazy map %s", ObjectUtil.toString(previous));
@@ -1320,12 +1354,18 @@ public class EntityManagerImpl implements EntityManager {
         }
         
         if (coll instanceof Map<?, ?>) {
-            ManagedPersistentMap<Object, Object> pmap = dataManager.newPersistentMap(parent, propertyName, 
-                (coll instanceof ManagedPersistentMap<?, ?>
-                        ? ((ManagedPersistentMap<?, ?>)coll).getCollection().clone(mergeContext.isUninitializing()) 
-                        : ((LazyableCollection)coll)));
+			LazyableCollection pm = (LazyableCollection)coll;
+			if (previous instanceof LazyableCollection)
+				pm = (LazyableCollection)previous;
+			if (coll instanceof ManagedPersistentMap<?, ?>)
+				pm = ((ManagedPersistentMap<?, ?>)coll).clone(mergeContext.isUninitializing());
+			else if (mergeContext.getSourceEntityManager() != null)
+				pm = pm.clone(mergeContext.isUninitializing());
+			
+        	ManagedPersistentMap<Object, Object> pmap = dataManager.newPersistentMap(parent, propertyName, pm);
             pmap.setServerSession(mergeContext.getServerSession());
-            mergeContext.putInCache(coll, pmap);
+            mergeContext.pushMerge(coll, pmap);
+            
             if (pmap.isInitialized()) {
                 List<Object> keys = new ArrayList<Object>(pmap.keySet());
                 for (Object key : keys) {
@@ -1341,12 +1381,18 @@ public class EntityManagerImpl implements EntityManager {
             return pmap;
         }
         
-        ManagedPersistentCollection<Object> pcoll = dataManager.newPersistentCollection(parent, propertyName,
-            (coll instanceof ManagedPersistentCollection<?>
-                    ? ((ManagedPersistentCollection<?>)coll).getCollection().clone(mergeContext.isUninitializing()) 
-                    : (LazyableCollection)coll));
+		LazyableCollection pc = (LazyableCollection)coll;
+		if (previous instanceof LazyableCollection)
+			pc = (LazyableCollection)previous;
+		if (coll instanceof ManagedPersistentCollection<?>)
+			pc = duplicatePersistentCollection(mergeContext, ((ManagedPersistentCollection<?>)coll).getCollection(), parent, propertyName);
+		else if (mergeContext.getSourceEntityManager() != null)
+			pc = duplicatePersistentCollection(mergeContext, pc, parent, propertyName);
+		
+    	ManagedPersistentCollection<Object> pcoll = dataManager.newPersistentCollection(parent, propertyName, pc);
         pcoll.setServerSession(mergeContext.getServerSession());
-        mergeContext.putInCache(coll, pcoll);
+        mergeContext.pushMerge(coll, pcoll);
+        
         if (pcoll.isInitialized()) {
             for (int i = 0; i < pcoll.size(); i++) {
                 Object obj = mergeExternal(mergeContext, pcoll.get(i), null, null, parent, propertyName, null, false);
@@ -1358,6 +1404,20 @@ public class EntityManagerImpl implements EntityManager {
         else if (parent instanceof Identifiable && propertyName != null)
             dataManager.getEntityDescriptor(parent).setLazy(propertyName);
         return pcoll;
+    }
+    
+    private LazyableCollection duplicatePersistentCollection(MergeContext mergeContext, Object coll, Object parent, String propertyName) {
+    	if (!(coll instanceof LazyableCollection))
+			throw new RuntimeException("Not a persistent collection/map " + ObjectUtil.toString(coll));
+		
+		LazyableCollection ccoll = ((LazyableCollection)coll).clone(mergeContext.isUninitializing());
+		
+		if (mergeContext.isUninitializing() && parent != null && propertyName != null) {
+			EntityDescriptor desc = dataManager.getEntityDescriptor((Identifiable)parent);
+			if (desc.getVersionPropertyName() != null && dataManager.getProperty(parent, desc.getVersionPropertyName()) != null && desc.isLazy(propertyName))
+				ccoll.uninitialize();
+		}
+		return ccoll;
     }
     
     
@@ -1380,7 +1440,7 @@ public class EntityManagerImpl implements EntityManager {
             mergeContext.setExternalDataSessionId(externalDataSessionId);        
             
             Object next = externalDataSessionId != null
-                ? internalMergeExternalData(mergeContext, obj, null, null) // Force handling of external data
+                ? internalMergeExternalData(mergeContext, obj, null, null, null) // Force handling of external data
                 : mergeExternal(mergeContext, obj, null, null, null, null, null, false);
             
             return next;
@@ -1401,15 +1461,15 @@ public class EntityManagerImpl implements EntityManager {
      */
 
     public Object mergeExternalData(Object obj) {
-        return mergeExternalData(null, obj, null, null, null);
+        return mergeExternalData(null, obj, null, null, null, null);
     }
     
     public Object mergeExternalData(ServerSession serverSession, Object obj) {
-        return mergeExternalData(serverSession, obj, null, null, null);
+        return mergeExternalData(serverSession, obj, null, null, null, null);
     }
-
-    public Object mergeExternalData(Object obj, Object prev, String externalDataSessionId, List<Object> removals) {
-    	return mergeExternalData(null, obj, prev, externalDataSessionId, removals);
+    
+    public Object mergeExternalData(Object obj, Object prev, String externalDataSessionId, List<Object> removals, List<Object> persists) {
+    	return mergeExternalData(null, obj, prev, externalDataSessionId, removals, persists);
     }
     
     /**
@@ -1423,13 +1483,13 @@ public class EntityManagerImpl implements EntityManager {
      *
      *  @return merged object (should === previous when previous not null)
      */
-    public Object mergeExternalData(ServerSession serverSession, Object obj, Object prev, String externalDataSessionId, List<Object> removals) {
+    public Object mergeExternalData(ServerSession serverSession, Object obj, Object prev, String externalDataSessionId, List<Object> removals, List<Object> persists) {
         try {
             MergeContext mergeContext = new MergeContext(this, dirtyCheckContext, null);
             mergeContext.setServerSession(serverSession);
             mergeContext.setExternalDataSessionId(externalDataSessionId);
             
-            return internalMergeExternalData(mergeContext, obj, prev, removals);
+            return internalMergeExternalData(mergeContext, obj, prev, removals, persists);
         }
         finally {
             MergeContext.destroy(this);
@@ -1447,7 +1507,7 @@ public class EntityManagerImpl implements EntityManager {
      *
      *  @return merged object (should === previous when previous not null)
      */
-    public Object internalMergeExternalData(MergeContext mergeContext, Object obj, Object prev, List<Object> removals) {
+    public Object internalMergeExternalData(MergeContext mergeContext, Object obj, Object prev, List<Object> removals, List<Object> persists) {
         Map<String, Object> savedContext = null;
         
         try {
@@ -1457,7 +1517,7 @@ public class EntityManagerImpl implements EntityManager {
             Object next = mergeExternal(mergeContext, obj, prev, null, null, null, null, false);
             
             if (removals != null)
-                handleRemovals(mergeContext, removals);
+                handleRemovalsAndPersists(mergeContext, removals, persists);
             
             if (mergeContext.getExternalDataSessionId() != null) {
                 handleMergeConflicts(mergeContext);         
@@ -1519,7 +1579,7 @@ public class EntityManagerImpl implements EntityManager {
      *
      *  @param removals array of entity instances to remove from the entity manager cache
      */
-    public void handleRemovals(MergeContext mergeContext, List<Object> removals) {
+    public void handleRemovalsAndPersists(MergeContext mergeContext, List<Object> removals, List<Object> persists) {
         for (Object removal : removals) {
             Object entity = getCachedObject(removal, true);
             if (entity == null) // Not found in local cache, cannot remove
@@ -1533,41 +1593,52 @@ public class EntityManagerImpl implements EntityManager {
                 mergeContext.addConflict((Identifiable)entity, null);
             }
             else {
-                List<Object[]> owners = getOwnerEntities(entity);
-                if (owners != null) {
-                    for (Object[] owner : owners) {
-                        Object val = dataManager.getProperty(owner[0], (String)owner[1]);
-                        if (val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())
-                            continue;
-                        if (val instanceof List<?>) {
-                            int idx = ((List<?>)val).indexOf(entity);
-                            if (idx >= 0)
-                                ((List<?>)val).remove(idx);
-                        }
-                        else if (val instanceof Map<?, ?>) {
-                            Map<?, ?> map = (Map<?, ?>)val;
-                            if (map.containsKey(entity))
-                                map.remove(entity);
-
-                            for (Iterator<?> ikey = map.keySet().iterator(); ikey.hasNext(); ) {
-                                Object key = ikey.next();
-                                if (ObjectUtil.objectEquals(dataManager, map.get(key), entity))
-                                    ikey.remove();
-                            }
-                        }
-                    }
-                }
-
-                /* May not be necessary, should be cleaned up by weak reference */
-                Map<String, Object> pvalues = dataManager.getPropertyValues(entity, false, true);
-                for (Object val : pvalues.values()) {
-                    if (val instanceof List<?> || val instanceof Map<?, ?> || (val != null && val.getClass().isArray()))
-                        entityReferences.remove(val);
-                }
-
-                detachEntity((Identifiable)entity);
+            	boolean saveMerging = mergeContext.isMerging();
+            	try {
+            		mergeContext.setMerging(true);
+	            		
+	                List<Object[]> owners = getOwnerEntities(entity);
+	                if (owners != null) {
+	                    for (Object[] owner : owners) {
+	                        Object val = dataManager.getProperty(owner[0], (String)owner[1]);
+	                        if (val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())
+	                            continue;
+	                        if (val instanceof List<?>) {
+	                            int idx = ((List<?>)val).indexOf(entity);
+	                            if (idx >= 0)
+	                                ((List<?>)val).remove(idx);
+	                        }
+	                        else if (val instanceof Map<?, ?>) {
+	                            Map<?, ?> map = (Map<?, ?>)val;
+	                            if (map.containsKey(entity))
+	                                map.remove(entity);
+	
+	                            for (Iterator<?> ikey = map.keySet().iterator(); ikey.hasNext(); ) {
+	                                Object key = ikey.next();
+	                                if (ObjectUtil.objectEquals(dataManager, map.get(key), entity))
+	                                    ikey.remove();
+	                            }
+	                        }
+	                    }
+	                }
+	                
+	                /* May not be necessary, should be cleaned up by weak reference */
+	                Map<String, Object> pvalues = dataManager.getPropertyValues(entity, false, true);
+	                for (Object val : pvalues.values()) {
+	                    if (val instanceof List<?> || val instanceof Map<?, ?> || (val != null && val.getClass().isArray()))
+	                        entityReferences.remove(val);
+	                }
+	                entityReferences.remove(entity);
+	                
+	                detach((Identifiable)entity, new IdentityHashMap<Object, Object>(), true);
+            	}
+				finally {
+					mergeContext.setMerging(saveMerging);
+				}
             }
         }
+		
+		dirtyCheckContext.fixRemovalsAndPersists(mergeContext, removals, persists);
     }
     
     
@@ -1586,7 +1657,7 @@ public class EntityManagerImpl implements EntityManager {
      */
     public void handleMergeConflicts(MergeContext mergeContext) {
         // Clear thread cache so acceptClient/acceptServer can work inside the conflicts handler
-        mergeContext.clearCache();
+        // mergeContext.clearCache();
         mergeContext.initMergeConflicts();
 
         if (mergeContext.getMergeConflicts() != null) {
@@ -1607,7 +1678,7 @@ public class EntityManagerImpl implements EntityManager {
             mergeContext.setResolvingConflict(resolving);
             
             if (modifiedEntity == null)
-                handleRemovals(mergeContext, Collections.singletonList(localEntity));
+                handleRemovalsAndPersists(mergeContext, Collections.singletonList(localEntity), Collections.emptyList());
             else
                 mergeExternal(mergeContext, modifiedEntity, localEntity, null, null, null, null, false);
     
@@ -1690,6 +1761,14 @@ public class EntityManagerImpl implements EntityManager {
         }
     }
     
+	
+    public boolean isEntityChanged(Identifiable entity) {
+        return dirtyCheckContext.isEntityChanged(entity);
+    }
+    
+	public boolean isEntityDeepChanged(Identifiable entity) {
+		return dirtyCheckContext.isEntityDeepChanged(entity);
+	}
     
     /**
      *  Discard changes of entity from last version received from the server
@@ -2170,16 +2249,19 @@ public class EntityManagerImpl implements EntityManager {
     public void handleUpdates(MergeContext mergeContext, String sourceSessionId, List<Update> updates) {
         List<Object> merges = new ArrayList<Object>();
         List<Object> removals = new ArrayList<Object>();
+        List<Object> persists = new ArrayList<Object>();
         
         for (Update update : updates) {
             if (update.getKind() == UpdateKind.PERSIST || update.getKind() == UpdateKind.UPDATE)
                 merges.add(update.getEntity());
             else if (update.getKind() == UpdateKind.REMOVE)
                 removals.add(update.getEntity());
+            if (update.getKind() == UpdateKind.PERSIST)
+            	persists.add(update.getEntity());
         }
         
         mergeContext.setExternalDataSessionId(sourceSessionId);
-        internalMergeExternalData(mergeContext, merges, null, removals);
+        internalMergeExternalData(mergeContext, merges, null, removals, persists);
         
         for (Update update : updates)
             update.setEntity(getCachedObject(update.getEntity(), update.getKind() != UpdateKind.REMOVE));

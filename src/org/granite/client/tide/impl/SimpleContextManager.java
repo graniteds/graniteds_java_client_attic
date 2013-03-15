@@ -220,10 +220,14 @@ public class SimpleContextManager implements ContextManager {
         contextsToDestroy.clear();
         
         Context globalCtx = contextsById.get(DEFAULT_CONTEXT);
+        List<String> contextIdsToDestroy = new ArrayList<String>();
         for (Entry<String, Context> ectx : contextsById.entrySet()) {
             if (!ectx.getKey().equals(DEFAULT_CONTEXT) && ectx.getValue().getParentContext() == globalCtx)
-                destroyContext(ectx.getKey(), force);
+                contextIdsToDestroy.add(ectx.getKey());
         }
+        for (String contextId : contextIdsToDestroy)
+        	destroyContext(contextId, force);
+        
         globalCtx.clear(force);
     }
     

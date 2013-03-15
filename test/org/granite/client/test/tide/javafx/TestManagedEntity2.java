@@ -55,7 +55,7 @@ public class TestManagedEntity2 {
         map2.put("maxResults", 100);
         map2.put("resultList", FXCollections.observableArrayList(new Person(1L, 0L, "P1", "A1", "B1"), new Person(3L, 0L, "P3", "A3", "B3")));
         
-        entityManager.mergeExternalData(map2, map, null, null);
+        entityManager.mergeExternalData(map2, map, null, null, null);
         
         Assert.assertEquals("Size", 4, map.size());
         Assert.assertEquals("Result count", 100, map.get("resultCount"));

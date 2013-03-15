@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,6 +40,7 @@ import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.Lazyable;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.DataManager.ChangeKind;
+import org.granite.client.tide.data.spi.EntityRef;
 import org.granite.client.tide.data.spi.ExpressionEvaluator.Value;
 import org.granite.client.tide.data.spi.DirtyCheckContext;
 import org.granite.client.tide.data.spi.EntityDescriptor;
@@ -57,6 +60,8 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     private TrackingContext trackingContext;
     private int dirtyCount = 0;
     private WeakIdentityHashMap<Object, Map<String, Object>> savedProperties = new WeakIdentityHashMap<Object, Map<String, Object>>();
+    private WeakIdentityHashMap<Object, Object> unsavedEntities = new WeakIdentityHashMap<Object, Object>();
+    
     
     public DirtyCheckContextImpl(DataManager dataManager, TrackingContext trackingContext) {
         this.dataManager = dataManager;
@@ -79,7 +84,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         dataManager.notifyDirtyChange(oldDirty, isDirty());
     }
     
-    public boolean notifyEntityDirtyChange(Object entity, Object object, boolean oldDirtyEntity) {
+    public boolean notifyEntityDirtyChange(Object entity, boolean oldDirtyEntity) {
         boolean newDirtyEntity = isEntityChanged(entity);
         if (newDirtyEntity != oldDirtyEntity)
             dataManager.notifyEntityDirtyChange(entity, oldDirtyEntity, newDirtyEntity);
@@ -93,6 +98,21 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     public boolean isSaved(Object entity) {
         return savedProperties.containsKey(entity);
     }
+	
+	/**
+	 *  Check if the object is marked as new in the context
+	 *
+	 *  @param object object to check
+	 * 
+	 *  @return true if the object has been newly attached
+	 */ 
+	public boolean isUnsaved(Object object) {
+		return unsavedEntities.containsKey(object);
+	}
+	
+	public void addUnsaved(Identifiable entity) {
+		unsavedEntities.put(entity, true);
+	}
     
     public void clear(boolean notify) {
         boolean wasDirty = isDirty();
@@ -111,24 +131,12 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
      *   
      *  @return true is value has been changed
      */ 
-    @SuppressWarnings("unchecked")
-	public boolean isEntityChanged(Identifiable entity, String propertyName, Object value) {
-        boolean saveTracking = trackingContext.isEnabled();
-        try {
-            trackingContext.setEnabled(false);
-            
-            Object source = savedProperties.get(entity);
-            Object v;
-            if (source == null || !(source instanceof Map<?, ?>))
-                v = dataManager.getProperty(entity, propertyName);
-            else
-                v = ((Map<String, Object>)source).get(propertyName);
-            
-            return v != value;
-        }
-        finally {
-            trackingContext.setEnabled(saveTracking);
-        }
+	public boolean isEntityPropertyChanged(Identifiable entity, String propertyName, Object value) {
+        Map<String, Object> source = savedProperties.get(entity);
+        if (source != null)
+        	return source.containsKey(propertyName) && !isSame(source.get(propertyName), value);
+       	
+		return !isSame(dataManager.getProperty(entity, propertyName), value);
     }
     
     
@@ -207,6 +215,92 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             trackingContext.setEnabled(saveTracking);
         }
     }
+	
+	public boolean isEntityDeepChanged(Object entity) {		
+		return isEntityDeepChanged(entity, null, new IdentityHashMap<Object, Boolean>());
+	}
+	
+	private boolean isEntityDeepChanged(Object entity, Object embedded, IdentityHashMap<Object, Boolean> cache) {
+		if (cache == null)
+			cache = new IdentityHashMap<Object, Boolean>();
+		if (cache.containsKey(entity))
+			return false;
+		cache.put(entity, true);
+		
+		boolean saveTracking = trackingContext.isEnabled();
+		try {
+			trackingContext.setEnabled(false);
+			
+            Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
+            
+            if (embedded == null)
+            	embedded = entity;
+            
+            EntityDescriptor desc = entity instanceof Identifiable ? dataManager.getEntityDescriptor(entity) : null;
+            Map<String, Object> save = savedProperties.get(entity);
+            String versionPropertyName = desc != null ? desc.getVersionPropertyName() : null;
+            String dirtyPropertyName = desc != null ? desc.getDirtyPropertyName() : null;
+            
+            for (String p : pval.keySet()) {
+                if (p.equals(versionPropertyName) || p.equals(dirtyPropertyName))
+                    continue;
+                
+                Object val = pval.get(p);
+                Object saveval = save != null ? save.get(p) : null;
+                
+                if (save != null && ((val != null && (ObjectUtil.isSimple(val) || val instanceof byte[]))
+                        || (saveval != null && (ObjectUtil.isSimple(saveval) || saveval instanceof byte[])))) {
+                    return true;
+                }
+                else if (save != null && (val instanceof Value || saveval instanceof Value || val instanceof Enum || saveval instanceof Enum)) {
+                    if (saveval != null && ((val == null && saveval != null) || !val.equals(saveval))) {
+                        return true;
+                    }
+                }
+                else if (save != null && (val instanceof Identifiable || saveval instanceof Identifiable)) {
+                    if (saveval != null && val != save.get(p))
+                        return true;
+                    
+                    if (isEntityDeepChanged(val, null, cache))
+						return true;
+                }
+                else if (val instanceof List<?> || val instanceof Map<?, ?>) {
+                	 if (val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())
+                		 return false;
+                	 
+                	 @SuppressWarnings("unchecked")
+                	 List<Change> savedArray = (List<Change>)saveval;
+                	 if (savedArray != null && !savedArray.isEmpty())
+                		 return true;
+                	 
+                	 if (val instanceof List<?>) {
+                		 for (Object elt : (List<?>)val) {
+                			 if (isEntityDeepChanged(elt, null, cache))
+                				 return true;
+                		 }
+                	 }
+                	 else if (val instanceof Map<?, ?>) {
+						for (Entry<?, ?> me : ((Map<?, ?>)val).entrySet()) {
+							if (isEntityDeepChanged(me.getKey(), null, cache))
+								return true;
+							if (isEntityDeepChanged(me.getValue(), null, cache))
+								return true;
+						}
+					}
+                }
+                else if (val != null
+                    && !(val instanceof Identifiable || val instanceof Enum || val instanceof Value || val instanceof byte[]) 
+                    && isEntityDeepChanged(val, embedded, cache)) {
+                    return true;
+                }
+			}
+		}
+		finally {            
+			trackingContext.setEnabled(saveTracking);
+		}
+		
+		return false;
+	}
 
 
     private boolean isSame(Object val1, Object val2) {
@@ -303,29 +397,29 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             if (map1.size() != map2.size())
                 return false;
             for (Object e : map1.keySet()) {
-                boolean found = false;
+            	Object key = null;
                 for (Object f : map2.keySet()) {
                     if (isSameExt(e, f)) {
-                        found = true;
+                        key = f;
                         break;
                     }
                 }
-                if (!found)
+                if (key == null)
                     return false;
-                if (!isSameExt(map1.get(e), map2.get(e)))
+                if (!isSameExt(map1.get(e), map2.get(key)))
                     return false;
             }
-            for (Object e : map2.keySet()) {
-                boolean found = false;
-                for (Object f : map1.keySet()) {
+            for (Object f : map2.keySet()) {
+            	Object key = null;
+                for (Object e : map1.keySet()) {
                     if (isSameExt(e, f)) {
-                        found = true;
+                        key = e;
                         break;
                     }
                 }
-                if (!found)
+                if (key == null)
                     return false;
-                if (!isSameExt(map1.get(e), map2.get(e)))
+                if (!isSameExt(map1.get(key), map2.get(f)))
                     return false;
             }
             return true;
@@ -394,7 +488,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 }
             }
             
-            notifyEntityDirtyChange(entity, object, oldDirtyEntity);
+            notifyEntityDirtyChange(entity, oldDirtyEntity);
         }
         
         notifyDirtyChange(oldDirty);
@@ -517,7 +611,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 save.add(new Change(kind, location, items));
         }
         
-        notifyEntityDirtyChange(owner, owner, oldDirtyEntity);
+        notifyEntityDirtyChange(owner, oldDirtyEntity);
         
         notifyDirtyChange(oldDirty);
     }
@@ -619,7 +713,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 save.add(new Change(kind, location, items));
         }
         
-        notifyEntityDirtyChange(owner, owner, oldDirtyEntity);
+        notifyEntityDirtyChange(owner, oldDirtyEntity);
         
         notifyDirtyChange(oldDirty);
     }
@@ -632,6 +726,9 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
      *  @param object merged object
      */ 
     public void markNotDirty(Object object, Identifiable entity) {
+    	if (entity != null)
+    		unsavedEntities.remove(entity);
+    	
         if (!savedProperties.containsKey(object))
             return;
         
@@ -646,7 +743,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         savedProperties.remove(object);
         
         if (entity != null)
-            notifyEntityDirtyChange(entity, entity, oldDirtyEntity);
+            notifyEntityDirtyChange(entity, oldDirtyEntity);
         
         dirtyCount--;
 
@@ -664,11 +761,23 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
      *  @param owner owner entity for embedded objects
      *  @return true if the entity is still dirty after comparing with incoming object
      */ 
-    public boolean checkAndMarkNotDirty(Object entity, Object source, Identifiable owner) {
-        Map<String, Object> save = savedProperties.get(entity);
+    public boolean checkAndMarkNotDirty(MergeContext mergeContext, Object entity, Object source) {
+    	if (entity != null)
+    		unsavedEntities.remove(entity);
+    	
+    	Map<String, Object> save = savedProperties.get(entity);
         if (save == null)
             return false;
         
+		Identifiable owner = null;
+		if (entity instanceof Identifiable)
+			owner = (Identifiable)entity;
+		else {
+			Object[] ownerEntity = mergeContext.getOwnerEntity(entity);
+			if (ownerEntity != null && ownerEntity[0] instanceof Identifiable)
+				owner = (Identifiable)ownerEntity[0];
+		}
+		
         boolean oldDirty = isDirty();
         boolean oldDirtyEntity = isEntityChanged(owner);
         
@@ -700,12 +809,89 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             dirtyCount--;
         }
         
-        boolean newDirtyEntity = notifyEntityDirtyChange(owner, entity, oldDirtyEntity);
+        boolean newDirtyEntity = notifyEntityDirtyChange(owner, oldDirtyEntity);
         
         notifyDirtyChange(oldDirty);
         
         return newDirtyEntity;
     }
+	
+	
+	public void fixRemovalsAndPersists(MergeContext mergeContext, List<Object> removals, List<Object> persists) {
+		boolean oldDirty = dirtyCount > 0;
+		
+		for (Object object : savedProperties.keySet()) {
+			Identifiable owner = null;
+			if (object instanceof Identifiable)
+				owner = (Identifiable)object;
+			else {
+				Object[] ownerEntity = mergeContext.getOwnerEntity(object);
+				if (ownerEntity != null && ownerEntity[0] instanceof Identifiable)
+					owner = (Identifiable)ownerEntity[0];
+			}
+			
+			EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
+			
+			boolean oldDirtyEntity = isEntityChanged(object);
+			
+	    	Map<String, Object> save = savedProperties.get(object);
+			
+	    	Iterator<String> ip = save.keySet().iterator();
+			while (ip.hasNext()) {
+				String p = ip.next();
+				Object value = save.get(p);
+				if (value instanceof List<?>) {
+					@SuppressWarnings("unchecked")
+					List<Change> savedArray = (List<Change>)value;
+					
+					for (int idx = 0; idx < savedArray.size(); idx++) {
+						Change ce = savedArray.get(idx);
+						if (ce.kind == ChangeKind.ADD && persists != null) {
+							for (Object persist : persists) {
+								if (ce.getItems() != null && ce.getItems().length == 1 && ce.getItems()[0] instanceof Identifiable
+									&& ((persist instanceof EntityRef && ((EntityRef)persist).getClassName().equals(ce.getItems()[0].getClass().getName()) && ((EntityRef)persist).getUid().equals(((Identifiable)ce.getItems()[0]).getUid()))
+									|| ObjectUtil.objectEquals(dataManager, persist, ce.items[0]))) {
+									// Found remaining add event for newly persisted item
+									savedArray.remove(idx);
+									idx--;
+									break;
+								}
+							}
+						}
+						else if (ce.kind == ChangeKind.REMOVE && removals != null) {
+							for (Object removal : removals) {
+								if (ce.getItems() != null && ce.getItems().length == 1 && ce.getItems()[0] instanceof Identifiable
+									&& ((removal instanceof EntityRef && ((EntityRef)removal).getClassName().equals(ce.getItems()[0].getClass().getName()) && ((EntityRef)removal).getUid().equals(((Identifiable)ce.getItems()[0]).getUid()))
+									|| ObjectUtil.objectEquals(dataManager, removal, ce.items[0]))) {
+									// Found remaining add event for newly persisted item
+									savedArray.remove(idx);
+									idx--;
+									break;
+								}
+							}
+						}
+					}
+					
+					if (savedArray.size() == 0)
+						ip.remove();
+				}
+			}
+			
+            int count = 0;
+            for (Object p : save.keySet()) {
+                if (!p.equals(desc.getVersionPropertyName()))
+                    count++;
+            }
+            if (count == 0) {
+                savedProperties.remove(object);
+                dirtyCount--;
+            }
+			
+			notifyEntityDirtyChange(object, oldDirtyEntity);
+		}
+		
+		notifyDirtyChange(oldDirty);
+	}
     
     
     /**

@@ -728,7 +728,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		    	}
 	    	}
 	    	
-    		entityManager.mergeExternalData(serverSession, list, getWrappedList(), null, null);
+    		entityManager.mergeExternalData(serverSession, list, getWrappedList(), null, null, null);
 	    	
             findResult(event, first, max);
 	    }

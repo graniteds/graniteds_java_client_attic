@@ -154,7 +154,7 @@ public interface EntityManager {
      *  @param propName name of the parent entity property that references the entity
      *  @param res expression to remove
      */ 
-    public void removeReference(Object entity, Object parent, String propName, Expression exp);
+    public boolean removeReference(Object entity, Object parent, String propName, Expression exp);
     
     /**
      *  Retrieves context expression path for the specified entity (internal implementation)
@@ -191,6 +191,8 @@ public interface EntityManager {
      */
     public Object getCachedObject(Object object, boolean nullIfAbsent);
     
+    public Object[] getOwnerEntity(Object object);
+    
     public MergeContext initMerge();
     
     public Object mergeExternal(final MergeContext mergeContext, Object obj, Object previous, Expression expr, Object parent, String propertyName, String setter, boolean forceUpdate);
@@ -205,7 +207,7 @@ public interface EntityManager {
      *
      *  @return merged object (should === previous when previous not null)
      */
-    public Object mergeExternalData(Object obj, Object prev, String externalDataSessionId, List<Object> removals);
+    public Object mergeExternalData(Object obj, Object prev, String externalDataSessionId, List<Object> removals, List<Object> persists);
     
     /**
      *  Merge an object coming from a remote location (in general from a service) in the local context
@@ -226,7 +228,7 @@ public interface EntityManager {
      *
      *  @return merged object (should === previous when previous not null)
      */
-    public Object mergeExternalData(ServerSession serverSession, Object obj, Object prev, String externalDataSessionId, List<Object> removals);
+    public Object mergeExternalData(ServerSession serverSession, Object obj, Object prev, String externalDataSessionId, List<Object> removals, List<Object> persists);
     
     /**
      *  Merge an object coming from a remote location (in general from a service) in the local context
@@ -237,7 +239,7 @@ public interface EntityManager {
      */
     public Object mergeExternalData(Object obj);
     
-    public Object internalMergeExternalData(MergeContext mergeContext, Object obj, Object prev, List<Object> removals);
+    // public Object internalMergeExternalData(MergeContext mergeContext, Object obj, Object prev, List<Object> removals);
     
     /**
      *  @private 

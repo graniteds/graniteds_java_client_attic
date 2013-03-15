@@ -49,6 +49,6 @@ public class OptimisticLockExceptionHandler implements ExceptionHandler {
   
 		// Received entity should be the correct version from the database
         if (entity != null)
-        	context.getEntityManager().mergeExternalData(faultEvent.getServerSession(), entity, null, receivedSessionId, null);
+        	context.getEntityManager().mergeExternalData(faultEvent.getServerSession(), entity, null, receivedSessionId, null, null);
       }
   }

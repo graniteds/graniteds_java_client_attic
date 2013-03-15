@@ -20,6 +20,7 @@
 
 package org.granite.client.tide.data.spi;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,13 +38,21 @@ public interface DirtyCheckContext {
     public void clear(boolean notify);
 
     public void markNotDirty(Object object, Identifiable entity);
-
-    public boolean checkAndMarkNotDirty(Object local, Object received, Identifiable owner);
-
+    
+    public boolean checkAndMarkNotDirty(MergeContext mergeContext, Object local, Object received);
+    
+	public void fixRemovalsAndPersists(MergeContext mergeContext, List<Object> removals, List<Object> persists);
+	
+	public boolean isUnsaved(Object object);
+	
     public boolean isEntityChanged(Object entity);
 
-    public Map<String, Object> getSavedProperties(Object localEntity);
+    public boolean isEntityDeepChanged(Object entity);
 
+    public Map<String, Object> getSavedProperties(Object localEntity);
+    
+    public void addUnsaved(Identifiable entity);
+    
     public void resetEntity(MergeContext mergeContext, Object entity, Identifiable parent, Set<Object> cache);
 
     public void resetAllEntities(MergeContext mergeContext, Set<Object> cache);

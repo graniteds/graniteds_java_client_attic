@@ -179,7 +179,7 @@ public class TestManagedEntity {
         Person p1b = new Person(1L, 0L, "P1", "A1", "B1");
         Person p2b = new Person(2L, 0L, "P2", "A2", "B2");
         ObservableList<Person> coll2 = FXCollections.observableArrayList(p1b, p2b, p2b, p1b);
-        entityManager.mergeExternalData(coll2, coll, null, null);
+        entityManager.mergeExternalData(coll2, coll, null, null, null);
         
         Assert.assertEquals("Element 0", 1L, coll.get(0).getId().longValue());
         Assert.assertEquals("Element 1", 2L, coll.get(1).getId().longValue());
@@ -204,7 +204,7 @@ public class TestManagedEntity {
                 new Person(3L, 0L, "P3", "A3", "B3"),
                 new Person(2L, 0L, "P2", "A2", "B2")
         );
-        entityManager.mergeExternalData(coll2, coll, null, null);
+        entityManager.mergeExternalData(coll2, coll, null, null, null);
          
         Assert.assertEquals("Element 0", 5L, coll.get(0).getId().longValue());
         Assert.assertEquals("Element 2", 3L, coll.get(2).getId().longValue());
@@ -238,7 +238,7 @@ public class TestManagedEntity {
                 new Person(2L, 0L, "P2", "A2", "B2"),
                 new Person(4L, 0L, "P4", "A4", "B4")
         );
-        entityManager.mergeExternalData(coll2, coll, null, null);
+        entityManager.mergeExternalData(coll2, coll, null, null, null);
      
         Assert.assertEquals("Element 1", 5L, coll.get(1).getId().longValue());
         Assert.assertEquals("Element 2", 2L, coll.get(2).getId().longValue());
@@ -275,7 +275,7 @@ public class TestManagedEntity {
                 new Person(2L, 0L, "P2", "A2", "B2"),
                 new Person(3L, 0L, "P3", "A3", "B3")
         );
-        entityManager.mergeExternalData(coll2, coll, null, null);
+        entityManager.mergeExternalData(coll2, coll, null, null, null);
         
         Assert.assertEquals("Element 1", 4L, coll.get(0).getId().longValue());
         Assert.assertEquals("Element 2", 1L, coll.get(1).getId().longValue());
@@ -348,7 +348,7 @@ public class TestManagedEntity {
         map2.put("p3", new Person(3L, 0L, "P3", "A3", "B3"));
         map2.put("p4", new Person(4L, 0L, "P4", "A4", "B4"));
         map2.put("p5", new Person(5L, 0L, "P5", "A5", "B5"));
-        entityManager.mergeExternalData(map2, map, null, null);
+        entityManager.mergeExternalData(map2, map, null, null, null);
          
         Assert.assertEquals("Size", 4, map.size());
         Assert.assertEquals("Element 3", 3L, map.get("p3").getId().longValue());
@@ -368,7 +368,7 @@ public class TestManagedEntity {
         map2.put(Salutation.Dr, new Person(1L, 0L, "P1", "A1", "B1"));
         map2.put(Salutation.Mr, new Person(3L, 0L, "P3", "A3", "B3"));
         map2.put(Salutation.Ms, new Person(4L, 0L, "P4", "A4", "B4"));
-        entityManager.mergeExternalData(map2, map, null, null);
+        entityManager.mergeExternalData(map2, map, null, null, null);
          
          Assert.assertEquals("Size", 3, map.size());
          Assert.assertEquals("Element Dr", 1L, map.get(Salutation.Dr).getId().longValue());
@@ -402,7 +402,7 @@ public class TestManagedEntity {
         map2.put("p5", new Person(5L, 0L, "P5", "A5", "B5"));
         map2.put("p2", new Person(2L, 0L, "P2", "A2", "B2"));
         map2.put("p4", new Person(4L, 0L, "P4", "A4", "B4"));
-        entityManager.mergeExternalData(map2, map, null, null);
+        entityManager.mergeExternalData(map2, map, null, null, null);
         
         Assert.assertEquals("Element 5", 5L, map.get("p5").getId().longValue());
         Assert.assertEquals("Element 2", 2L, map.get("p2").getId().longValue());

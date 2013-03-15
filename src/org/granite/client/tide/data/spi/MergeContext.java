@@ -23,6 +23,7 @@ package org.granite.client.tide.data.spi;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,17 +45,18 @@ public class MergeContext {
     };
     
     private final EntityManager entityManager;
-    @SuppressWarnings("unused")
 	private final DirtyCheckContext dirtyCheckContext;
+    private IdentityHashMap<Object, Object> entityCache = null;
+    private LinkedList<Object> mergeStack = new LinkedList<Object>();
     
     private String externalDataSessionId = null;
     private EntityManager sourceEntityManager = null;
     private ServerSession serverSession = null;
     private boolean mergeUpdate = false;
     private boolean merging = false;
-    private Map<Object, Object> entityCache = null;
     private Set<Object> versionChangeCache = null;
     private boolean resolvingConflict = false;
+    private boolean skipDirtyCheck = false;
     private Conflicts mergeConflicts = null;
     private boolean uninitializing = false;
     
@@ -82,6 +84,16 @@ public class MergeContext {
             this.mergeUpdate = true;
         }
     }
+    
+    public void clear() {
+		this.entityCache = null;
+        this.mergeConflicts = null;
+        this.versionChangeCache = null;
+        this.resolvingConflict = false;
+		this.uninitializing = false;
+        this.merging = false;
+        this.mergeUpdate = false;
+    }
 
     public void addConflict(Identifiable dest, Identifiable obj) {
         if (this.mergeConflicts == null)
@@ -90,6 +102,7 @@ public class MergeContext {
     }
 
     public void initMergeConflicts() {
+    	this.entityCache = null;
         this.versionChangeCache = null;
         this.resolvingConflict = false;
     }
@@ -110,6 +123,19 @@ public class MergeContext {
     public Conflicts getMergeConflicts() {
         return this.mergeConflicts;
     }
+	
+	public Map<?, ?> getEntityCache() {
+		return this.entityCache;
+	}
+	
+	public IdentityHashMap<Object, Object> saveEntityCache() {
+		IdentityHashMap<Object, Object> entityCache = this.entityCache;
+		this.entityCache = new IdentityHashMap<Object, Object>();
+		return entityCache;
+	}
+	public void restoreEntityCache(IdentityHashMap<Object, Object> entityCache) {
+		this.entityCache = entityCache;
+	}	
 
     public String getExternalDataSessionId() {
         return this.externalDataSessionId;
@@ -150,6 +176,14 @@ public class MergeContext {
     public void setMerging(boolean merging) {
         this.merging = merging;
     }
+
+    public boolean isSkipDirtyCheck() {
+        return this.skipDirtyCheck;
+    }
+    
+    public void setSkipDirtyCheck(boolean skipDirtyCheck) {
+        this.skipDirtyCheck = skipDirtyCheck;
+    }
     
     public Object getFromCache(Object obj) {
         if (this.entityCache == null)
@@ -157,10 +191,42 @@ public class MergeContext {
         return this.entityCache.get(obj);
     }
     
-    public void putInCache(Object obj, Object dest) {
+    public void pushMerge(Object obj, Object dest) {
+    	pushMerge(obj, dest, true);
+    }
+    public void pushMerge(Object obj, Object dest, boolean push) {
         if (this.entityCache != null)
             this.entityCache.put(obj, dest);
+        if (push)
+        	this.mergeStack.push(dest);
     }
+	public Object getCachedMerge(Object obj) {
+		return this.entityCache.get(obj);
+	}
+	public Object popMerge() {
+		return this.mergeStack.pop();
+	}
+	public Object getCurrentMerge() {
+		return this.mergeStack.peek();
+	}
+	public void setCurrentMerge(Object merge) {
+		this.mergeStack.set(0, merge);
+	}
+	public int getMergeStackSize() {
+		return this.mergeStack.size();
+	}
+	
+	public Object getSavedProperties(Object object) {
+		return dirtyCheckContext.getSavedProperties(object);
+	}
+	
+	public Object[] getOwnerEntity(Object entity) {
+		return entityManager.getOwnerEntity(entity);
+	}
+	
+	public boolean isUnsaved(Object object) {
+		return dirtyCheckContext.isUnsaved(object);
+	}
     
     public void clearCache() {
         this.entityCache = null;
