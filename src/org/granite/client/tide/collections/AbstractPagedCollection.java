@@ -309,7 +309,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		int nextFirst = (Integer)result.getFirstResult();
 		int nextLast = nextFirst + (Integer)result.getMaxResults();
 		
-		int page = nextFirst / max;
+		int page = max > 0 ? nextFirst / max : 0;
 		log.debug("handle result page %d (%d - %d)", page, nextFirst, nextLast);
 		
 		count = result.getResultCount();
