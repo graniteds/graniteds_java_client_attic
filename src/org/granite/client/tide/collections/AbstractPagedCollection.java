@@ -113,14 +113,8 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	 */
 	@Override
 	public int size() {
-	    if (initializing) {
-	    	if (!initSent) {
-	    		log.debug("initial find");
-		    	find(0, max);
-		    	initSent = true;
-		    }
+		if (initialFind())
 	        return 0;
-	    }
 	    else if (localIndex == null)
 	        return 0;
 		return count;
@@ -226,7 +220,20 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
         else
 			log.debug("refresh");			
         
-		find(first, last);
+		if (!initialFind())
+			find(first, last);
+		return true;
+	}
+	
+	private boolean initialFind() {
+		if (max > 0 && !initializing)
+			return false;
+		
+		if (!initSent) {
+			log.debug("initial find");
+			find(0, max);
+			initSent = true;
+		}
 		return true;
 	}
 	
@@ -397,16 +404,8 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		if (index < 0)
 			return null;
 	
-		// log.debug("get item at %d", index);
-		
-		if (max == 0 || initializing) {
-			if (!initSent) {
-				log.debug("initial find");
-			    find(0, max);
-			    initSent = true;
-			}
-		    return null;
-		}
+		if (initialFind())
+			return null;
 
 		if (localIndex != null && index >= first && index < last) {	// Local data available for index
 		    int j = index-first;
