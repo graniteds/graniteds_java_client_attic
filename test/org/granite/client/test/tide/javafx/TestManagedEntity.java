@@ -562,4 +562,17 @@ public class TestManagedEntity {
          
          Assert.assertTrue("User initialized", group.getUser().isInitialized());
     }
+
+    @Test
+    public void testMergeEnum() {
+    	PersonEnum person = new PersonEnum(1L, 0L, "P1", "Test", "Test");
+    	person.setSalutation(Salutation.Mr);
+    	person = (PersonEnum)entityManager.mergeExternalData(person);
+    	
+    	PersonEnum person2 = new PersonEnum(1L, 1L, "P1", "Test", "Test");
+    	person2.setSalutation(Salutation.Dr);
+    	person = (PersonEnum)entityManager.mergeExternalData(person2);
+    	
+    	Assert.assertEquals("Enum merged", Salutation.Dr, person.getSalutation());
+    }
 }

@@ -741,6 +741,9 @@ public class EntityManagerImpl implements EntityManager {
                     next = mergeMap(mergeContext, (Map<Object, Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
+//                else if (obj instanceof Enum) {
+//                	next = obj;
+//                }
                 else if (obj instanceof Identifiable) {
                     next = mergeEntity(mergeContext, obj, previous, expr, parent, propertyName);
                     addRef = true;
@@ -759,7 +762,7 @@ public class EntityManagerImpl implements EntityManager {
                             }
                         }
                     }
-                    if (!merged && !ObjectUtil.isSimple(obj) && !(obj instanceof Value || obj instanceof byte[])) {
+                    if (!merged && !ObjectUtil.isSimple(obj) && !(obj instanceof Enum || obj instanceof Value || obj instanceof byte[])) {
                         next = mergeEntity(mergeContext, obj, previous, expr, parent, propertyName);
                         addRef = true;
                     }
