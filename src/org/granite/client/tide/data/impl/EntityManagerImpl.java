@@ -1560,6 +1560,10 @@ public class EntityManagerImpl implements EntityManager {
     public boolean isDirty() {
         return dataManager.isDirty();
     }
+    
+    public boolean isDeepDirtyEntity(Object entity) {
+    	return dirtyCheckContext.isEntityDeepChanged(entity);
+    }
 
     @Override
     public boolean isSaved(Object entity) {

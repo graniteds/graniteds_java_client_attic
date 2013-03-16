@@ -35,10 +35,12 @@ import java.util.Set;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanPropertyBase;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.beans.value.WeakChangeListener;
 import javafx.beans.value.WritableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
@@ -48,23 +50,25 @@ import javafx.event.Event;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
-import javax.validation.TraversableResolver;
 import javax.validation.Path.Node;
+import javax.validation.TraversableResolver;
 
-import org.granite.logging.Logger;
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.tide.collections.ManagedPersistentCollection;
 import org.granite.client.tide.collections.ManagedPersistentMap;
 import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentCollection;
 import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentMap;
+import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.Lazyable;
+import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.Transient;
 import org.granite.client.tide.data.impl.AbstractDataManager;
 import org.granite.client.tide.data.spi.EntityDescriptor;
 import org.granite.client.util.WeakIdentityHashMap;
 import org.granite.client.util.javafx.DataNotifier;
 import org.granite.client.validation.javafx.ConstraintViolationEvent;
+import org.granite.logging.Logger;
 
 /**
  * @author William DRAI
@@ -87,6 +91,63 @@ public class JavaFXDataManager extends AbstractDataManager {
     
     public boolean isDirty() {
     	return dirty.get();
+    }
+    
+    private Map<Object, ObservableDeepDirtyEntity> deepDirtyEntityCache = new WeakIdentityHashMap<Object, ObservableDeepDirtyEntity>();
+    
+    public ObservableDeepDirtyEntity deepDirtyEntity(Object entity) {
+    	ObservableDeepDirtyEntity deepDirtyEntity = deepDirtyEntityCache.get(entity);
+    	if (deepDirtyEntity == null) {
+    		deepDirtyEntity = new ObservableDeepDirtyEntity(entity);
+    		deepDirtyEntityCache.put(entity, deepDirtyEntity);
+    	}
+    	return deepDirtyEntity;
+    }
+    
+    private class ObservableDeepDirtyEntity extends ReadOnlyBooleanPropertyBase {
+    	
+    	private Object entity;
+    	private EntityManager entityManager;
+    	private ChangeListener<Object> changeListener = new WeakChangeListener<Object>(new ChangeListener<Object>() {
+			@Override
+			public void changed(ObservableValue<?> observable, Object oldValue, Object newValue) {
+				ObservableDeepDirtyEntity.this.entity = newValue;
+				ObservableDeepDirtyEntity.this.entityManager = PersistenceManager.getEntityManager(newValue);
+				fireValueChangedEvent();
+			}    		
+    	});
+    	
+    	public ObservableDeepDirtyEntity(Object entity) {
+    		if (entity instanceof ObservableValue) {
+    			ObservableValue<?> value = (ObservableValue<?>)entity;
+    			this.entity = value.getValue();
+    			value.addListener(changeListener);
+    		}
+    		else
+    			this.entity = entity;
+    		this.entityManager = PersistenceManager.getEntityManager(this.entity);
+    	}
+    	
+		@Override
+		public Object getBean() {
+			return JavaFXDataManager.this;
+		}
+		
+		@Override
+		public String getName() {
+			return "deepDirtyEntity";
+		}
+		
+		@Override
+		public boolean get() {
+			if (entityManager == null || entity == null)
+				return false;
+			return entityManager.isDeepDirtyEntity(entity);
+		}
+
+		protected void fireValueChangedEvent() {
+			super.fireValueChangedEvent();
+		}
     }
     
     
@@ -372,6 +433,10 @@ public class JavaFXDataManager extends AbstractDataManager {
 
     @Override
     public void clear() {
+    	dirty.set(false);
+    	
+    	deepDirtyEntityCache.clear();
+    	
         Iterator<Object> ikey = trackingListeners.keySet().iterator();
         while (ikey.hasNext()) {
             Object obj = ikey.next();
@@ -436,6 +501,9 @@ public class JavaFXDataManager extends AbstractDataManager {
                 throw new RuntimeException("Could not get dirty property on entity " + entity, e);
             }
         }
+        
+        for (ObservableDeepDirtyEntity deepDirtyEntity : deepDirtyEntityCache.values())
+        	deepDirtyEntity.fireValueChangedEvent();
     }
     
     

@@ -175,6 +175,14 @@ public interface EntityManager {
     public boolean isDirty();
     
     /**
+     *  Entity is deep dirty when any element in its object graph has been modified
+     *  @param entity root of the entity graph
+     *
+     *  @return is dirty
+     */
+    public boolean isDeepDirtyEntity(Object entity);
+    
+    /**
      *  Indicates if the entity is persisted on the server (id/version not null/NaN)
      *
      *  @param entity an entity
