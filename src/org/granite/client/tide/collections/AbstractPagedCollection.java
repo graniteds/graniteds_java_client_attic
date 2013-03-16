@@ -717,7 +717,10 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		    			getInternalWrappedList().add((E)entityManager.mergeExternalData(serverSession, list.get(AbstractPagedCollection.this.last - first + i)));
 		    	}
 		    	else if (first+max > AbstractPagedCollection.this.first && first+max < AbstractPagedCollection.this.last) {
-		    		getInternalWrappedList().subList(first+max-AbstractPagedCollection.this.first, getWrappedList().size()).clear();
+		    		if (first+max-AbstractPagedCollection.this.first < getWrappedList().size())
+		    			getInternalWrappedList().subList(first+max-AbstractPagedCollection.this.first, getWrappedList().size()).clear();
+		    		else
+		    			getInternalWrappedList().clear();
 		    		for (int i = 0; i < AbstractPagedCollection.this.first - first && i < list.size(); i++)
 		    			getInternalWrappedList().add(i, (E)entityManager.mergeExternalData(serverSession, list.get(i)));
 		    	}
