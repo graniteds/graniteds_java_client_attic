@@ -160,11 +160,11 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	/**
 	 * 	Clear collection content
 	 */
+	@Override
 	public void clear() {
-		Page<E> result = new Page<E>(0, max, 0, new ArrayList<E>());
-		handleResult(result, null, 0, 0);
 		initializing = true;
 		initSent = false;
+		getWrappedList().clear();
 		clearLocalIndex();
 		first = 0;
 		last = first+max;
