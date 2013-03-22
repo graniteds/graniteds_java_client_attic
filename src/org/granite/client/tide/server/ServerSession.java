@@ -66,6 +66,7 @@ import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.Update;
 import org.granite.client.tide.data.spi.MergeContext;
+import org.granite.client.util.javafx.ListenerHelper;
 import org.granite.logging.Logger;
 import org.granite.tide.Expression;
 import org.granite.tide.invocation.ContextResult;
@@ -397,13 +398,14 @@ public class ServerSession implements ContextAware {
 			else
 				busyCount--;
 			status.setBusy(busyCount > 0);
+			transportIOListeners.fireEvent(status.isBusy());
 		}
-
+		
 		@Override
 		public void handleException(TransportException e) {
-			// TODO: never called
-			log.error(e, "Transport failed");
-		}		
+			log.warn(e, "Transport failed");
+			transportExceptionListeners.fireEvent(e);
+		}
 	};
 	
 	
@@ -859,6 +861,32 @@ public class ServerSession implements ContextAware {
 			this.showBusyCursor = showBusyCursor;			
 		}		
 	}
+	
+	
+	private ListenerHelper<TransportIOListener> transportIOListeners = new ListenerHelper<TransportIOListener>(TransportIOListener.class);
+	private ListenerHelper<TransportExceptionListener> transportExceptionListeners = new ListenerHelper<TransportExceptionListener>(TransportExceptionListener.class);
+	
+	public void addListener(TransportIOListener listener) {
+		transportIOListeners.addListener(listener);
+	}
+	public void removeListener(TransportIOListener listener) {
+		transportIOListeners.removeListener(listener);
+	}
+	
+	public void addListener(TransportExceptionListener listener) {
+		transportExceptionListeners.addListener(listener);
+	}
+	public void removeListener(TransportExceptionListener listener) {
+		transportExceptionListeners.removeListener(listener);
+	}
+	
+	public interface TransportIOListener {		
+		public void handleIO(boolean busy);
+	}
+	
+	public interface TransportExceptionListener {		
+		public void handleException(TransportException e);
+	}
     
 	
     /**
@@ -898,5 +926,4 @@ public class ServerSession implements ContextAware {
             return r1.getExpression().compareTo(r2.getExpression()) < 0 ? -1 : 0;
         }
     }
-
 }
