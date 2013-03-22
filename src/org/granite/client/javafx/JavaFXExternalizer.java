@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -137,13 +138,28 @@ public class JavaFXExternalizer extends DefaultExternalizer {
                         }
                     }
                 }
-
-                Collections.sort(newFields, new Comparator<Property>() {
-                    public int compare(Property o1, Property o2) {
-                        return o1.getName().compareTo(o2.getName());
-                    }
-                });
-
+                
+                try {
+                	Field f = c.getDeclaredField("__externalizedProperties");
+                	f.setAccessible(true);
+                	final List<String> externalizedProperties = Arrays.asList((String[])f.get(null));
+	                Collections.sort(newFields, new Comparator<Property>() {
+	                    public int compare(Property o1, Property o2) {
+	                        return externalizedProperties.indexOf(o1.getName()) - externalizedProperties.indexOf(o2.getName());
+	                    }
+	                });
+                }
+                catch (NoSuchFieldException e) {
+	                Collections.sort(newFields, new Comparator<Property>() {
+	                    public int compare(Property o1, Property o2) {
+	                        return o1.getName().compareTo(o2.getName());
+	                    }
+	                });
+                }
+                catch (Exception e) {
+                	throw new RuntimeException("Could not get value of __externalizedProperties", e);
+                }
+                
                 fields.addAll(0, newFields);
             }
 
