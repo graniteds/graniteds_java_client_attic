@@ -20,6 +20,8 @@
 
 package org.granite.client.tide.data;
 
+import java.util.List;
+
 import org.granite.logging.Logger;
 
 /**
@@ -36,14 +38,16 @@ public class Conflict {
     
     private Identifiable localEntity;
     private Identifiable receivedEntity;
+    private List<String> properties;
     private boolean resolved = false;
     
 
 
-    public Conflict(Conflicts conflicts, Identifiable localEntity, Identifiable receivedEntity) {
+    public Conflict(Conflicts conflicts, Identifiable localEntity, Identifiable receivedEntity, List<String> properties) {
         this.conflicts = conflicts;
         this.localEntity = localEntity;
         this.receivedEntity = receivedEntity;
+        this.properties = properties;
     }
     
     public Identifiable getLocalEntity() {
@@ -53,7 +57,11 @@ public class Conflict {
     public Identifiable getReceivedEntity() {
         return receivedEntity;
     }
-
+    
+    public List<String> getProperties() {
+    	return properties;
+    }
+    
     public boolean isRemoval() {
         return receivedEntity == null;
     }

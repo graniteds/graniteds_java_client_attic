@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -95,10 +96,11 @@ public class MergeContext {
         this.mergeUpdate = false;
     }
 
-    public void addConflict(Identifiable dest, Identifiable obj) {
+    public void addConflict(Identifiable localEntity, Identifiable receivedEntity, List<String> properties) {
         if (this.mergeConflicts == null)
             this.mergeConflicts = new Conflicts(this.entityManager);
-        this.mergeConflicts.addConflict(dest, obj);
+
+        this.mergeConflicts.addConflict(localEntity, receivedEntity, properties);
     }
 
     public void initMergeConflicts() {
@@ -218,6 +220,10 @@ public class MergeContext {
 	
 	public Object getSavedProperties(Object object) {
 		return dirtyCheckContext.getSavedProperties(object);
+	}
+	
+	public Object getCachedObject(Object object) {
+		return entityManager.getCachedObject(object, true);
 	}
 	
 	public Object[] getOwnerEntity(Object entity) {

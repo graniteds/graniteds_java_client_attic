@@ -941,9 +941,14 @@ public class EntityManagerImpl implements EntityManager {
                                 dest.toString(), oldVersion, newVersion);
                             
                             // Check incoming values and local values
-                            if (dirtyCheckContext.checkAndMarkNotDirty(mergeContext, dest, obj)) {
+                            if (dirtyCheckContext.checkAndMarkNotDirty(mergeContext, dest, obj, null)) {
                                 // Incoming data is different from local data
-                                mergeContext.addConflict((Identifiable)dest, (Identifiable)obj);
+                                Map<String, Object> save = dirtyCheckContext.getSavedProperties(dest);
+                                List<String> properties = new ArrayList<String>(save.keySet());
+                                properties.remove(desc.getVersionPropertyName());
+                                Collections.sort(properties);
+                                
+                                mergeContext.addConflict((Identifiable)dest, (Identifiable)obj, properties);
                                 
                                 ignore = true;
                             }
@@ -980,7 +985,7 @@ public class EntityManagerImpl implements EntityManager {
             defaultMerge(mergeContext, obj, dest, expr, parent, propertyName);
         
         if (dest != null && !ignore && !mergeContext.isSkipDirtyCheck() && !mergeContext.isResolvingConflict())
-            dirtyCheckContext.checkAndMarkNotDirty(mergeContext, dest, obj);
+            dirtyCheckContext.checkAndMarkNotDirty(mergeContext, dest, obj, (parent instanceof Identifiable && !(dest instanceof Identifiable)) ? parent : null);
         
         if (dest != null)
             log.debug("mergeEntity result: %s", dest.toString());
@@ -1597,7 +1602,7 @@ public class EntityManagerImpl implements EntityManager {
                 // Conflict between externally received data and local modifications
                 log.error("conflict with external data removal detected on %s", ObjectUtil.toString(entity));
 
-                mergeContext.addConflict((Identifiable)entity, null);
+                mergeContext.addConflict((Identifiable)entity, null, null);
             }
             else {
             	boolean saveMerging = mergeContext.isMerging();
@@ -2086,7 +2091,7 @@ public class EntityManagerImpl implements EntityManager {
                 if (parent == null)
                     log.warn("Owner entity not found for collection %s, cannot process dirty checking", ObjectUtil.toString(target));
                 else
-                    dirtyCheckContext.entityCollectionChangeHandler(parent[0], (String)parent[1], kind, location, items);
+                    dirtyCheckContext.entityCollectionChangeHandler(parent[0], (String)parent[1], (Collection<?>)target, kind, location, items);
             }
             
             if (items != null && items.length > 0 && items[0] instanceof Identifiable)
@@ -2203,7 +2208,7 @@ public class EntityManagerImpl implements EntityManager {
                 if (parent == null)
                     log.warn("Owner entity not found for collection %s, cannot process dirty checking", ObjectUtil.toString(target));
                 else
-                    dirtyCheckContext.entityMapChangeHandler(parent[0], (String)parent[1], kind, location, items);
+                    dirtyCheckContext.entityMapChangeHandler(parent[0], (String)parent[1], (Map<?, ?>)target, kind, items);
             }
             
             if (items != null && items.length > 0 && items[0] instanceof Object[] && ((Object[])items[0])[1] instanceof Identifiable) {

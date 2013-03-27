@@ -20,6 +20,7 @@
 
 package org.granite.client.tide.data.spi;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,7 @@ public interface DirtyCheckContext {
 
     public void markNotDirty(Object object, Identifiable entity);
     
-    public boolean checkAndMarkNotDirty(MergeContext mergeContext, Object local, Object received);
+    public boolean checkAndMarkNotDirty(MergeContext mergeContext, Object local, Object received, Object parent);
     
 	public void fixRemovalsAndPersists(MergeContext mergeContext, List<Object> removals, List<Object> persists);
 	
@@ -59,8 +60,8 @@ public interface DirtyCheckContext {
 
     public void entityPropertyChangeHandler(Object owner, Object target, String property, Object oldValue, Object newValue);
 
-    public void entityCollectionChangeHandler(Object owner, String property, ChangeKind kind, int location, Object[] items);
-
-    public void entityMapChangeHandler(Object owner, String property, ChangeKind kind, int location, Object[] items);
+    public void entityCollectionChangeHandler(Object owner, String property, Collection<?> coll, ChangeKind kind, Integer location, Object[] items);
+    
+    public void entityMapChangeHandler(Object owner, String property, Map<?, ?> map, ChangeKind kind, Object[] items);
 
 }

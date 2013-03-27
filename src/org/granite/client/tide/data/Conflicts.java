@@ -45,8 +45,8 @@ public class Conflicts {
         this.entityManager = entityManager;
     }
     
-    public void addConflict(Identifiable localEntity, Identifiable receivedEntity) {
-        Conflict conflict = new Conflict(this, localEntity, receivedEntity);
+    public void addConflict(Identifiable localEntity, Identifiable receivedEntity, List<String> properties) {
+        Conflict conflict = new Conflict(this, localEntity, receivedEntity, properties);
         conflicts.add(conflict);
     }
     

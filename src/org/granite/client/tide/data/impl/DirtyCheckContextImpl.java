@@ -33,21 +33,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.granite.logging.Logger;
 import org.granite.client.persistence.LazyableCollection;
-import org.granite.client.tide.collections.ManagedPersistentAssociation;
+import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.Lazyable;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.DataManager.ChangeKind;
-import org.granite.client.tide.data.spi.EntityRef;
-import org.granite.client.tide.data.spi.ExpressionEvaluator.Value;
 import org.granite.client.tide.data.spi.DirtyCheckContext;
 import org.granite.client.tide.data.spi.EntityDescriptor;
+import org.granite.client.tide.data.spi.ExpressionEvaluator.Value;
 import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.client.tide.data.spi.Wrapper;
 import org.granite.client.tide.server.TrackingContext;
 import org.granite.client.util.WeakIdentityHashMap;
+import org.granite.logging.Logger;
 
 /**
  * @author William DRAI
@@ -161,15 +160,15 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             
             boolean dirty = false;
             
-            if (embedded == null)
-            	embedded = entity;
-            
             Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
             
             EntityDescriptor desc = entity instanceof Identifiable ? dataManager.getEntityDescriptor(entity) : null;
             Map<String, Object> save = savedProperties.get(entity);
             String versionPropertyName = desc != null ? desc.getVersionPropertyName() : null;
             String dirtyPropertyName = desc != null ? desc.getDirtyPropertyName() : null;
+			
+			if (embedded == null)
+				embedded = entity;
             
             for (String p : pval.keySet()) {
                 if (p.equals(versionPropertyName) || p.equals(dirtyPropertyName))
@@ -204,7 +203,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 }
                 else if (val != null
                     && !(val instanceof Identifiable || val instanceof Enum || val instanceof Value || val instanceof byte[]) 
-                    && isEntityChanged(val, embedded, propName, value)) {
+                    && isEntityChanged(val)) {
                     dirty = true;
                     break;
                 }
@@ -320,6 +319,40 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         if (n instanceof Identifiable && o instanceof Identifiable)
             return ((Identifiable)n).getUid() != null && ((Identifiable)n).getUid().equals(((Identifiable)o).getUid());
         return n == o;
+    }
+
+    private boolean isSameList(List<Object> save, Collection<?> coll) {
+    	if (save.size() != coll.size())
+    		return false;
+
+    	if (coll instanceof List<?>) {
+    		List<?> list = (List<?>)coll;
+	        for (int i = 0; i < save.size(); i++) {
+	        	if (!isSame(save.get(i), list.get(i)))
+	        		return false;
+	        }
+    	}
+    	else {
+    		for (Object e : save) {
+    			if (!coll.contains(e))
+    				return false;
+    		}
+    	}
+        return true;
+    }    
+    
+    private boolean isSameMap(List<Object[]> save, Map<?, ?> map) {
+    	if (save.size() != map.size())
+    		return false;
+
+        for (int i = 0; i < save.size(); i++) {
+        	Object[] entry = save.get(i);
+        	if (!map.containsKey(entry[0]))
+        		return false;
+        	if (!isSame(entry[1], map.get(entry[0])))
+        		return false;
+        }
+        return true;
     }
     
     private boolean isSameExt(Object val1, Object val2) {
@@ -504,7 +537,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
      *  @param event collection event
      */ 
     @SuppressWarnings("unchecked")
-	public void entityCollectionChangeHandler(Object owner, String propName, ChangeKind kind, int location, Object[] items) {
+	public void entityCollectionChangeHandler(Object owner, String propName, Collection<?> coll, ChangeKind kind, Integer location, Object[] items) {
         boolean oldDirty = isDirty();
         
         EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
@@ -525,91 +558,59 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 dirtyCount++;
         }
     
-        List<Change> save = (List<Change>)esave.get(propName);
+        List<Object> save = (List<Object>)esave.get(propName);
         if (save == null) {
-            save = new ArrayList<Change>();
+            save = new ArrayList<Object>();
             esave.put(propName, save);
-        }
-        
-        if (esave != null && (desc.getVersionPropertyName() == null 
-            || esave.get(desc.getVersionPropertyName()) == dataManager.getProperty(owner, desc.getVersionPropertyName())
-            || (esave.get(desc.getVersionPropertyName()) == null && dataManager.getProperty(owner, desc.getVersionPropertyName()) == null))) {
-            
-            boolean found = false;
+						
+			// Save collection snapshot
+			for (Object e : coll)
+				save.add(e);
 			
-			int[] actualLocations = new int[save.size()];
-			for (int i = 0; i < save.size(); i++) {
-				actualLocations[i] = save.get(i).location;
-                for (int j = 0; j < i; j++) {
-                    if (save.get(j).kind == ChangeKind.REMOVE && actualLocations[i] <= save.get(j).location)
-                        actualLocations[j]--;
-					else if (save.get(j).kind == ChangeKind.ADD && actualLocations[i] <= save.get(j).location)
-						actualLocations[j]++;
+			// Adjust with last event
+			if (kind == ChangeKind.ADD) {
+				if (location != null) {
+					for (int i = 0; i < items.length; i++)
+						save.remove(location.intValue());
+				}
+				else {
+					for (Object item : items)
+						save.remove(item);
 				}
 			}
-
-            for (int i = 0; i < save.size(); i++) {                     
-                if (((kind == ChangeKind.ADD && save.get(i).getKind() == ChangeKind.REMOVE)
-                    || (kind == ChangeKind.REMOVE && save.get(i).getKind() == ChangeKind.ADD))
-                    && items.length == 1 && save.get(i).getItems().length == 1 
-                    && isSame(items[0], save.get(i).getItems()[0]) && location == actualLocations[i]) {
-                    
-                    save.remove(i);
-                    // Adjust location of other saved events because an element added/removed locally has been removed/added
-                    for (int j = i; j < save.size(); j++) {
-                    	Change c = save.get(j);
-                        if (kind == ChangeKind.REMOVE && c.kind == ChangeKind.ADD && c.location > location)
-                            c.moveLocation(-1);
-                        else if (kind == ChangeKind.ADD && c.kind == ChangeKind.REMOVE && c.location > location)
-                            c.moveLocation(1);
-                    }
-                    
-                    if (save.size() == 0) {
-                        esave.remove(propName);
-                        int count = 0;
-                        for (String p : esave.keySet()) {
-                            if (!p.equals(desc.getVersionPropertyName()))
-                                count++;
-                        }
-                        if (count == 0) {
-                            savedProperties.remove(owner);
-                            dirtyCount--;
-                        }
-                    }
-                    i--;
-                    found = true;
-                }
-                else if (kind == ChangeKind.REPLACE && save.get(i).getKind() == ChangeKind.REPLACE
-                    && items.length == 1 && save.get(i).getItems().length == 1
-                    && location == actualLocations[i]) {
-                    
-                    if (isSame(((Object[])items[0])[0], ((Object[])save.get(i).getItems()[0])[1])
-                        && isSame(((Object[])items[0])[1], ((Object[])save.get(i).getItems()[0])[0])) {
-                        
-                        save.remove(i);
-                        if (save.isEmpty()) {
-                            esave.remove(propName);
-                            int count = 0;
-                            for (Object p : esave.keySet()) {
-                                if (!p.equals(desc.getVersionPropertyName()))
-                                    count++;
-                            }
-                            if (count == 0) {
-                                savedProperties.remove(owner);
-                                dirtyCount--;
-                            }
-                        }
-                        i--;
-                    }
-                    else {
-                        ((Object[])save.get(i).getItems()[0])[1] = ((Object[])items[0])[1];
-                    }
-                    found = true;
-                }
-            }
-            if (!found)
-                save.add(new Change(kind, location, items));
+			else if (kind == ChangeKind.REMOVE) {
+				if (location != null) {
+					for (int i = 0; i < items.length; i++)
+						save.add(location.intValue()+i, items[i]);
+				}
+				else {
+					for (Object item : items)
+						save.add(item);
+				}
+			}
+			else if (kind == ChangeKind.REPLACE) {
+				if (location != null)
+					save.set(location.intValue(), ((Object[])items[0])[0]);
+				else {
+					save.remove(((Object[])items[0])[1]);
+					save.add(((Object[])items[0])[0]);
+				}
+			}
         }
+		else {
+			if (isSameList(save, coll)) {
+                esave.remove(propName);
+                int count = 0;
+                for (Object p : esave.keySet()) {
+                    if (!p.equals(desc.getVersionPropertyName()))
+                        count++;
+                }
+                if (count == 0) {
+                    savedProperties.remove(owner);
+                    dirtyCount--;
+                }
+			}
+		}
         
         notifyEntityDirtyChange(owner, oldDirtyEntity);
         
@@ -626,7 +627,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
          *  @param event map event
          */ 
     @SuppressWarnings("unchecked")
-	public void entityMapChangeHandler(Object owner, String propName, ChangeKind kind, int location, Object[] items) {
+	public void entityMapChangeHandler(Object owner, String propName, Map<?, ?> map, ChangeKind kind, Object[] items) {
         boolean oldDirty = isDirty();
         
         EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
@@ -647,71 +648,55 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 dirtyCount++;
         }
         
-        List<Change> save = (List<Change>)esave.get(propName);
+        List<Object[]> save = (List<Object[]>)esave.get(propName);
         if (save == null) {
-            save = new ArrayList<Change>();
+            save = new ArrayList<Object[]>();
             esave.put(propName, save);
-        }
-        
-        if (esave != null && (desc.getVersionPropertyName() == null 
-            || esave.get(desc.getVersionPropertyName()) == dataManager.getProperty(owner, desc.getVersionPropertyName())
-            || (esave.get(desc.getVersionPropertyName()) == null && dataManager.getProperty(owner, desc.getVersionPropertyName()) == null))) {
-                
-            boolean found = false;
 
-            for (int i = 0; i < save.size(); i++) {
-                if (((kind == ChangeKind.ADD && save.get(i).getKind() == ChangeKind.REMOVE)
-                    || (kind == ChangeKind.REMOVE && save.get(i).getKind() == ChangeKind.ADD))
-                    && items.length == 1 && save.get(i).getItems().length == 1 && location == save.get(i).getLocation() 
-                    && isSame(((Object[])items[0])[0], ((Object[])save.get(i).items[0])[0]) && isSame(((Object[])items[0])[1], ((Object[])save.get(i).items[0])[1])) {
-                    
-                    save.remove(i);
-                    if (save.size() == 0) {
-                        esave.remove(propName);
-                        int count = 0;
-                        for (String p : esave.keySet()) {
-                            if (!p.equals(desc.getVersionPropertyName()))
-                                count++;
-                        }
-                        if (count == 0) {
-                            savedProperties.remove(owner);
-                            dirtyCount--;
-                        }
-                    }
-                    i--;
-                    found = true;
-                }
-                else if (kind == ChangeKind.REPLACE && save.get(i).getKind() == ChangeKind.REPLACE
-                    && items.length == 1 && save.get(i).getItems().length == 1
-                    && isSame(((Object[])items[0])[0], ((Object[])save.get(i).getItems()[0])[0])) {
-                    
-                    if (isSame(((Object[])items[0])[1], ((Object[])save.get(i).getItems()[0])[2])
-                        && isSame(((Object[])items[0])[2], ((Object[])save.get(i).getItems()[0])[1])) {
-                        
-                        save.remove(i);
-                        if (save.isEmpty()) {
-                            esave.remove(propName);
-                            int count = 0;
-                            for (Object p : esave.keySet()) {
-                                if (!p.equals(desc.getVersionPropertyName()))
-                                    count++;
-                            }
-                            if (count == 0) {
-                                savedProperties.remove(owner);
-                                dirtyCount--;
-                            }
-                        }
-                        i--;
-                    }
-                    else {
-                        ((Object[])save.get(i).getItems()[0])[2] = ((Object[])items[0])[2];
-                    }
-                    found = true;
-                }
-            }
-            if (!found)
-                save.add(new Change(kind, location, items));
+			// Save map snapshot
+			for (Entry<?, ?> entry : map.entrySet()) {
+				boolean found = false;
+				if (kind == ChangeKind.ADD) {
+					for (Object item : items) {
+						if (isSame(entry.getKey(), ((Object[])item)[0])) {
+							found = true;
+							break;
+						}
+					}
+				}
+				else if (kind == ChangeKind.REPLACE) {
+					for (Object item : items) {
+						if (isSame(entry.getKey(), ((Object[])item)[0])) {
+							save.add(new Object[] { entry.getKey(), ((Object[])item)[1] });
+							found = true;
+							break;
+						}
+					}
+				}
+				if (!found)
+					save.add(new Object[] { entry.getKey(), entry.getValue() });
+			}
+			
+			// Add removed element if needed
+			if (kind == ChangeKind.REMOVE) {
+				for (Object item : items)
+					save.add(new Object[] { ((Object[])item)[0], ((Object[])item)[1] });
+			}
         }
+		else {
+			if (isSameMap(save, map)) {
+                esave.remove(propName);
+                int count = 0;
+                for (Object p : esave.keySet()) {
+                    if (!p.equals(desc.getVersionPropertyName()))
+                        count++;
+                }
+                if (count == 0) {
+                    savedProperties.remove(owner);
+                    dirtyCount--;
+                }
+			}
+		}
         
         notifyEntityDirtyChange(owner, oldDirtyEntity);
         
@@ -761,7 +746,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
      *  @param owner owner entity for embedded objects
      *  @return true if the entity is still dirty after comparing with incoming object
      */ 
-    public boolean checkAndMarkNotDirty(MergeContext mergeContext, Object entity, Object source) {
+    public boolean checkAndMarkNotDirty(MergeContext mergeContext, Object entity, Object source, Object parent) {
     	if (entity != null)
     		unsavedEntities.remove(entity);
     	
@@ -769,32 +754,56 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         if (save == null)
             return false;
         
-		Identifiable owner = null;
-		if (entity instanceof Identifiable)
-			owner = (Identifiable)entity;
-		else {
-			Object[] ownerEntity = mergeContext.getOwnerEntity(entity);
-			if (ownerEntity != null && ownerEntity[0] instanceof Identifiable)
-				owner = (Identifiable)ownerEntity[0];
-		}
+		Object owner = entity instanceof Identifiable ? (Identifiable)entity : parent;
 		
         boolean oldDirty = isDirty();
         boolean oldDirtyEntity = isEntityChanged(owner);
         
-        EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
-        List<String> merged = new ArrayList<String>();
-        
-        for (String propName : save.keySet()) {
-            if (propName.equals(desc.getVersionPropertyName()))
-                continue;
-            
-            Object localValue = dataManager.getProperty(entity, propName);
-            Object sourceValue = dataManager.getProperty(source, propName);
-            if (localValue instanceof ManagedPersistentAssociation)
-                localValue = ((ManagedPersistentAssociation)localValue).getCollection();
-            if (isSameExt(localValue, sourceValue))
-                merged.add(propName);
-        }
+		List<String> merged = new ArrayList<String>();
+		
+        EntityDescriptor desc = owner instanceof Identifiable ? dataManager.getEntityDescriptor(owner) : null;
+        String versionPropertyName = desc != null ? desc.getVersionPropertyName() : null;
+		
+		if (source instanceof Identifiable && versionPropertyName != null)
+			save.put(versionPropertyName, dataManager.getProperty(source, versionPropertyName));
+		
+		Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
+		for (String propName : pval.keySet()) {
+			if (propName.equals(versionPropertyName) || propName.equals("dirty"))
+				continue;
+			
+//			if (!source.hasOwnProperty(propName))
+//				continue;
+			
+			Object localValue = pval.get(propName);
+			if (localValue instanceof PropertyHolder)
+				localValue = ((PropertyHolder)localValue).getObject();
+			
+			Object sourceValue = dataManager.getProperty(source, propName);
+			
+			if (isSameExt(sourceValue, localValue)) {
+				merged.add(propName);
+				continue;
+			}
+			
+			if (sourceValue == null || ObjectUtil.isSimple(sourceValue) || sourceValue instanceof Value || sourceValue instanceof Enum) {
+				save.put(propName, sourceValue);
+			}
+			else if (sourceValue instanceof Identifiable) {
+				save.put(propName, mergeContext.getFromCache(sourceValue));
+			}
+			else if (sourceValue instanceof Collection<?> && !(sourceValue instanceof LazyableCollection && !((LazyableCollection)sourceValue).isInitialized())) {
+				List<Object> snapshot = new ArrayList<Object>((Collection<?>)sourceValue);
+				save.put(propName, snapshot);
+			}
+			else if (sourceValue instanceof Map<?, ?> && !(sourceValue instanceof LazyableCollection && !((LazyableCollection)sourceValue).isInitialized())) {
+				Map<?, ?> map = (Map<?, ?>)sourceValue;
+				List<Object[]> snapshot = new ArrayList<Object[]>(map.size());
+				for (Entry<?, ?> entry : map.entrySet())
+					snapshot.add(new Object[] { entry.getKey(), entry.getValue() });
+				save.put(propName, snapshot);
+			}
+		}
         
         for (String propName : merged)
             save.remove(propName);
@@ -839,40 +848,96 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 	    	Iterator<String> ip = save.keySet().iterator();
 			while (ip.hasNext()) {
 				String p = ip.next();
-				Object value = save.get(p);
-				if (value instanceof List<?>) {
+				Object sn = save.get(p);
+				if (!(sn instanceof List<?>))
+					continue;
+				
+				Object value = dataManager.getProperty(object, p);
+				if (value instanceof Collection<?>) {
 					@SuppressWarnings("unchecked")
-					List<Change> savedArray = (List<Change>)value;
-					
-					for (int idx = 0; idx < savedArray.size(); idx++) {
-						Change ce = savedArray.get(idx);
-						if (ce.kind == ChangeKind.ADD && persists != null) {
-							for (Object persist : persists) {
-								if (ce.getItems() != null && ce.getItems().length == 1 && ce.getItems()[0] instanceof Identifiable
-									&& ((persist instanceof EntityRef && ((EntityRef)persist).getClassName().equals(ce.getItems()[0].getClass().getName()) && ((EntityRef)persist).getUid().equals(((Identifiable)ce.getItems()[0]).getUid()))
-									|| ObjectUtil.objectEquals(dataManager, persist, ce.items[0]))) {
-									// Found remaining add event for newly persisted item
-									savedArray.remove(idx);
-									idx--;
-									break;
-								}
+					List<Object> snapshot = (List<Object>)sn;
+					Collection<?> coll = (Collection<?>)value;
+					if (removals != null) {
+						Iterator<Object> isne = snapshot.iterator();
+						while (isne.hasNext()) {
+							Object sne = isne.next();
+							for (Object removal : removals) {
+								if (sne instanceof Identifiable && ObjectUtil.objectEquals(dataManager, sne, removal))
+									isne.remove();
 							}
 						}
-						else if (ce.kind == ChangeKind.REMOVE && removals != null) {
-							for (Object removal : removals) {
-								if (ce.getItems() != null && ce.getItems().length == 1 && ce.getItems()[0] instanceof Identifiable
-									&& ((removal instanceof EntityRef && ((EntityRef)removal).getClassName().equals(ce.getItems()[0].getClass().getName()) && ((EntityRef)removal).getUid().equals(((Identifiable)ce.getItems()[0]).getUid()))
-									|| ObjectUtil.objectEquals(dataManager, removal, ce.items[0]))) {
-									// Found remaining add event for newly persisted item
-									savedArray.remove(idx);
-									idx--;
-									break;
+					}
+					if (persists != null) {
+						for (Object persist : persists) {
+							if (coll instanceof List<?>) {
+								List<?> list = (List<?>)coll;
+								List<Integer> found = new ArrayList<Integer>();
+								for (int j = 0; j < list.size(); j++) {
+									if (ObjectUtil.objectEquals(dataManager, list.get(j), persist))
+										found.add(j);
 								}
+								for (int j = 0; j < snapshot.size(); j++) {
+									if (ObjectUtil.objectEquals(dataManager, persist, snapshot.get(j))) {
+										snapshot.remove(j);
+										j--;
+									}
+								}
+								for (int idx : found)
+									snapshot.add(idx, persist);
+							}
+							else {
+								if (coll.contains(persist) && !snapshot.contains(persist))
+									snapshot.add(persist);
 							}
 						}
 					}
 					
-					if (savedArray.size() == 0)
+					if (isSameList(snapshot, coll))
+						ip.remove();
+				}
+				else if (value instanceof Map<?, ?>) {
+					@SuppressWarnings("unchecked")
+					List<Object[]> snapshot = (List<Object[]>)sn;
+					Map<?, ?> map = (Map<?, ?>)value;
+					if (removals != null) {
+						Iterator<Object[]> isne = snapshot.iterator();
+						while (isne.hasNext()) {
+							Object[] sne = isne.next();
+							for (Object removal : removals) {
+								if (sne[0] instanceof Identifiable && ObjectUtil.objectEquals(dataManager, sne[0], removal))
+									isne.remove();
+								else if (sne[1] instanceof Identifiable && ObjectUtil.objectEquals(dataManager, sne[1], removal))
+									isne.remove();
+							}
+						}
+					}
+					// TODO: persist ?				
+//					if (persists != null) {
+//						for (Object persist : persists) {
+//							boolean foundKey = false;
+//							List<Object> foundValues = new ArrayList<Object>();
+//							Iterator<Object[]> isne = snapshot.iterator();
+//							while (isne.hasNext()) {
+//								Object[] sne = isne.next();
+//								if (ObjectUtil.objectEquals(dataManager, sne[0], persist))
+//									foundKey = true;
+//								if (ObjectUtil.objectEquals(dataManager, sne[1], persist)) {
+//									foundValues.add(sne[0]);
+//									isne.remove();
+//								}
+//							}
+//							if (map.containsKey(persist) && !foundKey)
+//								snapshot.add(new Object[] { persist, map.get(persist) });
+//							if (map.containsValue(persist)) {
+//								for (Entry<?, ?> e : map.entrySet()) {
+//									if (e.getValue().equals(persist) && !e.getKey().equals(persist))
+//										snapshot.add(new Object[] { e.getKey(), e.getValue() });
+//								}
+//							}
+//						}
+//					}
+					
+					if (isSameMap(snapshot, map))
 						ip.remove();
 				}
 			}
@@ -917,106 +982,53 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             if (p.equals(desc.getVersionPropertyName()))
                 continue;
             
-            List<Object> removed = null;
-            
             Object val = dataManager.getProperty(entity, p);
-            if (val instanceof List<?> && !(val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())) {
-                List<Object> list = (List<Object>)val;
-                List<Change> savedArray = save != null ? (List<Change>)save.get(p) : null;
+            if (val instanceof Collection<?> && !(val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())) {
+                Collection<Object> coll = (Collection<Object>)val;
+                List<Object> savedArray = save != null ? (List<Object>)save.get(p) : null;
                 
                 if (savedArray != null) {
-                	for (int a = savedArray.size()-1; a >= 0; a--) {
-                		if (a >= savedArray.size())	{ // Due to internal changes during remove/add
-                			log.debug("WARN: savedArray for collection empty before complete processing %s", list);
-                			break;
-                		}
-                        Change ce = savedArray.get(a);
-                        if (ce.getKind() == ChangeKind.ADD) {
-                            if (removed == null)
-                                removed = new ArrayList<Object>();
-                            for (int z = 0; z < ce.getItems().length; z++) {
-                            	if (ce.getLocation() < list.size())
-                            		removed.add(list.remove(ce.getLocation()));
-                            	else
-                        			log.debug("WARN: could not restore remove for collection %s location %d", list, ce.getLocation());
-                            }
-                        }
-                        else if (ce.getKind() == ChangeKind.REMOVE) {
-                            for (int z = 0; z < ce.getItems().length; z++) {
-                            	if (ce.getLocation()+z <= list.size())
-                            		list.add(ce.getLocation()+z, ce.getItems()[z]);
-                            	else
-                        			log.debug("WARN: could not restore add for collection %s location %d", list, ce.getLocation()+z);
-                            }
-                        }
-                        else if (ce.getKind() == ChangeKind.REPLACE) {
-                            if (removed == null)
-                                removed = new ArrayList<Object>();
-                            for (int z = 0; z < ce.getItems().length; z++) {
-                            	if (ce.getLocation()+z < list.size())
-                            		removed.add(list.set(ce.getLocation()+z, ((Object[])ce.getItems()[z])[0]));
-                            	else
-                        			log.debug("WARN: could not restore replace for collection %s location %d", list, ce.getLocation()+z);
-                            }
-                        }
-                    }
+                	for (Object obj : coll) {
+                		if (obj instanceof Identifiable)
+                			resetEntity(mergeContext, obj, parent, cache);
+                	}
+                	coll.clear();
+                	for (Object e : savedArray)
+                		coll.add(e);
                     
                     // Must be here because collection reset has triggered other useless CollectionEvents
                     markNotDirty(val, parent);
                 }
-                for (Object o : list) {
+                
+                for (Object o : coll) {
                     if (o instanceof Identifiable)
                         resetEntity(mergeContext, o, (Identifiable)o, cache);
-                }
-                if (removed != null) {
-                    for (Object o : removed) {
-                        if (o instanceof Identifiable)
-                            resetEntity(mergeContext, o, (Identifiable)o, cache);
-                    }
                 }
             }
             else if (val instanceof Map<?, ?> && !(val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())) {
                 Map<Object, Object> map = (Map<Object, Object>)val;
-                List<Change> savedArray = save != null ? (List<Change>)save.get(p) : null;
+                List<Object[]> savedArray = save != null ? (List<Object[]>)save.get(p) : null;
                 
                 if (savedArray != null) {
-                    for (int a = savedArray.size()-1; a >= 0; a--) {
-                        Change ce = savedArray.get(a);
-                        if (ce.getKind() == ChangeKind.ADD) {
-                            if (removed == null)
-                                removed = new ArrayList<Object>();
-                            for (int z = 0; z < ce.getItems().length; z++) {
-                                removed.add(map.remove(((Object[])ce.getItems()[z])[0]));
-                                removed.add(((Object[])ce.getItems()[z])[0]);
-                            }
-                        }
-                        else if (ce.getKind() == ChangeKind.REMOVE) {
-                            for (int z = 0; z < ce.getItems().length; z++)
-                                map.put(((Object[])ce.getItems()[z])[0], ((Object[])ce.getItems()[z])[1]);
-                        }
-                        else if (ce.getKind() == ChangeKind.REPLACE) {
-                            if (removed == null)
-                                removed = new ArrayList<Object>();
-                            for (int z = 0; z < ce.getItems().length; z++) {
-                                removed.add(map.put(((Object[])ce.getItems()[z])[0], ((Object[])ce.getItems()[z])[1]));
-                            }
-                        }
-                    }
+                	for (Entry<Object, Object> entry : map.entrySet()) {
+                		if (entry.getKey() instanceof Identifiable)
+                			resetEntity(mergeContext, entry.getKey(), parent, cache);
+                		if (entry.getValue() instanceof Identifiable)
+                			resetEntity(mergeContext, entry.getValue(), parent, cache);
+		            }
+            		map.clear();
+            		for (Object[] e : savedArray)
+            			map.put(e[0], e[1]);
                     
                     // Must be here because collection reset has triggered other useless CollectionEvents
                     markNotDirty(val, parent);
                 }
+                
                 for (Entry<Object, Object> me : map.entrySet()) {
                     if (me.getKey() instanceof Identifiable)
                         resetEntity(mergeContext, me.getKey(), (Identifiable)me.getKey(), cache);
                     if (me.getValue() instanceof Identifiable)
                         resetEntity(mergeContext, me.getValue(), (Identifiable)me.getValue(), cache);
-                }
-                if (removed != null) {
-                    for (Object o : removed) {
-                        if (o instanceof Identifiable)
-                            resetEntity(mergeContext, o, (Identifiable)o, cache);
-                    }
                 }
             }
             else if (save != null && (ObjectUtil.isSimple(val) || ObjectUtil.isSimple(save.get(p)))) {

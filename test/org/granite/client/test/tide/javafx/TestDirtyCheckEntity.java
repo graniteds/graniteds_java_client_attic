@@ -36,8 +36,6 @@ import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.test.tide.MockInstanceStoreFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
-import org.granite.client.tide.data.impl.DirtyCheckContextImpl.Change;
-import org.granite.client.tide.data.spi.DataManager.ChangeKind;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.impl.SimpleContextManager;
 import org.granite.client.tide.javafx.JavaFXDataManager;
@@ -461,9 +459,8 @@ public class TestDirtyCheckEntity {
          Assert.assertTrue("Context dirty", entityManager.isDirty());
           
          person.getContacts().remove(0);
-          
-         Assert.assertEquals("Saved events", 1, ((List<Change>)entityManager.getSavedProperties(person).get("contacts")).size());
-         Assert.assertEquals("Saved event location", 0, ((List<Change>)entityManager.getSavedProperties(person).get("contacts")).get(0).getLocation());
+         
+         Assert.assertEquals("Saved snapshot", 0, ((List<Object>)entityManager.getSavedProperties(person).get("contacts")).size());
      }
 
      @Test
@@ -483,8 +480,7 @@ public class TestDirtyCheckEntity {
 
          person.getContacts().remove(1);
 
-         Assert.assertEquals("Saved events", 1, ((List<Change>)entityManager.getSavedProperties(person).get("contacts")).size());
-         Assert.assertEquals("Saved event location", 0, ((List<Change>)entityManager.getSavedProperties(person).get("contacts")).get(0).getLocation());
+         Assert.assertEquals("Saved snapshot", 0, ((List<Object>)entityManager.getSavedProperties(person).get("contacts")).size());
 
          person.getContacts().remove(0);
          Assert.assertFalse("Context dirty", entityManager.isDirty());
@@ -511,9 +507,7 @@ public class TestDirtyCheckEntity {
           
          Assert.assertTrue("Context dirty", entityManager.isDirty());
           
-         Assert.assertEquals("Saved events", 1, ((List<Change>)entityManager.getSavedProperties(person).get("contacts")).size());
-         Assert.assertEquals("Saved remove event location", ChangeKind.REMOVE, ((List<Change>)entityManager.getSavedProperties(person).get("contacts")).get(0).getKind());
-         Assert.assertEquals("Saved remove event location", 0, ((List<Change>)entityManager.getSavedProperties(person).get("contacts")).get(0).getLocation());
+         Assert.assertEquals("Saved snapshot", 2, ((List<Object>)entityManager.getSavedProperties(person).get("contacts")).size());
 
          Contact contact4 = new Contact(1L, 0L, "C1", "toto@tutu.com");
          contact4.setPerson(person);
