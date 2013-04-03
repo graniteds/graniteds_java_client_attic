@@ -189,6 +189,8 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 
 		while (!Thread.interrupted()) {
 			try {
+				timer.purge();	// Must purge to cleanup references to AsyncToken
+				
 				AsyncToken token = tokensQueue.take();
 				
 				if (token.isDone())
