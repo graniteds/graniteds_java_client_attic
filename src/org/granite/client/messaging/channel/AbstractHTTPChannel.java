@@ -189,8 +189,6 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 
 		while (!Thread.interrupted()) {
 			try {
-				timer.purge();	// Must purge to cleanup references to AsyncToken
-				
 				AsyncToken token = tokensQueue.take();
 				
 				if (token.isDone())
@@ -342,7 +340,8 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 		}
 		catch (Exception e) {
 			tokensMap.remove(token.getId());
-			token.dispatchFailure(e);
+			token.dispatchFailure(e);			
+			timer.purge();	// Must purge to cleanup timer references to AsyncToken
 			return false;
 		}
 		finally {
@@ -431,6 +430,8 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 						token.dispatchFailure(new RuntimeException("Unknown message type: " + response));
 						break;
 				}
+				
+				timer.purge();	// Must purge to cleanup timer references to AsyncToken
 			}
 		}
 		catch (Exception e) {
@@ -442,16 +443,20 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 	public void onError(TransportMessage message, Exception e) {
 		if (message != null) {
 			AsyncToken token = tokensMap.remove(message.getId());
-			if (token != null)
+			if (token != null) {
 				token.dispatchFailure(e);
+				timer.purge();	// Must purge to cleanup timer references to AsyncToken
+			}
 		}
 	}
 
 	@Override
 	public void onCancelled(TransportMessage message) {
 		AsyncToken token = tokensMap.remove(message.getId());
-		if (token != null)
+		if (token != null) {
 			token.dispatchCancelled();
+			timer.purge();	// Must purge to cleanup timer references to AsyncToken
+		}
 	}
 	
 	private static class ChannelResponseListener extends AllInOneResponseListener {
