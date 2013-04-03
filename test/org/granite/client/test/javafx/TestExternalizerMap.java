@@ -61,4 +61,26 @@ public class TestExternalizerMap {
 		Assert.assertTrue("Map type", entity instanceof Map);
 		Assert.assertEquals("Map value", new Long(89), ((Map<String, Long>)entity).get("test"));
 	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testExternalizationMap2() throws Exception {
+		Map<Integer, Long> map = new HashMap<Integer, Long>();
+		map.put(34, 89L);
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
+		ObjectOutput out = graniteConfigHibernate.newAMF3Serializer(baos);
+		out.writeObject(map);
+		
+		byte[] buf = baos.toByteArray();
+		
+		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+		ObjectInput in = graniteConfigJavaFX.newAMF3Deserializer(bais);
+		Object entity = in.readObject();
+		
+		Assert.assertTrue("Map type", entity instanceof Map);
+		Assert.assertEquals("Map value", new Long(89), ((Map<Integer, Long>)entity).get(34));
+	}
 }
