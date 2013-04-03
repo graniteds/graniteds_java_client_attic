@@ -1,9 +1,11 @@
 package org.granite.client.test.javafx;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 
@@ -14,6 +16,15 @@ public class Entity1c {
 	@Basic
 	private String name;
 	
+	@Basic
+	@Column(scale = 2, nullable = false)
+	private BigDecimal value;
+	
+	@Basic
+	@Column(scale = 2, nullable = false)
+	private BigDecimal value2;
+
+	
 	@OneToMany(mappedBy="entity1")
 	private Map<String, Entity2c> map = new HashMap<String, Entity2c>();
 	
@@ -22,6 +33,20 @@ public class Entity1c {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	public BigDecimal getValue() {
+		return value;
+	}
+	public void setValue(BigDecimal value) {
+		this.value = value;
+	}
+	
+	public BigDecimal getValue2() {
+		return value2;
+	}
+	public void setValue2(BigDecimal value) {
+		this.value2 = value;
 	}
 	
 	public Map<String, Entity2c> getMap() {

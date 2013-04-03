@@ -1,5 +1,9 @@
 package org.granite.client.test.javafx;
 
+import java.math.BigDecimal;
+
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -21,7 +25,9 @@ public class FXEntity1c {
         return __initialized;
     }
     
-	private StringProperty name = new SimpleStringProperty(this, "name", null);	
+	private StringProperty name = new SimpleStringProperty(this, "name", null);
+	private ObjectProperty<BigDecimal> value = new SimpleObjectProperty<BigDecimal>(this, "value", null);
+	private ObjectProperty<BigDecimal> value2 = new SimpleObjectProperty<BigDecimal>(this, "value2", null);
 	private ObservableMap<String, FXEntity2c> map = FXCollections.observableHashMap();
 	
 	public StringProperty nameProperty() {
@@ -32,6 +38,26 @@ public class FXEntity1c {
 	}
 	public void setName(String name) {
 		this.name.set(name);
+	}
+	
+	public ObjectProperty<BigDecimal> valueProperty() {
+		return value;
+	}
+	public BigDecimal getValue() {
+		return this.value.get();
+	}
+	public void setValue(BigDecimal value) {
+		this.value.set(value);
+	}
+	
+	public ObjectProperty<BigDecimal> value2Property() {
+		return value2;
+	}
+	public BigDecimal getValue2() {
+		return this.value2.get();
+	}
+	public void setValue2(BigDecimal value) {
+		this.value2.set(value);
 	}
 	
 	public ObservableMap<String, FXEntity2c> getMap() {

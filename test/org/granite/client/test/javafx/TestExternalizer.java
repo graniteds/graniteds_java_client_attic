@@ -5,9 +5,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
@@ -242,5 +244,49 @@ public class TestExternalizer {
 		
 		Assert.assertTrue("Entity type", entity instanceof Entity1c);
 		Assert.assertEquals("Entity2 value", "Test2", ((Entity1c)entity).getMap().get("test").getName());
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testExternalizationPerfServerToClient() throws Exception {
+		List<Entity1c> list = new ArrayList<Entity1c>(10000);
+		for (int i = 0; i < 200; i++) {
+			Entity1c entity1 = new Entity1c();
+			entity1.setName("Test" + i);
+			entity1.setValue(new BigDecimal((i+1)*67.89));
+			entity1.setValue2(new BigDecimal((i+1)*23.78));
+			entity1.setMap(new PersistentMap(null, new HashMap<String, Entity2c>()));
+			Entity2c entity2 = new Entity2c();
+			entity2.setName("Test" + i);
+			entity1.getMap().put("test" + i, entity2);
+			entity1.getMap().put("tost", entity2);
+			list.add(entity1);
+		}
+		
+		for (int test = 0; test < 5; test++) {
+			long time = System.nanoTime();
+			
+			SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+			ByteArrayOutputStream baos = new ByteArrayOutputStream(1000000);
+			ObjectOutput out = graniteConfigHibernate.newAMF3Serializer(baos);
+			out.writeObject(list);
+			
+			byte[] buf = baos.toByteArray();
+			
+			long elapsedTimeServer = (System.nanoTime()-time)/1000000;
+			System.out.println("Elapsed time server: " + elapsedTimeServer);
+			time = System.nanoTime();
+			System.out.println("Buf size: " + buf.length);
+			
+			SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+			ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+			ObjectInput in = graniteConfigJavaFX.newAMF3Deserializer(bais);
+			Object read = in.readObject();
+			
+			long elapsedTimeClient = (System.nanoTime()-time)/1000000;
+			System.out.println("Elapsed time client: " + elapsedTimeClient);
+			
+			Assert.assertTrue("Result type", read instanceof List<?>);
+		}
 	}
 }
