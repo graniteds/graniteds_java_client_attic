@@ -20,6 +20,8 @@
 
 package org.granite.client.tide.server;
 
+import java.util.concurrent.ExecutionException;
+
 import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.ResultEvent;
@@ -28,7 +30,7 @@ import org.granite.client.tide.Context;
 /**
  * @author William DRAI
  */
-public interface ComponentListener extends ResponseListener {
+public interface ComponentListener<T> extends ResponseListener {
     
     public String getOperation();
     
@@ -39,11 +41,15 @@ public interface ComponentListener extends ResponseListener {
     
     public Component getComponent();
     
+    public void setResult(T result);
     
-    public static interface Handler {
+    public T getResult() throws InterruptedException, ExecutionException;
+    
+    
+    public static interface Handler<T> {
         
-        public void result(Context context, ResultEvent event, Object info, String componentName, String operation, TideResponder<?> tideResponder, ComponentListener componentResponder);
+        public Runnable result(Context context, ResultEvent event, Object info, String componentName, String operation, TideResponder<T> tideResponder, ComponentListener<T> componentResponder);
         
-        public void fault(Context context, FaultEvent event, Object info, String componentName, String operation, TideResponder<?> tideResponder, ComponentListener componentResponder);
+        public Runnable fault(Context context, FaultEvent event, Object info, String componentName, String operation, TideResponder<T> tideResponder, ComponentListener<T> componentResponder);
     }
 }

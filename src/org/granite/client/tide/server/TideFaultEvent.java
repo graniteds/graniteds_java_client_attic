@@ -35,7 +35,7 @@ public class TideFaultEvent extends TideRpcEvent {
     private Fault fault;
     private Map<String, Object> extendedData;
 
-    public TideFaultEvent(Context context, ServerSession serverSession, ComponentListener componentResponder, Fault fault, Map<String, Object> extendedData) {
+    public TideFaultEvent(Context context, ServerSession serverSession, ComponentListener<?> componentResponder, Fault fault, Map<String, Object> extendedData) {
         super(context, serverSession, componentResponder);
         this.fault = fault;
         this.extendedData = extendedData;

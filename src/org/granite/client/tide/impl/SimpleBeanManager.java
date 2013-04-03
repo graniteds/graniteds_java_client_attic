@@ -21,9 +21,7 @@
 package org.granite.client.tide.impl;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.Future;
 
-import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.tide.BeanManager;
 import org.granite.logging.Logger;
 
@@ -70,11 +68,6 @@ public class SimpleBeanManager implements BeanManager {
         catch (Exception e) {
             throw new RuntimeException("Could not read bean property " + bean + "." + propertyName, e);
         }
-    }
-
-    @Override
-    public <T> Future<T> buildFutureResult(ResponseMessageFuture rmfuture) {
-        return new FutureResult<T>(rmfuture);
     }
 
 }

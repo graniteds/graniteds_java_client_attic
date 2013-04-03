@@ -68,6 +68,7 @@ import org.granite.client.tide.data.EntityManager.Update;
 import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.client.util.javafx.ListenerHelper;
 import org.granite.logging.Logger;
+import org.granite.messaging.amf.io.convert.Converters;
 import org.granite.tide.Expression;
 import org.granite.tide.invocation.ContextResult;
 import org.granite.tide.invocation.ContextUpdate;
@@ -235,6 +236,10 @@ public class ServerSession implements ContextAware {
 	
 	public void setRemoteClassPackage(Set<String> packageNames) {
 		remoteClassConfigurator.setPackageNames(packageNames);
+	}
+	
+	public Converters getConverters() {
+		return configuration.getGraniteConfig().getConverters();
 	}
 	
 	public void start() throws Exception {

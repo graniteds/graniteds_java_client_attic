@@ -20,16 +20,19 @@
 
 package org.granite.client.tide.impl;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
 import org.granite.client.messaging.events.Event;
 import org.granite.client.messaging.events.IncomingMessageEvent;
 import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.tide.Context;
-import org.granite.tide.invocation.InvocationResult;
 import org.granite.client.tide.server.ComponentListener;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideMergeResponder;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
+import org.granite.tide.invocation.InvocationResult;
 
 /**
  * @author William DRAI
@@ -44,10 +47,11 @@ public class ResultHandler<T> implements Runnable {
 	@SuppressWarnings("unused")
 	private final Object info;
 	private final TideResponder<T> tideResponder;
-	private final ComponentListener componentResponder;
+	private final ComponentListener<T> componentListener;
 	
 	
-	public ResultHandler(ServerSession serverSession, Context sourceContext, String componentName, String operation, Event event, Object info, TideResponder<T> tideResponder, ComponentListener componentResponder) {
+	public ResultHandler(ServerSession serverSession, Context sourceContext, String componentName, String operation, 
+			Event event, Object info, TideResponder<T> tideResponder, ComponentListener<T> componentListener) {
 		this.serverSession = serverSession;
 		this.sourceContext = sourceContext;
 		this.componentName = componentName;
@@ -55,9 +59,10 @@ public class ResultHandler<T> implements Runnable {
 		this.event = event;
 		this.info = info;
 		this.tideResponder = tideResponder;
-		this.componentResponder = componentResponder;
+		this.componentListener = componentListener;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void run() {
         InvocationResult invocationResult = null;
         Object result = null; 
@@ -69,6 +74,18 @@ public class ResultHandler<T> implements Runnable {
         if (result instanceof InvocationResult) {
             invocationResult = (InvocationResult)result;
             result = invocationResult.getResult();
+        }
+        
+        if (tideResponder != null) {
+	        for (Type type : tideResponder.getClass().getGenericInterfaces()) {
+	        	if (type instanceof ParameterizedType && ((ParameterizedType)type).getRawType().equals(TideResponder.class)) {
+	        		Type expectedReturnType = ((ParameterizedType)type).getActualTypeArguments()[0];
+	        		result = serverSession.getConverters().convert(result, expectedReturnType);
+	        		if (invocationResult != null)
+	        			invocationResult.setResult(result);
+	        		break;
+	        	}
+	        }
         }
         
 //        var conversationId:String = null;
@@ -91,12 +108,13 @@ public class ResultHandler<T> implements Runnable {
         @SuppressWarnings("unused")
 		boolean handled = false;
         if (tideResponder != null) {
-            @SuppressWarnings("unchecked")
-            TideResultEvent<T> resultEvent = new TideResultEvent<T>(context, serverSession, componentResponder, (T)result);
+            TideResultEvent<T> resultEvent = new TideResultEvent<T>(context, serverSession, componentListener, (T)result);
             tideResponder.result(resultEvent);
             if (resultEvent.isDefaultPrevented())
                 handled = true;
         }
+        
+        componentListener.setResult((T)result);
         
 //	        context.clearData();
 //	        

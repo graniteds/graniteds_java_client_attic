@@ -123,9 +123,9 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
         
         log.debug("callComponent %s.%s", getName(), operation);
         
-        TideResponder<?> responder = null;
+        TideResponder<T> responder = null;
         if (args != null && args.length > 0 && args[args.length-1] instanceof TideResponder) {
-            responder = (TideResponder<?>)args[args.length-1];
+        	responder = (TideResponder<T>)args[args.length-1];
             Object[] newArgs = new Object[args.length-1];
             for (int i = 0; i < args.length-1; i++)
             	newArgs[i] = args[i];
@@ -165,8 +165,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
         boolean saveTracking = trackingContext.isEnabled();
         try {
             trackingContext.setEnabled(false);
-            ResponseMessageFuture rmf = invoke(context, this, operation, args, responder, withContext, null);
-            future = context.getBeanManager().buildFutureResult(rmf);
+            future = invoke(context, this, operation, args, responder, withContext, null);
         }
         finally {
             trackingContext.setEnabled(saveTracking);
@@ -185,24 +184,24 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
     
     
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public ResponseMessageFuture invoke(Context context, Component component, String operation, Object[] args, TideResponder<?> tideResponder, 
-                           boolean withContext, ComponentListener.Handler handler) {
+    public <T> Future<T> invoke(Context context, Component component, String operation, Object[] args, TideResponder<T> tideResponder, 
+                           boolean withContext, ComponentListener.Handler<T> handler) {
         log.debug("invokeComponent %s > %s.%s", context.getContextId(), component.getName() != null ? component.getName() : component.getClass().getName(), operation);
         
-        ComponentListener.Handler h = handler != null ? handler : new ComponentListener.Handler() {            
+        ComponentListener.Handler h = handler != null ? handler : new ComponentListener.Handler<T>() {            
 			@Override
-            public void result(Context context, ResultEvent event, Object info, String componentName,
-                    String operation, TideResponder<?> tideResponder, ComponentListener componentResponder) {
-            	context.callLater(new ResultHandler(serverSession, context, componentName, operation, event, info, tideResponder, componentResponder));
+            public Runnable result(Context context, ResultEvent event, Object info, String componentName,
+                    String operation, TideResponder<T> tideResponder, ComponentListener<T> componentListener) {
+            	return new ResultHandler(serverSession, context, componentName, operation, event, info, tideResponder, componentListener);
             }
             
             @Override
-            public void fault(Context context, FaultEvent event, Object info, String componentName,
-                    String operation, TideResponder<?> tideResponder, ComponentListener componentResponder) {
-            	context.callLater(new FaultHandler(serverSession, context, componentName, operation, event, info, tideResponder, componentResponder));
+            public Runnable fault(Context context, FaultEvent event, Object info, String componentName,
+                    String operation, TideResponder<T> tideResponder, ComponentListener<T> componentListener) {
+            	return new FaultHandler(serverSession, context, componentName, operation, event, info, tideResponder, componentListener);
             }
         };
-        ComponentListener componentListener = new ComponentListenerImpl(context, h, component, operation, args, null, tideResponder);
+        ComponentListener<T> componentListener = new ComponentListenerImpl<T>(context, h, component, operation, args, null, tideResponder);
         
         InvocationInterceptor[] interceptors = context.allByType(InvocationInterceptor.class);
         if (interceptors != null) {
@@ -235,12 +234,12 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
     	call[2] = componentListener.getOperation();
     	call[3] = componentListener.getArgs();
     	call[4] = new InvocationCall();
-    	
+
         RemoteService ro = serverSession.getRemoteService();
         ResponseMessageFuture rmf = ro.newInvocation("invokeComponent", call).addListener(componentListener).invoke();
         
         serverSession.checkWaitForLogout();
         
-        return rmf;
+        return new FutureResult<T>(rmf, componentListener);
     }
 }

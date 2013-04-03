@@ -31,14 +31,14 @@ public class TideRpcEvent {
     
     private Context context;
     private ServerSession serverSession;
-    private ComponentListener componentResponder;
+    private ComponentListener<?> componentListener;
     private boolean defaultPrevented = false;
 
     
-    public TideRpcEvent(Context context, ServerSession serverSession, ComponentListener componentResponder) {
+    public TideRpcEvent(Context context, ServerSession serverSession, ComponentListener<?> componentListener) {
         this.context = context;
         this.serverSession = serverSession;
-        this.componentResponder = componentResponder;
+        this.componentListener = componentListener;
     }
     
     public Context getContext() {
@@ -49,8 +49,8 @@ public class TideRpcEvent {
     	return serverSession;
     }
     
-    public ComponentListener getComponentResponder() {
-        return componentResponder;
+    public ComponentListener<?> getComponentListener() {
+        return componentListener;
     }
     
     public void preventDefault() {

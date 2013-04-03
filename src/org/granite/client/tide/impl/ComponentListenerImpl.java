@@ -20,6 +20,8 @@
 
 package org.granite.client.tide.impl;
 
+import java.util.concurrent.ExecutionException;
+
 import org.granite.client.messaging.events.CancelledEvent;
 import org.granite.client.messaging.events.FailureEvent;
 import org.granite.client.messaging.events.FaultEvent;
@@ -28,24 +30,29 @@ import org.granite.client.messaging.events.TimeoutEvent;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ComponentListener;
+import org.granite.client.tide.server.FaultException;
 import org.granite.client.tide.server.TideResponder;
 
 /**
  * @author William DRAI
  */
-public class ComponentListenerImpl implements ComponentListener {
+public class ComponentListenerImpl<T> implements ComponentListener<T> {
     
     private Context sourceContext;
     private Component component;
     private String componentName;
     private String operation;
     private Object[] args;
-    private Handler handler;
-    private TideResponder<?> tideResponder;
+    private Handler<T> handler;
+    private TideResponder<T> tideResponder;
     private Object info;
+    private boolean waiting = false;
+    private Runnable responseHandler;
+    private T result = null;
+    private Exception exception = null;
     
     
-    public ComponentListenerImpl(Context sourceContext, Handler handler, Component component, String operation, Object[] args, Object info, TideResponder<?> tideResponder) {        
+    public ComponentListenerImpl(Context sourceContext, Handler<T>handler, Component component, String operation, Object[] args, Object info, TideResponder<T> tideResponder) {        
         this.sourceContext = sourceContext;
         this.handler = handler;
         this.component = component;
@@ -53,7 +60,7 @@ public class ComponentListenerImpl implements ComponentListener {
         this.operation = operation;
         this.args = args;
         this.tideResponder = tideResponder;
-        this.info = info;   
+        this.info = info;
     }
     
     public String getOperation() {
@@ -75,29 +82,78 @@ public class ComponentListenerImpl implements ComponentListener {
         return component;
     }
     
+    public T getResult() throws InterruptedException, ExecutionException {
+        synchronized (this) {
+        	waiting = true;
+        	wait();
+        	if (responseHandler != null)
+        		responseHandler.run();
+        }
+        if (exception instanceof ExecutionException)
+        	throw (ExecutionException)exception;
+        else if (exception instanceof InterruptedException)
+        	throw (InterruptedException)exception;
+    	return result;
+    }
+    
+    public void setResult(T result) {
+    	this.result = result;
+    }
+    
 	@Override
     public void onResult(ResultEvent event) {
-        handler.result(sourceContext, event, info, componentName, operation, tideResponder, this);
-        
+		Runnable h = handler.result(sourceContext, event, info, componentName, operation, tideResponder, this);
+        synchronized (this) {
+        	if (waiting) {
+        		responseHandler = h;
+        		notifyAll();
+        	}
+        	else
+        		sourceContext.callLater(h);
+        }
     }
     
 	@Override
     public void onFault(FaultEvent event) {
-        handler.fault(sourceContext, event, info, componentName, operation, tideResponder, this);
+		Runnable h = handler.fault(sourceContext, event, info, componentName, operation, tideResponder, this);
+		synchronized (this) {
+			if (waiting) {
+				responseHandler = h;
+				exception = new FaultException(event);
+				notifyAll();
+			}
+			else
+		        sourceContext.callLater(h);
+		}
     }
 
 	@Override
-	public void onFailure(FailureEvent event) {
-		// TODO: handle listener failure 
+	public void onFailure(final FailureEvent event) {
+		synchronized (this) {
+			if (waiting) {
+				exception = new ExecutionException(event.getCause());
+				notifyAll();
+			}
+		}
 	}
 
 	@Override
 	public void onTimeout(TimeoutEvent event) {
-		// TODO: handle listener failure 
+		synchronized (this) {
+			if (waiting) {
+				exception = new InterruptedException("timeout");
+				notifyAll();
+			}
+		}
 	}
 
 	@Override
 	public void onCancelled(CancelledEvent event) {
-		// TODO: handle listener failure 
+		synchronized (this) {
+			if (waiting) {
+				exception = new InterruptedException("cancel");
+				notifyAll();
+			}
+		}
 	}
 }

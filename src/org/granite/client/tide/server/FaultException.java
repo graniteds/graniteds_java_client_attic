@@ -18,15 +18,27 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide;
+package org.granite.client.tide.server;
 
+import java.util.concurrent.ExecutionException;
+
+import org.granite.client.messaging.events.FaultEvent;
 
 /**
  * @author William DRAI
  */
-public interface BeanManager {
+public class FaultException extends ExecutionException {
 
-    public void setProperty(Object bean, String propertyName, Object value);
-    
-    public Object getProperty(Object bean,  String propertyName);
+	private static final long serialVersionUID = 1L;
+	
+	private FaultEvent faultEvent;
+	
+	public FaultException(FaultEvent event) {
+		super();
+		this.faultEvent = event;
+	}
+	
+	public FaultEvent getFaultEvent() {
+		return faultEvent;
+	}
 }

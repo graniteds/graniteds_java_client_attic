@@ -57,11 +57,11 @@ public class FaultHandler<T> implements Runnable {
 	@SuppressWarnings("unused")
 	private final Object info;
 	private final TideResponder<T> tideResponder;
-	private final ComponentListener componentResponder;
+	private final ComponentListener<T> componentResponder;
 	
 	
 	public FaultHandler(ServerSession serverSession, Context sourceContext, String componentName, String operation, FaultEvent event, Object info, 
-			TideResponder<T> tideResponder, ComponentListener componentResponder) {
+			TideResponder<T> tideResponder, ComponentListener<T> componentResponder) {
 		this.serverSession = serverSession;
 		this.sourceContext = sourceContext;
 		this.componentName = componentName;

@@ -20,9 +20,12 @@
 
 package org.granite.client.test.tide.javafx;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.messages.Message;
@@ -44,14 +47,22 @@ import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
+import org.granite.config.GraniteConfig;
+import org.granite.config.flex.ServicesConfig;
+import org.granite.tide.invocation.InvocationResult;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import flex.messaging.io.ArrayCollection;
+
 
 public class TestSimpleCall {
     
+	private ServicesConfig servicesConfig = null;
+	private GraniteConfig graniteConfigHibernate = null;
+	
     private ContextManager contextManager;
     private Context ctx;
     private ServerSession serverSession;
@@ -59,7 +70,11 @@ public class TestSimpleCall {
     
     @Before
     public void setup() throws Exception {
-        contextManager = new SimpleContextManager(new DefaultPlatform());
+		servicesConfig = new ServicesConfig(null, null, false);
+		InputStream is = getClass().getClassLoader().getResourceAsStream("org/granite/client/test/javafx/granite-config-hibernate.xml");
+		graniteConfigHibernate = new GraniteConfig(null, is, null, null);
+    	
+    	contextManager = new SimpleContextManager(new DefaultPlatform());
         contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext();
         serverSession = new ServerSession("spring", "/test", "localhost", 8080);
@@ -105,11 +120,11 @@ public class TestSimpleCall {
             }
         });
         
-        Future<List<Person>> fpersons = personService.call("findAllPersons", new TideResponder<Person>() {
+        Future<List<Person>> fpersons = personService.call("findAllPersons", new TideResponder<List<Person>>() {
 			@Override
-			public void result(TideResultEvent<Person> event) {
+			public void result(TideResultEvent<List<Person>> event) {
 			}
-
+			
 			@Override
 			public void fault(TideFaultEvent event) {
 				event.getFault();
@@ -135,5 +150,96 @@ public class TestSimpleCall {
         Assert.assertEquals("Person", "Wolff", person.getLastName());
         
         System.out.println("Done.");
+    }
+
+    @Test
+    public void testSimpleSetCall() throws Exception {        
+        Component personService = new ComponentImpl(serverSession);
+        ctx.set("personService", personService);
+        MockRemoteService.setResponseBuilder(new ResponseBuilder() {
+            @Override
+            public Message buildResponseMessage(RemoteService service, RequestMessage request) {
+            	InvocationMessage invocation = (InvocationMessage)request;
+            	
+                if (!invocation.getParameters()[0].equals("personService"))
+                    return new FaultMessage();
+                
+                String method = (String)invocation.getParameters()[2];
+                Object[] args = ((Object[])invocation.getParameters()[3]);
+
+//        		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//        		byte[] buf = new byte[10000];
+//        		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+//        		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
+//        		Object entity = in.readObject();
+                
+                Object result = null;
+                if (method.equals("findAllPersons") && args.length == 0) {
+                    ArrayCollection set = new ArrayCollection();
+                    set.add(new Person());
+                    set.add(new Person());
+                    result = set;
+                }
+                else if (method.equals("findMapPersons") && args.length == 0) {
+                	
+                    ArrayCollection set = new ArrayCollection();
+                    set.add(new Person());
+                    set.add(new Person());
+                    result = set;
+                }
+                else if (method.equals("createPerson") && args.length == 1) {
+                    Person person = (Person)args[0];
+                    Person p = new Person();
+                    p.setFirstName(person.getFirstName());
+                    p.setLastName(person.getLastName());
+                    result = p;
+                }
+                
+                InvocationResult invResult = new InvocationResult(result);
+                return new ResultMessage(null, null, invResult);
+            }
+        });
+        
+        final Object[] res = new Object[1];
+        Future<Set<Person>> fpersons = personService.call("findAllPersons", new TideResponder<Set<Person>>() {
+			@Override
+			public void result(TideResultEvent<Set<Person>> event) {
+				res[0] = event.getResult();
+			}
+
+			@Override
+			public void fault(TideFaultEvent event) {
+				event.getFault();
+			}
+        });
+        
+        Set<Person> persons = fpersons.get();
+        Object persons2 = res[0];
+        
+        // (Set<Person>)res[0];
+        System.out.println("findAllPersons result: " + persons);
+        Assert.assertTrue("Persons set", persons instanceof Set);
+        Assert.assertEquals("Persons result", 2, persons.size());
+        Assert.assertSame("get() == TideResultEvent", persons, persons2);
+        
+        res[0] = null;
+        final Semaphore sem = new Semaphore(0);
+        
+        personService.call("findAllPersons", new TideResponder<Set<Person>>() {
+			@Override
+			public void result(TideResultEvent<Set<Person>> event) {
+				res[0] = event.getResult();
+				sem.release();
+			}
+
+			@Override
+			public void fault(TideFaultEvent event) {
+				event.getFault();
+			}
+        });
+        
+        sem.acquire();
+        persons2 = res[0];
+        Assert.assertTrue("Persons set", persons2 instanceof Set);
     }
 }
