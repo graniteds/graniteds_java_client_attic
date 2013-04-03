@@ -238,12 +238,14 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
 			Identity.this.call(name, roleName, new SimpleTideResponder<Boolean>() {
 				@Override
 				public void result(TideResultEvent<Boolean> event) {
+					tideResponder.result(event);
 					hasRole = event.getResult();
 					fireValueChangedEvent();
 				}
 				
 				@Override
 				public void fault(TideFaultEvent event) {
+					tideResponder.fault(event);
 					clear();
 				}
 			});
@@ -327,12 +329,14 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
 			Identity.this.call(name, entity, action, new SimpleTideResponder<Boolean>() {
 				@Override
 				public void result(TideResultEvent<Boolean> event) {
+					tideResponder.result(event);
 					hasPermission = event.getResult();
 					fireValueChangedEvent();
 				}
 				
 				@Override
 				public void fault(TideFaultEvent event) {
+					tideResponder.fault(event);
 					clear();
 				}
 			});
