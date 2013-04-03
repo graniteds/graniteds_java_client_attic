@@ -28,6 +28,9 @@ import java.util.concurrent.Future;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
 
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
@@ -76,12 +79,20 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
     
     protected boolean usePage = false;
     
-    private Map<String, Object> filterMap = new ConcurrentHashMap<String, Object>();
+    private ObservableMap<String, Object> filterMap = FXCollections.observableMap(new ConcurrentHashMap<String, Object>());
     private ObjectProperty<F> filter = null;
 	
     
     public PagedQuery(ServerSession serverSession) {
     	this.serverSession = serverSession;
+    	
+    	this.filterMap.addListener(new MapChangeListener<String, Object>() {
+			@Override
+			public void onChanged(MapChangeListener.Change<? extends String, ?> change) {
+				fullRefresh = true;
+				filterRefresh = true;
+			}
+    	});
     }
 	
     public void setName(String componentName) {
@@ -116,6 +127,15 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 	public void setFilterClass(Class<F> filterClass) throws IllegalAccessException, InstantiationException {
 		this.filter = new SimpleObjectProperty<F>(this, "filter");
 		setFilter((F)TypeUtil.newInstance(filterClass, Object.class));
+	}
+	
+	@Override
+	public boolean refresh() {
+		if (getFilter() != null && this.context.getEntityManager().isDeepDirtyEntity(getFilter())) {
+			filterRefresh = true;
+			fullRefresh = true;
+		}
+		return super.refresh();
 	}
 	
 
@@ -174,7 +194,7 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 		doFind(filter, first, max, findResponder);
 	}
 	
-	protected void doFind(Object filter, int first, int max, PagedCollectionResponder findResponder) { 			
+	protected void doFind(Object filter, int first, int max, PagedCollectionResponder findResponder) {
 		// Force evaluation of max, results and count
 		String[] order = new String[0];
 		boolean[] desc = new boolean[0];
@@ -223,12 +243,6 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 				((Number)result.get("resultCount")).intValue(), (List<E>)result.get("resultList"));
 	    return page;
 	}
-	
-	
-//	private function filterChangedHandler(event:Event):void {
-//	    _fullRefresh = true;
-//	    _filterRefresh = true;
-//	}
 	
 	
 	/**
