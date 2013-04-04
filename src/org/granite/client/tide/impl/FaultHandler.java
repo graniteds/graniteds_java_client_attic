@@ -58,6 +58,7 @@ public class FaultHandler<T> implements Runnable {
 	private final Object info;
 	private final TideResponder<T> tideResponder;
 	private final ComponentListener<T> componentResponder;
+	private boolean executed = false;
 	
 	
 	public FaultHandler(ServerSession serverSession, Context sourceContext, String componentName, String operation, FaultEvent event, Object info, 
@@ -73,6 +74,10 @@ public class FaultHandler<T> implements Runnable {
 	}
 
 	public void run() {
+		if (executed)
+			return;
+		executed = true;
+		
         log.error("fault %s", event.toString());
        
         // TODO: conversation contexts

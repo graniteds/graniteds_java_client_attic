@@ -48,6 +48,7 @@ public class ResultHandler<T> implements Runnable {
 	private final Object info;
 	private final TideResponder<T> tideResponder;
 	private final ComponentListener<T> componentListener;
+	private boolean executed = false;
 	
 	
 	public ResultHandler(ServerSession serverSession, Context sourceContext, String componentName, String operation, 
@@ -64,6 +65,9 @@ public class ResultHandler<T> implements Runnable {
 	
 	@SuppressWarnings("unchecked")
 	public void run() {
+		if (executed)
+			return;
+		executed = true;
         InvocationResult invocationResult = null;
         Object result = null; 
         if (event instanceof ResultEvent)

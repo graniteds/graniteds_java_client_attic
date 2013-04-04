@@ -20,7 +20,6 @@
 
 package org.granite.client.test.tide.javafx;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -47,8 +46,6 @@ import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
-import org.granite.config.GraniteConfig;
-import org.granite.config.flex.ServicesConfig;
 import org.granite.tide.invocation.InvocationResult;
 import org.junit.After;
 import org.junit.Assert;
@@ -60,9 +57,6 @@ import flex.messaging.io.ArrayCollection;
 
 public class TestSimpleCall {
     
-	private ServicesConfig servicesConfig = null;
-	private GraniteConfig graniteConfigHibernate = null;
-	
     private ContextManager contextManager;
     private Context ctx;
     private ServerSession serverSession;
@@ -70,10 +64,6 @@ public class TestSimpleCall {
     
     @Before
     public void setup() throws Exception {
-		servicesConfig = new ServicesConfig(null, null, false);
-		InputStream is = getClass().getClassLoader().getResourceAsStream("org/granite/client/test/javafx/granite-config-hibernate.xml");
-		graniteConfigHibernate = new GraniteConfig(null, is, null, null);
-    	
     	contextManager = new SimpleContextManager(new DefaultPlatform());
         contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext();
@@ -87,7 +77,7 @@ public class TestSimpleCall {
     public void tearDown() throws Exception {
     	serverSession.stop();
     }
-
+    
     @Test
     public void testSimpleCall() throws Exception {        
         Component personService = new ComponentImpl(serverSession);
@@ -123,6 +113,7 @@ public class TestSimpleCall {
         Future<List<Person>> fpersons = personService.call("findAllPersons", new TideResponder<List<Person>>() {
 			@Override
 			public void result(TideResultEvent<List<Person>> event) {
+		        System.out.println("findAllPersons result(): " + event.getResult());
 			}
 			
 			@Override
@@ -133,7 +124,7 @@ public class TestSimpleCall {
         
         List<Person> persons = fpersons.get();
         
-        System.out.println("findAllPersons result: " + persons);
+        System.out.println("findAllPersons get(): " + persons);
         Assert.assertEquals("Persons result", 2, persons.size());
         
         // Create a new Person entity.
@@ -145,8 +136,8 @@ public class TestSimpleCall {
         // the new person as its parameter.
         Future<Person> fperson = personService.call("createPerson", person);
         person = fperson.get();
-
-        System.out.println("createPerson result: " + person);
+        
+        System.out.println("createPerson get(): " + person);
         Assert.assertEquals("Person", "Wolff", person.getLastName());
         
         System.out.println("Done.");
@@ -204,6 +195,7 @@ public class TestSimpleCall {
         Future<Set<Person>> fpersons = personService.call("findAllPersons", new TideResponder<Set<Person>>() {
 			@Override
 			public void result(TideResultEvent<Set<Person>> event) {
+		        System.out.println("findAllPersons result(): " + event.getResult());
 				res[0] = event.getResult();
 			}
 
@@ -217,7 +209,7 @@ public class TestSimpleCall {
         Object persons2 = res[0];
         
         // (Set<Person>)res[0];
-        System.out.println("findAllPersons result: " + persons);
+        System.out.println("findAllPersons get(): " + persons);
         Assert.assertTrue("Persons set", persons instanceof Set);
         Assert.assertEquals("Persons result", 2, persons.size());
         Assert.assertSame("get() == TideResultEvent", persons, persons2);
@@ -228,6 +220,7 @@ public class TestSimpleCall {
         personService.call("findAllPersons", new TideResponder<Set<Person>>() {
 			@Override
 			public void result(TideResultEvent<Set<Person>> event) {
+				System.out.println("findAllPersons result(): " + event.getResult());
 				res[0] = event.getResult();
 				sem.release();
 			}

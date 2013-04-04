@@ -93,6 +93,12 @@ public class MockRemoteService extends RemoteService {
 			executor.execute(new Runnable() {
 				@Override
 				public void run() {
+					try {
+						Thread.sleep(50);
+					} 
+					catch (InterruptedException e1) {
+					}
+					
 					PublicByteArrayOutputStream os = new PublicByteArrayOutputStream(512);
 					TransportMessage message = null;
 					try {

@@ -47,7 +47,7 @@ public class ComponentListenerImpl<T> implements ComponentListener<T> {
     private TideResponder<T> tideResponder;
     private Object info;
     private boolean waiting = false;
-    private Runnable responseHandler;
+    private Runnable responseHandler = null;
     private T result = null;
     private Exception exception = null;
     
@@ -84,8 +84,10 @@ public class ComponentListenerImpl<T> implements ComponentListener<T> {
     
     public T getResult() throws InterruptedException, ExecutionException {
         synchronized (this) {
-        	waiting = true;
-        	wait();
+        	if (responseHandler == null && exception == null) {
+	        	waiting = true;
+	        	wait();
+        	}
         	if (responseHandler != null)
         		responseHandler.run();
         }
@@ -104,10 +106,10 @@ public class ComponentListenerImpl<T> implements ComponentListener<T> {
     public void onResult(ResultEvent event) {
 		Runnable h = handler.result(sourceContext, event, info, componentName, operation, tideResponder, this);
         synchronized (this) {
-        	if (waiting) {
-        		responseHandler = h;
+        	System.out.println("onResult, waiting " + waiting + ", handler: " + h);
+    		responseHandler = h;
+        	if (waiting)
         		notifyAll();
-        	}
         	else
         		sourceContext.callLater(h);
         }
@@ -117,43 +119,39 @@ public class ComponentListenerImpl<T> implements ComponentListener<T> {
     public void onFault(FaultEvent event) {
 		Runnable h = handler.fault(sourceContext, event, info, componentName, operation, tideResponder, this);
 		synchronized (this) {
-			if (waiting) {
-				responseHandler = h;
-				exception = new FaultException(event);
+			responseHandler = h;
+			exception = new FaultException(event);
+			if (waiting)
 				notifyAll();
-			}
 			else
-		        sourceContext.callLater(h);
+        		sourceContext.callLater(h);
 		}
     }
 
 	@Override
 	public void onFailure(final FailureEvent event) {
 		synchronized (this) {
-			if (waiting) {
-				exception = new ExecutionException(event.getCause());
+			exception = new ExecutionException(event.getCause());
+			if (waiting)
 				notifyAll();
-			}
 		}
 	}
 
 	@Override
 	public void onTimeout(TimeoutEvent event) {
 		synchronized (this) {
-			if (waiting) {
-				exception = new InterruptedException("timeout");
+			exception = new InterruptedException("timeout");
+			if (waiting)
 				notifyAll();
-			}
 		}
 	}
 
 	@Override
 	public void onCancelled(CancelledEvent event) {
 		synchronized (this) {
-			if (waiting) {
-				exception = new InterruptedException("cancel");
+			exception = new InterruptedException("cancel");
+			if (waiting)
 				notifyAll();
-			}
 		}
 	}
 }
