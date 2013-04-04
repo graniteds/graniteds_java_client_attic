@@ -6,10 +6,10 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 
 import org.granite.client.javafx.JavaFXObject;
+import org.granite.client.persistence.javafx.PersistentMap;
 import org.granite.messaging.amf.RemoteClass;
 
 
@@ -28,7 +28,7 @@ public class FXEntity1c {
 	private StringProperty name = new SimpleStringProperty(this, "name", null);
 	private ObjectProperty<BigDecimal> value = new SimpleObjectProperty<BigDecimal>(this, "value", null);
 	private ObjectProperty<BigDecimal> value2 = new SimpleObjectProperty<BigDecimal>(this, "value2", null);
-	private ObservableMap<String, FXEntity2c> map = FXCollections.observableHashMap();
+	private ObservableMap<String, FXEntity2c> map = new PersistentMap<String, FXEntity2c>();
 	
 	public StringProperty nameProperty() {
 		return name;
