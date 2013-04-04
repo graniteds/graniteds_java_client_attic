@@ -106,7 +106,6 @@ public class ComponentListenerImpl<T> implements ComponentListener<T> {
     public void onResult(ResultEvent event) {
 		Runnable h = handler.result(sourceContext, event, info, componentName, operation, tideResponder, this);
         synchronized (this) {
-        	System.out.println("onResult, waiting " + waiting + ", handler: " + h);
     		responseHandler = h;
         	if (waiting)
         		notifyAll();
