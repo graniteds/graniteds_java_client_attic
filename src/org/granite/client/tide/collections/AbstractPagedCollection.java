@@ -27,15 +27,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 import java.util.Set;
 
 import org.granite.client.tide.collections.javafx.Sort;
-import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.UpdateKind;
 import org.granite.client.tide.events.TideEvent;
 import org.granite.client.tide.events.TideEventObserver;
-import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
@@ -283,9 +280,9 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	 *  @param max max elements requested
 	 */
 	protected void findResult(TideResultEvent<?> event, int first, int max) {
-	    Page<E> result = getResult(event, first, max);
-	    
-	    handleResult(result, event, first, max);
+	    Page<E> page = getResult(event, first, max);
+    	
+	    handleResult(page, event, first, max);
 	}
 	
 	/**
@@ -296,8 +293,8 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	 *  @param event the result event
 	 */
 	@SuppressWarnings("unchecked")
-	protected void handleResult(Page<E> result, TideResultEvent<?> event, int first, int max) {
-		List<E> list = (List<E>)result.getResultList();
+	protected void handleResult(Page<E> page, TideResultEvent<?> event, int first, int max) {
+		List<E> list = (List<E>)page.getResultList();
 
 		for (Iterator<Integer[]> ipr = pendingRanges.iterator(); ipr.hasNext(); ) {
 			Integer[] pr = ipr.next();
@@ -308,18 +305,55 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		}
 		
 		if (initializing && event != null) {
-			if (this.max == 0 && result.getMaxResults() > 0)
-		    	this.max = result.getMaxResults();
+			if (this.max == 0 && page.getMaxResults() > 0)
+		    	this.max = page.getMaxResults();
 		    initialize(event);
 		}
 		
-		int nextFirst = (Integer)result.getFirstResult();
-		int nextLast = nextFirst + (Integer)result.getMaxResults();
+		int nextFirst = (Integer)page.getFirstResult();
+		int nextLast = nextFirst + (Integer)page.getMaxResults();
 		
-		int page = max > 0 ? nextFirst / max : 0;
-		log.debug("handle result page %d (%d - %d)", page, nextFirst, nextLast);
+		int pageNum = max > 0 ? nextFirst / max : 0;
+		log.debug("handle result page %d (%d - %d)", pageNum, nextFirst, nextLast);
+
+    	if (!initializing) {
+    		log.debug("Adjusting from %d-%d to %d-%d size %d", AbstractPagedCollection.this.first, AbstractPagedCollection.this.last, nextFirst, nextLast, list.size());
+    		// Adjust internal list to expected results without triggering events
+	    	if (nextFirst > AbstractPagedCollection.this.first && nextFirst < AbstractPagedCollection.this.last) {
+    			getInternalWrappedList().subList(0, nextFirst - AbstractPagedCollection.this.first).clear();
+	    		for (int i = 0; i < nextFirst - AbstractPagedCollection.this.first && AbstractPagedCollection.this.last - nextFirst + i < list.size(); i++) {
+	    			E elt = list.get(AbstractPagedCollection.this.last - nextFirst + i);
+    				getInternalWrappedList().add(elt);
+	    		}
+	    	}
+	    	else if (nextFirst == AbstractPagedCollection.this.first && nextLast > AbstractPagedCollection.this.last) {
+	    		for (int i = 0; i < (nextLast-nextFirst)-(AbstractPagedCollection.this.last-AbstractPagedCollection.this.first) && AbstractPagedCollection.this.last + i < list.size(); i++) {
+	    			E elt = list.get(AbstractPagedCollection.this.last + i);
+    				getInternalWrappedList().add(elt);
+	    		}
+	    	}
+	    	else if (nextLast > AbstractPagedCollection.this.first && nextLast < AbstractPagedCollection.this.last) {
+	    		if (nextLast-AbstractPagedCollection.this.first < getInternalWrappedList().size())
+	    			getInternalWrappedList().subList(nextLast-AbstractPagedCollection.this.first, getInternalWrappedList().size()).clear();
+	    		else
+	    			getInternalWrappedList().clear();
+	    		for (int i = 0; i < AbstractPagedCollection.this.first - nextFirst && i < list.size(); i++) {
+	    			E elt = list.get(i);
+    				getInternalWrappedList().add(i, elt);
+	    		}
+	    	}
+	    	else if (nextFirst >= AbstractPagedCollection.this.last || nextLast <= AbstractPagedCollection.this.first) {
+	    		getInternalWrappedList().clear();
+	    		for (int i = 0; i < list.size(); i++) {
+	    			E elt = list.get(i);
+    				getInternalWrappedList().add(i, elt);
+	    		}
+	    	}
+    	}
+    	else
+    		getWrappedList().addAll(list);
 		
-		count = result.getResultCount();
+		count = page.getResultCount();
 		
 	    initializing = false;
 		
@@ -345,7 +379,6 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	        }
 	    }
 	    
-		// Must be before collection event dispatch because it can trigger a new getItemAt
 		this.first = nextFirst;
 		this.last = nextLast;
 	    
@@ -674,64 +707,17 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	
 	public class PagedCollectionResponder implements TideResponder<Object> {
 	    
-		private ServerSession serverSession;
 	    private int first;
 	    private int max;
 	    
 	    
-	    public PagedCollectionResponder(ServerSession serverSession, int first, int max) {
-	    	this.serverSession = serverSession;
+	    public PagedCollectionResponder(int first, int max) {
 	        this.first = first;
 	        this.max = max;
 	    }
 	    
 	    @Override
-    	@SuppressWarnings("unchecked")
 	    public void result(TideResultEvent<Object> event) {
-	    	Object result = event.getResult();
-	    	
-	    	List<E> list = null;
-	    	int first, max;
-	    	
-	    	if (result instanceof Map<?, ?>) {
-	    		Map<String, Object> map = (Map<String, Object>)result;
-	    		list = (List<E>)map.get("resultList");
-	    		first = (Integer)map.get("firstResult");
-	    		max = (Integer)map.get("maxResults");
-	    	}
-	    	else {
-	    		Page<E> page = (Page<E>)result;
-	    		list = page.getResultList();
-	    		first = page.getFirstResult();
-	    		max = page.getMaxResults();
-	    	}
-	    	
-	    	EntityManager entityManager = event.getContext().getEntityManager();
-	    	
-	    	if (!initializing) {
-	    		// Adjust internal list to expected results without triggering events	    		
-		    	if (first > AbstractPagedCollection.this.first && first < AbstractPagedCollection.this.last) {
-	    			getInternalWrappedList().subList(0, first - AbstractPagedCollection.this.first).clear();
-		    		for (int i = 0; i < first - AbstractPagedCollection.this.first && AbstractPagedCollection.this.last - first + i < list.size(); i++)
-		    			getInternalWrappedList().add((E)entityManager.mergeExternalData(serverSession, list.get(AbstractPagedCollection.this.last - first + i)));
-		    	}
-		    	else if (first+max > AbstractPagedCollection.this.first && first+max < AbstractPagedCollection.this.last) {
-		    		if (first+max-AbstractPagedCollection.this.first < getWrappedList().size())
-		    			getInternalWrappedList().subList(first+max-AbstractPagedCollection.this.first, getWrappedList().size()).clear();
-		    		else
-		    			getInternalWrappedList().clear();
-		    		for (int i = 0; i < AbstractPagedCollection.this.first - first && i < list.size(); i++)
-		    			getInternalWrappedList().add(i, (E)entityManager.mergeExternalData(serverSession, list.get(i)));
-		    	}
-		    	else if (first >= AbstractPagedCollection.this.last || first+max <= AbstractPagedCollection.this.first) {
-		    		getInternalWrappedList().clear();
-		    		for (int i = 0; i < list.size(); i++)
-		    			getInternalWrappedList().add((E)entityManager.mergeExternalData(serverSession, list.get(i)));
-		    	}
-	    	}
-	    	
-    		entityManager.mergeExternalData(serverSession, list, getWrappedList(), null, null, null);
-	    	
             findResult(event, first, max);
 	    }
 	    

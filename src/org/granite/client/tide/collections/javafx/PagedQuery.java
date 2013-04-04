@@ -188,13 +188,13 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 		else if (!this.initializing)
 		    max = last-first;
 		
-		PagedCollectionResponder findResponder = new PagedCollectionResponder(serverSession, first, max);		
+		PagedCollectionResponder findResponder = new PagedCollectionResponder(first, max);		
 		Object filter = this.filter != null ? getFilter() : filterMap;
 		
 		doFind(filter, first, max, findResponder);
 	}
 	
-	protected void doFind(Object filter, int first, int max, PagedCollectionResponder findResponder) {
+	protected synchronized void doFind(Object filter, int first, int max, PagedCollectionResponder findResponder) {
 		// Force evaluation of max, results and count
 		String[] order = new String[0];
 		boolean[] desc = new boolean[0];

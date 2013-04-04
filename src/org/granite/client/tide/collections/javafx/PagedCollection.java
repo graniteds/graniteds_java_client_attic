@@ -97,6 +97,7 @@ public abstract class PagedCollection<E> extends AbstractPagedCollection<E> impl
 	}
 	
 	public void firePageChange(TideRpcEvent event) {
+		fireItemsUpdated(0, this.last-this.first);
 		pageChangeHelper.fireEvent(this, event);
 	}
 	
@@ -107,6 +108,45 @@ public abstract class PagedCollection<E> extends AbstractPagedCollection<E> impl
 	    	ListChangeWrapper wrappedChange = new ListChangeWrapper(wrappedList, change);
     		helper.fireValueChangedEvent(wrappedChange);
 	    }
+	}
+	
+	public void fireItemsUpdated(final int from, final int to) {
+		ListChangeListener.Change<E> change = new ListChangeListener.Change<E>(wrappedList) {
+			@Override
+			public int getFrom() {
+				return first+from;
+			}
+
+			@Override
+			public int getTo() {
+				return first+to;
+			}
+			
+			@Override
+			public boolean wasUpdated() {
+				return true;
+			}
+			
+			@Override
+			protected int[] getPermutation() {
+				return EMPTY_PERMUTATION;
+			}
+
+			@Override
+			public List<E> getRemoved() {
+				return null;
+			}
+
+			@Override
+			public boolean next() {
+				return false;
+			}
+
+			@Override
+			public void reset() {
+			}			
+		};
+		helper.fireValueChangedEvent(change);
 	}
 
     private static final int[] EMPTY_PERMUTATION = new int[0];
