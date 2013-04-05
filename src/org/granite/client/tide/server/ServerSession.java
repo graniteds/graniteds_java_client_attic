@@ -756,24 +756,24 @@ public class ServerSession implements ContextAware {
 		private boolean sessionExpired = false;
 		private Timer logoutTimeout = null;
 		
-		public void logout(Observer logoutObserver, TimerTask forceLogout) {
+		public synchronized void logout(Observer logoutObserver, TimerTask forceLogout) {
 			logout(logoutObserver);
 			logoutTimeout = new Timer(true);
 			logoutTimeout.schedule(forceLogout, 1000L);
 		}
 		
-		public void logout(Observer logoutObserver) {
+		public synchronized void logout(Observer logoutObserver) {
 			addObserver(logoutObserver);
 	        logoutInProgress = true;
 		    waitForLogout = 1;
 		}
 		
-		public void checkWait() {
+		public synchronized void checkWait() {
 			if (logoutInProgress)
 				waitForLogout++;
 		}
 		
-		public boolean stillWaiting() {
+		public synchronized boolean stillWaiting() {
 			if (sessionExpired)
 				return false;
 			
@@ -792,7 +792,7 @@ public class ServerSession implements ContextAware {
 			return sessionExpired;
 		}
 		
-		public void loggedOut(TideRpcEvent event) {
+		public synchronized void loggedOut(TideRpcEvent event) {
 			if (logoutTimeout != null) {
 				logoutTimeout.cancel();
 				logoutTimeout = null;
@@ -807,7 +807,7 @@ public class ServerSession implements ContextAware {
 			sessionExpired = false;
 		}
 		
-		public void sessionExpired() {
+		public synchronized void sessionExpired() {
 			logoutInProgress = false;
 			waitForLogout = 0;
 			sessionExpired = true;

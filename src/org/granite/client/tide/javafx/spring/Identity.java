@@ -126,6 +126,8 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
     public void login(final String username, String password, final TideResponder<String> tideResponder) {
     	getServerSession().login(username, password);
     	
+    	clearSecurityCache();
+    	
     	checkLoggedIn(tideResponder);
     }
     
@@ -329,14 +331,16 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
 			Identity.this.call(name, entity, action, new SimpleTideResponder<Boolean>() {
 				@Override
 				public void result(TideResultEvent<Boolean> event) {
-					tideResponder.result(event);
+					if (tideResponder != null)
+						tideResponder.result(event);
 					hasPermission = event.getResult();
 					fireValueChangedEvent();
 				}
 				
 				@Override
 				public void fault(TideFaultEvent event) {
-					tideResponder.fault(event);
+					if (tideResponder != null)
+						tideResponder.fault(event);
 					clear();
 				}
 			});
