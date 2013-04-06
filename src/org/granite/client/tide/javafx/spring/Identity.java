@@ -240,14 +240,16 @@ public class Identity extends ComponentImpl implements ExceptionHandler {
 			Identity.this.call(name, roleName, new SimpleTideResponder<Boolean>() {
 				@Override
 				public void result(TideResultEvent<Boolean> event) {
-					tideResponder.result(event);
+					if (tideResponder != null)
+						tideResponder.result(event);
 					hasRole = event.getResult();
 					fireValueChangedEvent();
 				}
 				
 				@Override
 				public void fault(TideFaultEvent event) {
-					tideResponder.fault(event);
+					if (tideResponder != null)
+						tideResponder.fault(event);
 					clear();
 				}
 			});
