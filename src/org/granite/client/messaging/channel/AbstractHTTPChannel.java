@@ -341,7 +341,8 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 		catch (Exception e) {
 			tokensMap.remove(token.getId());
 			token.dispatchFailure(e);			
-			timer.purge();	// Must purge to cleanup timer references to AsyncToken
+			if (timer != null)
+				timer.purge();	// Must purge to cleanup timer references to AsyncToken
 			return false;
 		}
 		finally {
@@ -431,7 +432,8 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 						break;
 				}
 				
-				timer.purge();	// Must purge to cleanup timer references to AsyncToken
+				if (timer != null)
+					timer.purge();	// Must purge to cleanup timer references to AsyncToken
 			}
 		}
 		catch (Exception e) {
@@ -445,7 +447,8 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 			AsyncToken token = tokensMap.remove(message.getId());
 			if (token != null) {
 				token.dispatchFailure(e);
-				timer.purge();	// Must purge to cleanup timer references to AsyncToken
+				if (timer != null)
+					timer.purge();	// Must purge to cleanup timer references to AsyncToken
 			}
 		}
 	}
@@ -455,7 +458,8 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 		AsyncToken token = tokensMap.remove(message.getId());
 		if (token != null) {
 			token.dispatchCancelled();
-			timer.purge();	// Must purge to cleanup timer references to AsyncToken
+			if (timer != null)
+				timer.purge();	// Must purge to cleanup timer references to AsyncToken
 		}
 	}
 	
