@@ -28,9 +28,7 @@ import org.granite.client.persistence.javafx.PersistentBag;
 import org.granite.client.persistence.javafx.PersistentList;
 import org.granite.client.persistence.javafx.PersistentMap;
 import org.granite.client.persistence.javafx.PersistentSet;
-import org.granite.client.tide.EventBus;
 import org.granite.client.tide.data.spi.DataManager;
-import org.granite.client.tide.impl.SimpleEventBus;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.validation.InvalidValue;
 import org.granite.config.GraniteConfig;
@@ -42,16 +40,6 @@ public class JavaFXPlatform implements org.granite.client.tide.Platform {
 	
 	private DataManager dataManager = new JavaFXDataManager();
 	private final ServerSession.Status serverSessionStatus = new JavaFXServerSessionStatus();
-	private final EventBus eventBus;
-	
-	
-	public JavaFXPlatform() {
-		eventBus = new SimpleEventBus();
-	}
-	
-	public JavaFXPlatform(EventBus eventBus) {
-		this.eventBus = eventBus;
-	}
 	
 	
 	public void configure(Object instance) {
@@ -78,11 +66,6 @@ public class JavaFXPlatform implements org.granite.client.tide.Platform {
 	@Override
 	public DataManager getDataManager() {
 		return dataManager;
-	}
-
-	@Override
-	public EventBus getEventBus() {
-		return eventBus;
 	}
 
 	public void execute(Runnable runnable) {

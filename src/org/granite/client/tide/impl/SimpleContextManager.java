@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import org.granite.client.tide.BeanManager;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
+import org.granite.client.tide.EventBus;
 import org.granite.client.tide.InstanceStore;
 import org.granite.client.tide.InstanceStoreFactory;
 import org.granite.client.tide.Platform;
@@ -44,14 +45,27 @@ public class SimpleContextManager implements ContextManager {
     public static final String CONTEXT_DESTROY = "org.granite.tide.contextDestroy";
     
     protected final Platform platform;
+    protected final EventBus eventBus;
     private InstanceStoreFactory instanceStoreFactory = new DefaultInstanceStoreFactory();
     private BeanManager beanManager = new SimpleBeanManager();
     private Map<String, Context> contextsById = new HashMap<String, Context>();
     private List<String> contextsToDestroy = new ArrayList<String>();
     
     
+    protected SimpleContextManager() {
+    	// CDI proxying...
+    	this.platform = null;
+    	this.eventBus = null;
+    }
+    
     public SimpleContextManager(Platform platform) {
     	this.platform = platform;
+    	this.eventBus = new SimpleEventBus();
+    }
+
+    public SimpleContextManager(Platform platform, EventBus eventBus) {
+    	this.platform = platform;
+    	this.eventBus = eventBus;
     }
     
     public void setInstanceStoreFactory(InstanceStoreFactory instanceStoreFactory) {
@@ -102,7 +116,7 @@ public class SimpleContextManager implements ContextManager {
     
     protected Context createContext(Context parentCtx, String contextId) {
         Context ctx = new Context(this, parentCtx, contextId);
-        ctx.initContext(platform, beanManager, instanceStoreFactory.createStore(ctx));
+        ctx.initContext(platform, eventBus, beanManager, instanceStoreFactory.createStore(ctx));
         return ctx;
     }
     

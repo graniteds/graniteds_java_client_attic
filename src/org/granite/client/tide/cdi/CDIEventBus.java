@@ -18,18 +18,32 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide;
+package org.granite.client.tide.cdi;
 
-import org.granite.client.tide.data.spi.DataManager;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.inject.Inject;
+
+import org.granite.client.tide.Context;
+import org.granite.client.tide.impl.SimpleEventBus;
 
 /**
  * @author William DRAI
  */
-public interface Platform {
+@ApplicationScoped
+public class CDIEventBus extends SimpleEventBus {
 
-	public DataManager getDataManager();
+	@Inject
+	private BeanManager beanManager;
 	
-	public void configure(Object instance);
+	@Override
+	public void raiseEvent(Context context, String type, Object... args) {
+		beanManager.fireEvent(new TideApplicationEvent(context, type, args));
+	}
+	
+	public void onApplicationEvent(@Observes TideApplicationEvent event) {
+	    raiseEvent(event);
+	}
 
-	public void execute(Runnable runnable);
 }

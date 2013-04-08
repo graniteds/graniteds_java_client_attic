@@ -21,6 +21,7 @@
 package org.granite.client.tide.spring;
 
 import org.granite.client.tide.ContextAware;
+import org.granite.client.tide.EventBus;
 import org.granite.client.tide.NameAware;
 import org.granite.client.tide.Platform;
 import org.granite.client.tide.PlatformConfigurable;
@@ -44,9 +45,13 @@ public class SpringContextManager extends SimpleContextManager implements Applic
 	private ApplicationContext applicationContext;
 	
 	public SpringContextManager(Platform platform) {
-		super(platform);
+		super(platform, new SpringEventBus());
 	}
 
+	public SpringContextManager(Platform platform, EventBus eventBus) {
+		super(platform, eventBus);
+	}
+	
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;

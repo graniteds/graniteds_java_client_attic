@@ -83,6 +83,11 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
     private ObjectProperty<F> filter = null;
 	
     
+    protected PagedQuery() {
+    	this.serverSession = null;
+    	// CDI proxying...
+    }
+    
     public PagedQuery(ServerSession serverSession) {
     	this.serverSession = serverSession;
     	

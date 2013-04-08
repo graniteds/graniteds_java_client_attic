@@ -58,6 +58,10 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
     private final ServerSession serverSession;
     
     
+    public ComponentImpl() {   
+    	this.serverSession = null;
+    }
+    
     public ComponentImpl(ServerSession serverSession) {
     	this.serverSession = serverSession;
     }

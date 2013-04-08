@@ -23,6 +23,9 @@ package org.granite.client.tide.data;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
@@ -34,6 +37,7 @@ import org.granite.client.messaging.events.TopicMessageEvent;
 import org.granite.client.messaging.messages.push.TopicMessage;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
+import org.granite.client.tide.NameAware;
 import org.granite.client.tide.data.EntityManager.UpdateKind;
 import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.client.tide.server.ServerSession;
@@ -42,7 +46,7 @@ import org.granite.logging.Logger;
 /**
  * @author William DRAI
  */
-public class DataObserver implements ContextAware {
+public class DataObserver implements ContextAware, NameAware {
     
     private static Logger log = Logger.getLogger(DataObserver.class);
     
@@ -56,6 +60,15 @@ public class DataObserver implements ContextAware {
 	private Consumer consumer = null;
 
 	
+    protected DataObserver() {
+    	// CDI proxying...
+    }
+    
+	public DataObserver(ServerSession serverSession, EntityManager entityManager) {
+		this.serverSession = serverSession;
+		this.entityManager = entityManager;
+	}
+	
 	public DataObserver(String destination, ServerSession serverSession, EntityManager entityManager) {
 		this.destination = destination;
 		this.serverSession = serverSession;
@@ -66,10 +79,17 @@ public class DataObserver implements ContextAware {
 		this.context = context;
 	}
 	
+	public void setName(String name) {
+		if (this.destination == null)
+			this.destination = name;
+	}
+	
+	@PostConstruct
 	public void start() {
         consumer = serverSession.getConsumer(destination, DATA_OBSERVER_TOPIC_NAME);
 	}	
 	
+	@PreDestroy
 	public void stop() {
 		if (consumer.isSubscribed())
 			unsubscribe();

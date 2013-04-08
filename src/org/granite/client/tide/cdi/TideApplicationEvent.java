@@ -18,18 +18,37 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide;
+package org.granite.client.tide.cdi;
 
-import org.granite.client.tide.data.spi.DataManager;
+import org.granite.client.tide.Context;
+import org.granite.client.tide.events.TideEvent;
 
 /**
  * @author William DRAI
  */
-public interface Platform {
-
-	public DataManager getDataManager();
+public class TideApplicationEvent implements TideEvent {
 	
-	public void configure(Object instance);
+	private final Context context;
+	private final String type;
+	private final Object[] args;
 
-	public void execute(Runnable runnable);
+	
+	public TideApplicationEvent(Context context, String type, Object... args) {
+		this.context = context;
+		this.type = type;
+		this.args = args;
+	}
+	
+	public Context getContext() {
+		return context;
+	}
+	
+	public String getType() {
+		return type;
+	}
+	
+	public Object[] getArgs() {
+		return args;
+	}
+	
 }

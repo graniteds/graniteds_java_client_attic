@@ -33,6 +33,9 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.Producer;
@@ -128,7 +131,7 @@ public class ServerSession implements ContextAware {
 	
 	private LogoutState logoutState = new LogoutState();
 		
-	private String destination = null;
+	private String destination = "server";
 	private Configuration configuration = null;
     private RemotingChannel remotingChannel;
 	private MessagingChannel messagingChannel;
@@ -137,7 +140,16 @@ public class ServerSession implements ContextAware {
 	private RemoteClassScanner remoteClassConfigurator = new RemoteClassScanner();
 	
 	
-    public ServerSession() throws Exception {    	
+    public ServerSession() throws Exception {
+    	// Used for testing
+    }
+    
+    public ServerSession(String contextRoot, String serverName, int serverPort) throws Exception {
+    	this(null, "http", contextRoot, serverName, serverPort, null, null);
+    }
+
+    public ServerSession(String contextRoot, String serverName, int serverPort, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
+    	this(null, "http", contextRoot, serverName, serverPort, graniteUrlMapping, gravityUrlMapping);
     }
     
     public ServerSession(String destination, String contextRoot, String serverName, int serverPort) throws Exception {
@@ -150,7 +162,8 @@ public class ServerSession implements ContextAware {
     
     public ServerSession(String destination, String protocol, String contextRoot, String serverName, int serverPort, String graniteUrlMapping, String gravityUrlMapping) throws Exception {
         super();
-        this.destination = destination;
+        if (destination != null)
+        	this.destination = destination;
         this.protocol = protocol;
         this.contextRoot = contextRoot;
         this.serverName = serverName;
@@ -242,6 +255,7 @@ public class ServerSession implements ContextAware {
 		return configuration.getGraniteConfig().getConverters();
 	}
 	
+	@PostConstruct
 	public void start() throws Exception {
 		if (remotingTransport == null)
 			remotingTransport = new ApacheAsyncTransport();
@@ -269,6 +283,7 @@ public class ServerSession implements ContextAware {
 		messagingChannel = new AMFMessagingChannel(messagingTransport, configuration, "gravityamf", gravityURI);
 	}
 	
+	@PreDestroy
 	public void stop()throws Exception {
 		if (remotingTransport != null)
 			remotingTransport.stop();		

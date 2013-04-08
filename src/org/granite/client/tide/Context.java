@@ -53,6 +53,9 @@ public class Context {
     private EntityManager entityManager;
     
     
+    protected Context() {
+    	// CDI proxying...
+    }
     
     public Context(ContextManager contextManager, Context parentCtx, String contextId) {
         this.contextManager = contextManager;
@@ -74,11 +77,11 @@ public class Context {
     }
     
     
-    public void initContext(Platform platform, BeanManager beanManager, InstanceStore instanceStore) {
+    public void initContext(Platform platform, EventBus eventBus, BeanManager beanManager, InstanceStore instanceStore) {
     	this.platform = platform;
     	this.entityManager = new EntityManagerImpl("", platform.getDataManager(), null, null);
     	this.entityManager.setRemoteInitializer(new RemoteInitializerImpl(this));
-    	this.eventBus = platform.getEventBus();
+    	this.eventBus = eventBus;
         this.instanceStore = instanceStore;
         this.beanManager = beanManager;
     }
