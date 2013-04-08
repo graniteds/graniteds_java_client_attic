@@ -67,7 +67,7 @@ public class TestSimpleCall {
     	contextManager = new SimpleContextManager(new DefaultPlatform());
         contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext();
-        serverSession = new ServerSession("spring", "/test", "localhost", 8080);
+        serverSession = new ServerSession("/test", "localhost", 8080);
         serverSession.setServiceFactory(new MockServiceFactory());
         ctx.set(serverSession);
         serverSession.start();
