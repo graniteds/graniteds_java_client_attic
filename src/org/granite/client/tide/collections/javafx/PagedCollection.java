@@ -66,7 +66,9 @@ public abstract class PagedCollection<E> extends AbstractPagedCollection<E> impl
 	
 	@Override
 	public boolean setAll(Collection<? extends E> coll) {
-		return fullRefresh();
+		if (!initializing)
+			return fullRefresh();
+		return false;
 	}
 	
 	
