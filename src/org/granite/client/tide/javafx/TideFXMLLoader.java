@@ -23,6 +23,8 @@ package org.granite.client.tide.javafx;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.inject.Named;
+
 import javafx.fxml.FXMLLoader;
 import javafx.util.Callback;
 
@@ -45,8 +47,11 @@ public class TideFXMLLoader {
 					return context.byType(type);
 				}
             });
-            for (String name : context.allNames())
-            	loader.getNamespace().put(name, context.byName(name));
+            for (String name : context.allNames()) {
+            	Object instance = context.byName(name);
+            	if (instance != null && instance.getClass().isAnnotationPresent(Named.class))
+            		loader.getNamespace().put(name, instance);
+            }
             return loader.load(fxmlStream);
         }
         finally {
