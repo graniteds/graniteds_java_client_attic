@@ -20,8 +20,6 @@
 
 package org.granite.client.util.javafx;
 
-import java.util.Arrays;
-
 import javafx.beans.InvalidationListener;
 import javafx.collections.ListChangeListener;
 
@@ -34,76 +32,19 @@ public class ListListenerHelper<E> {
 	private ListChangeListener<? super E>[] listChangeListeners = null;
 	
 	public void addListener(InvalidationListener listener) {
-		if (invalidationListeners == null)
-			invalidationListeners = new InvalidationListener[] { listener };
-		else {
-			for (InvalidationListener invalidationListener : invalidationListeners) {
-				if (invalidationListener.equals(listener))
-					return;
-			}
-			InvalidationListener[] newInvalidationListeners = Arrays.copyOf(invalidationListeners, invalidationListeners.length+1);
-			newInvalidationListeners[invalidationListeners.length] = listener;
-			invalidationListeners = newInvalidationListeners;
-		}
+		invalidationListeners = ListenerUtil.add(InvalidationListener.class, invalidationListeners, listener);
 	}
 	
 	public void removeListener(InvalidationListener listener) {
-		if (invalidationListeners == null)
-			return;
-		
-		int index = -1;
-		for (int i = 0; i < invalidationListeners.length; i++) {
-			if (invalidationListeners[i].equals(listener)) {
-				index = i;
-				break;
-			}
-		}
-		if (index < 0)
-			return;
-		
-		if (invalidationListeners.length == 1)
-			invalidationListeners = null;
-		else {
-			InvalidationListener[] newInvalidationListeners = Arrays.copyOf(invalidationListeners, invalidationListeners.length-1);
-			if (index < invalidationListeners.length-1)
-				System.arraycopy(invalidationListeners, index+1, newInvalidationListeners, index, invalidationListeners.length-index-1);
-			invalidationListeners = newInvalidationListeners;
-		}
+		invalidationListeners = ListenerUtil.remove(InvalidationListener.class, invalidationListeners, listener);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public void addListener(ListChangeListener<? super E> listener) {
-		if (listChangeListeners == null)
-			listChangeListeners = new ListChangeListener[] { listener };
-		else {
-			ListChangeListener<? super E>[] newListChangeListeners = Arrays.copyOf(listChangeListeners, listChangeListeners.length+1);
-			newListChangeListeners[listChangeListeners.length] = listener;
-			listChangeListeners = newListChangeListeners;
-		}
+		listChangeListeners = ListenerUtil.add(ListChangeListener.class, listChangeListeners, listener);
 	}
 	
 	public void removeListener(ListChangeListener<? super E> listener) {
-		if (listChangeListeners == null)
-			return;
-		
-		int index = -1;
-		for (int i = 0; i < listChangeListeners.length; i++) {
-			if (listChangeListeners[i].equals(listener)) {
-				index = i;
-				break;
-			}
-		}
-		if (index < 0)
-			return;
-		
-		if (listChangeListeners.length == 1)
-			listChangeListeners = null;
-		else {
-			ListChangeListener<? super E>[] newListChangeListeners = Arrays.copyOf(listChangeListeners, listChangeListeners.length-1);
-			if (index < listChangeListeners.length-1)
-				System.arraycopy(listChangeListeners, index+1, newListChangeListeners, index, listChangeListeners.length-index-1);
-			listChangeListeners = newListChangeListeners;
-		}
+		listChangeListeners = ListenerUtil.remove(ListChangeListener.class, listChangeListeners, listener);
 	}
 	
     public void fireValueChangedEvent(ListChangeListener.Change<E> change) {
@@ -121,6 +62,19 @@ public class ListListenerHelper<E> {
 
     public boolean hasListeners() {
         return invalidationListeners != null || listChangeListeners != null;
+    }
+    
+    public int getInvalidationListenersSize() {
+    	return invalidationListeners.length;
+    }
+    
+    public int getListChangeListenersListenersSize() {
+    	return listChangeListeners.length;
+    }
+    
+    public void clear() {
+    	invalidationListeners = null;
+    	listChangeListeners = null;
     }
 	
 }

@@ -20,9 +20,7 @@
 
 package org.granite.client.util.javafx;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 /**
  * @author William DRAI
@@ -43,45 +41,12 @@ public class ListenerHelper<L> {
 		listenerMethod = methods[0];
 	}
 	
-	@SuppressWarnings("unchecked")
 	public void addListener(L listener) {
-		if (listeners == null) {
-			listeners = (L[])Array.newInstance(listenerInterface, 1);
-			listeners[0] = listener;
-		}
-		else {
-			for (L l : listeners) {
-				if (listener.equals(l))
-					return;
-			}
-			L[] newListeners = Arrays.copyOf(listeners, listeners.length+1);
-			newListeners[listeners.length] = listener;
-			listeners = newListeners;
-		}
+		listeners = ListenerUtil.add(listenerInterface, listeners, listener);
 	}
 	
 	public void removeListener(L listener) {
-		if (listeners == null)
-			return;
-		
-		int index = -1;
-		for (int i = 0; i < listeners.length; i++) {
-			if (listeners[i].equals(listener)) {
-				index = i;
-				break;
-			}
-		}
-		if (index < 0)
-			return;
-		
-		if (listeners.length == 1)
-			listeners = null;
-		else {
-			L[] newListeners = Arrays.copyOf(listeners, listeners.length-1);
-			if (index < listeners.length-1)
-				System.arraycopy(listeners, index+1, newListeners, index, listeners.length-index-1);
-			listeners = newListeners;
-		}
+		listeners = ListenerUtil.remove(listenerInterface, listeners, listener);
 	}
 	
     public void fireEvent(Object... args) {
