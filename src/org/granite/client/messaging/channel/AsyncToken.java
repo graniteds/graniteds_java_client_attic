@@ -170,7 +170,11 @@ public class AsyncToken extends TimerTask implements ResponseMessageFuture {
 		// Call all listeners.
 		for (ResponseListener listener : listeners)
 			ResponseListenerDispatcher.dispatch(listener, event);
-			
+		
+		// Release references on listeners to help gc
+		channelListener = null;
+		listeners.clear();
+		
 		return true;
 	}
 
