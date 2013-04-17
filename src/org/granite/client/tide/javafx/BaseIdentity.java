@@ -171,9 +171,9 @@ public abstract class BaseIdentity extends ComponentImpl implements ExceptionHan
 	@Override
 	public void handle(Context context, FaultMessage emsg, TideFaultEvent faultEvent) {
 		if (isLoggedIn()) {
+			setLoggedIn(false);
 			// Session expired, directly mark the channel as logged out
 			getServerSession().sessionExpired();
-			setLoggedIn(false);
 		}
 	}
 	
