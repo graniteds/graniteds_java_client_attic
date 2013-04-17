@@ -40,6 +40,7 @@ import org.granite.client.messaging.channel.Channel;
 import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.codec.AMF3MessagingCodec;
+import org.granite.client.messaging.codec.MessagingCodec;
 import org.granite.client.messaging.messages.RequestMessage;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.requests.DisconnectMessage;
@@ -63,16 +64,16 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	
 	private static final Logger log = Logger.getLogger(AMFMessagingChannel.class);
 	
-	private final AMF3MessagingCodec codec;
+	protected final MessagingCodec<Message[]> codec;
 	
-	private String sessionId = null;
-	private final ConcurrentMap<String, Consumer> consumersMap = new ConcurrentHashMap<String, Consumer>();	
-	private final AtomicReference<String> connectMessageId = new AtomicReference<String>(null);
-	private final AtomicReference<ReconnectTimerTask> reconnectTimerTask = new AtomicReference<ReconnectTimerTask>();
+	protected String sessionId = null;
+	protected final ConcurrentMap<String, Consumer> consumersMap = new ConcurrentHashMap<String, Consumer>();	
+	protected final AtomicReference<String> connectMessageId = new AtomicReference<String>(null);
+	protected final AtomicReference<ReconnectTimerTask> reconnectTimerTask = new AtomicReference<ReconnectTimerTask>();
 	
-	private volatile long reconnectIntervalMillis = TimeUnit.SECONDS.toMillis(30L);
-	private volatile long reconnectMaxAttempts = 60L;
-	private volatile long reconnectAttempts = 0L;
+	protected volatile long reconnectIntervalMillis = TimeUnit.SECONDS.toMillis(30L);
+	protected volatile long reconnectMaxAttempts = 60L;
+	protected volatile long reconnectAttempts = 0L;
 	
 	public AMFMessagingChannel(Transport transport, String id, URI uri) {
 		this(transport, DefaultConfiguration.getInstance(), id, uri);
@@ -81,7 +82,11 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	public AMFMessagingChannel(Transport transport, Configuration configuration, String id, URI uri) {
 		super(transport, id, uri, 1);
 		
-		this.codec = new AMF3MessagingCodec(configuration);
+		this.codec = newMessagingCodec(configuration);
+	}
+
+	protected MessagingCodec<Message[]> newMessagingCodec(Configuration configuration) {
+		return new AMF3MessagingCodec(configuration);
 	}
 	
 	public void setSessionId(String sessionId) {
@@ -91,7 +96,7 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 		}				
 	}
 
-	private boolean connect() {
+	protected boolean connect() {
 		
 		// Connecting: make sure we don't have an active reconnect timer task.
 		cancelReconnectTimerTask();
@@ -246,13 +251,13 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 			scheduleReconnectTimerTask();
 	}
 
-	private void cancelReconnectTimerTask() {
+	protected void cancelReconnectTimerTask() {
 		ReconnectTimerTask task = reconnectTimerTask.getAndSet(null);
 		if (task != null && task.cancel())
 			reconnectAttempts = 0L;
 	}
 	
-	private void scheduleReconnectTimerTask() {
+	protected void scheduleReconnectTimerTask() {
 		ReconnectTimerTask task = new ReconnectTimerTask();
 		
 		ReconnectTimerTask previousTask = reconnectTimerTask.getAndSet(task);

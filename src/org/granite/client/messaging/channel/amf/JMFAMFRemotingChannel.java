@@ -1,23 +1,3 @@
-/*
-  GRANITE DATA SERVICES
-  Copyright (C) 2012 GRANITE DATA SERVICES S.A.S.
-
-  This file is part of Granite Data Services.
-
-  Granite Data Services is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Library General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or (at your
-  option) any later version.
-
-  Granite Data Services is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE. See the GNU Library General Public License
-  for more details.
-
-  You should have received a copy of the GNU Library General Public License
-  along with this library; if not, see <http://www.gnu.org/licenses/>.
-*/
-
 package org.granite.client.messaging.channel.amf;
 
 import java.io.IOException;
@@ -26,10 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
 import org.granite.client.configuration.Configuration;
-import org.granite.client.configuration.DefaultConfiguration;
 import org.granite.client.messaging.channel.AsyncToken;
-import org.granite.client.messaging.channel.RemotingChannel;
-import org.granite.client.messaging.codec.AMF0MessagingCodec;
+import org.granite.client.messaging.codec.JMFAMF0MessagingCodec;
 import org.granite.client.messaging.codec.MessagingCodec;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
@@ -43,38 +21,30 @@ import org.granite.messaging.amf.AMF3Object;
 import flex.messaging.messages.AcknowledgeMessage;
 import flex.messaging.messages.Message;
 
-/**
- * @author Franck WOLFF
- */
-public class AMFRemotingChannel extends AbstractAMFChannel implements RemotingChannel {
-	
-	protected final MessagingCodec<AMF0Message> codec;
-	protected volatile int index = 1;
-	
-	public AMFRemotingChannel(Transport transport, String id, URI uri) {
-		this(transport, id, uri, 5);
+public class JMFAMFRemotingChannel extends AMFRemotingChannel {
+
+	public JMFAMFRemotingChannel(Transport transport, String id, URI uri) {
+		super(transport, id, uri);
 	}
-	
-	public AMFRemotingChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
-		this(transport, DefaultConfiguration.getInstance(), id, uri, maxConcurrentRequests);
-	}
-	
-	public AMFRemotingChannel(Transport transport, Configuration configuration, String id, URI uri, int maxConcurrentRequests) {
+
+	public JMFAMFRemotingChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
 		super(transport, id, uri, maxConcurrentRequests);
-		
-		this.codec = newMessagingCodec(configuration);
 	}
 
+	public JMFAMFRemotingChannel(Transport transport, Configuration configuration, String id, URI uri, int maxConcurrentRequests) {
+		super(transport, configuration, id, uri, maxConcurrentRequests);
+	}
+
+	@Override
 	protected MessagingCodec<AMF0Message> newMessagingCodec(Configuration configuration) {
-		return new AMF0MessagingCodec(configuration);
+		return new JMFAMF0MessagingCodec(configuration);
 	}
-
+	
 	@Override
 	protected TransportMessage createTransportMessage(AsyncToken token) throws UnsupportedEncodingException {
 		AMF0Message amf0Message = new AMF0Message();
 		for (Message message : convertToAmf(token.getRequest())) {
-			AMF3Object data = new AMF3Object(message);
-		    AMF0Body body = new AMF0Body("", "/" + (index++), new Object[]{data}, AMF0Body.DATA_TYPE_AMF3_OBJECT);
+		    AMF0Body body = new AMF0Body("", "/" + (index++), new Object[]{message}, AMF0Body.DATA_TYPE_AMF3_OBJECT);
 		    amf0Message.addBody(body);
 		}
 		return new DefaultTransportMessage<AMF0Message>(token.getId(), false, clientId, null, amf0Message, codec);
@@ -88,10 +58,14 @@ public class AMFRemotingChannel extends AbstractAMFChannel implements RemotingCh
 		if (messagesCount > 0) {
 			AMF0Body body = amf0Message.getBody(0);
 			
-			if (!(body.getValue() instanceof AcknowledgeMessage))
-				throw new RuntimeException("Message should be an AcknowledgeMessage: " + body.getValue());
+			if (!(body.getValue() instanceof AMF3Object))
+				throw new RuntimeException("Message should be an AMF3Object: " + body.getValue());
 			
-			AcknowledgeMessage message = (AcknowledgeMessage)body.getValue();
+			AMF3Object bodyObject = (AMF3Object)body.getValue();
+			if (!(bodyObject.getValue() instanceof AcknowledgeMessage))
+				throw new RuntimeException("Message should be an AcknowledgeMessage: " + bodyObject.getValue());
+			
+			AcknowledgeMessage message = (AcknowledgeMessage)bodyObject.getValue();
 			
 			final AbstractResponseMessage response = convertFromAmf(message);
 			

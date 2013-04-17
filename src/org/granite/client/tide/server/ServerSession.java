@@ -44,12 +44,11 @@ import org.granite.client.messaging.RemoteClassScanner;
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.TopicAgent;
+import org.granite.client.messaging.channel.ChannelFactory;
 import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.SessionAwareChannel;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
-import org.granite.client.messaging.channel.amf.AMFMessagingChannel;
-import org.granite.client.messaging.channel.amf.AMFRemotingChannel;
 import org.granite.client.messaging.events.Event;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IncomingMessageEvent;
@@ -77,6 +76,7 @@ import org.granite.tide.Expression;
 import org.granite.tide.invocation.ContextResult;
 import org.granite.tide.invocation.ContextUpdate;
 import org.granite.tide.invocation.InvocationResult;
+import org.granite.util.ContentType;
 
 /**
  * @author William DRAI
@@ -110,6 +110,7 @@ public class ServerSession implements ContextAware {
     
 	@SuppressWarnings("unused")
 	private boolean confChanged = false;
+	private ContentType contentType = ContentType.AMF;
 	private boolean useWebSocket = true;
     private Transport remotingTransport = null;
     private Transport messagingTransport = null;
@@ -176,8 +177,17 @@ public class ServerSession implements ContextAware {
         	this.gravityUrlMapping = gravityUrlMapping;
     }
 
-    	
-    public void setContextRoot(String contextRoot) {
+    public ContentType getContentType() {
+		return contentType;
+	}
+
+	public void setContentType(ContentType contentType) {
+		if (contentType == null)
+			throw new NullPointerException("contentType cannot be null");
+		this.contentType = contentType;
+	}
+
+	public void setContextRoot(String contextRoot) {
     	this.contextRoot = contextRoot;
     	confChanged = true;
     }
@@ -275,14 +285,16 @@ public class ServerSession implements ContextAware {
 		configuration.addConfigurator(remoteClassConfigurator);
 		configuration.load();
 		
+		ChannelFactory factory = new ChannelFactory(contentType);
+		
 		graniteURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.graniteUrlMapping);
-		remotingChannel = new AMFRemotingChannel(remotingTransport, configuration, "graniteamf", graniteURI, 1);
+		remotingChannel = factory.newRemotingChannel(remotingTransport, configuration, "graniteamf", graniteURI, 1);
 
 		if (useWebSocket)
 			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
 		else
 			gravityURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
-		messagingChannel = new AMFMessagingChannel(messagingTransport, configuration, "gravityamf", gravityURI);
+		messagingChannel = factory.newMessagingChannel(messagingTransport, configuration, "gravityamf", gravityURI);
 	}
 	
 	@PreDestroy
