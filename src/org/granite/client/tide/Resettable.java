@@ -18,32 +18,13 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide.impl;
+package org.granite.client.tide;
 
-import org.granite.client.tide.Context;
-import org.granite.client.tide.EventBus;
-import org.granite.client.tide.events.TideEvent;
-import org.granite.client.tide.events.TideEventObserver;
 
 /**
  * @author William DRAI
  */
-public class SimpleEventBus implements EventBus {
-	
-    @Override
-    public void raiseEvent(Context context, String type, Object... args) {
-    	SimpleTideEvent event = new SimpleTideEvent(context, type, args);
-    	
-    	raiseEvent(event);
-    }
-    
-    protected void raiseEvent(TideEvent event) {
-    	TideEventObserver[] observers = event.getContext().allByType(TideEventObserver.class, false);
-    	if (observers == null)
-    		return;
-    	
-    	for (TideEventObserver observer : observers)
-    		observer.handleEvent(event);
-    }
+public interface Resettable {
 
+	public void reset();
 }

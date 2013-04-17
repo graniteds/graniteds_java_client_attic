@@ -20,7 +20,9 @@
 
 package org.granite.client.tide;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author William DRAI
@@ -43,5 +45,7 @@ public interface InstanceStore {
     
     public <T> T byType(Class<T> type, Context context);
     
-    public <T> T[] allByType(Class<T> type, Context context);
+    public <T> T[] allByType(Class<T> type, Context context, boolean create);
+    
+	public Map<String, Object> allByAnnotatedWith(Class<? extends Annotation> annotationClass, Context context);
 }

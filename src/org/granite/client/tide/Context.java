@@ -20,7 +20,9 @@
 
 package org.granite.client.tide;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Map;
 
 import org.granite.logging.Logger;
 import org.granite.client.tide.data.EntityManager;
@@ -143,7 +145,14 @@ public class Context {
     }
 
     public <T> T[] allByType(Class<T> type) {
-        return instanceStore.allByType(type, this);
+        return instanceStore.allByType(type, this, true);
+    }
+    public <T> T[] allByType(Class<T> type, boolean create) {
+        return instanceStore.allByType(type, this, create);
+    }
+    
+    public Map<String, Object> allByAnnotatedWith(Class<? extends Annotation> annotationClass) {
+        return instanceStore.allByAnnotatedWith(annotationClass, this);
     }
     
     public List<String> allNames() {

@@ -20,6 +20,7 @@
 
 package org.granite.client.tide.spring;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
@@ -28,12 +29,15 @@ import java.util.Map;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.InstanceStore;
 import org.granite.client.tide.InstanceStoreFactory;
+import org.granite.logging.Logger;
 import org.springframework.context.ApplicationContext;
 
 /**
  * @author William DRAI
  */
 public class SpringInstanceStoreFactory implements InstanceStoreFactory {
+	
+	private static final Logger log = Logger.getLogger(SpringInstanceStoreFactory.class);
 	
 	private final ApplicationContext applicationContext;
 	
@@ -99,13 +103,18 @@ public class SpringInstanceStoreFactory implements InstanceStoreFactory {
 		public <T> T byType(Class<T> type, Context context) {
 			return applicationContext.getBean(type);
 		}
-
+		
 		@SuppressWarnings("unchecked")
 		@Override
-		public <T> T[] allByType(Class<T> type, Context context) {
-			Map<String, T> instancesMap = applicationContext.getBeansOfType(type);
+		public <T> T[] allByType(Class<T> type, Context context, boolean create) {
+			Map<String, T> instancesMap = applicationContext.getBeansOfType(type, true, create);
 			T[] all = (T[])Array.newInstance(type, instancesMap.size());
 			return instancesMap.values().toArray(all);
+		}
+		
+		@Override
+		public Map<String, Object> allByAnnotatedWith(Class<? extends Annotation> annotationClass, Context context) {
+			return applicationContext.getBeansWithAnnotation(annotationClass);
 		}
 	}
 }

@@ -20,9 +20,13 @@
 
 package org.granite.client.tide.cdi;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.enterprise.context.spi.CreationalContext;
@@ -102,7 +106,7 @@ public class CDIInstanceStoreFactory implements InstanceStoreFactory {
 		
 		@SuppressWarnings("unchecked")
 		@Override
-		public <T> T[] allByType(Class<T> type, Context context) {
+		public <T> T[] allByType(Class<T> type, Context context, boolean create) {
 			Set<Bean<?>> beans = beanManager.getBeans(type);
 			T[] instances = (T[])Array.newInstance(type, beans.size());
 			int i = 0;
@@ -112,7 +116,29 @@ public class CDIInstanceStoreFactory implements InstanceStoreFactory {
 			}
 			return instances;
 		}
-
+		
+		@Override
+		public Map<String, Object> allByAnnotatedWith(Class<? extends Annotation> annotationClass, Context context) {
+			Set<Bean<?>> beans = beanManager.getBeans(Object.class);
+			Set<Bean<?>> filtered = new HashSet<Bean<?>>();
+			for (Bean<?> bean : beans) {
+				if (bean.getName() == null)
+					continue;
+				for (Annotation annotation : bean.getQualifiers()) {
+					if (annotation.annotationType().equals(annotationClass)) {
+						filtered.add(bean);
+						break;
+					}
+				}
+			}
+			Map<String, Object> map = new HashMap<String, Object>();
+			for (Bean<?> bean : filtered) {
+				CreationalContext<?> cc = beanManager.createCreationalContext(bean);
+				map.put(bean.getName(), beanManager.getReference(bean, Object.class, cc));
+			}
+			return map;
+		}
+		
 		@Override
 		public List<String> allNames() {
 			Set<Bean<?>> beans = beanManager.getBeans(Object.class);

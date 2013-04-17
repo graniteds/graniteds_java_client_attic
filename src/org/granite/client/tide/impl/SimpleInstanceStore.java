@@ -20,11 +20,13 @@
 
 package org.granite.client.tide.impl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.granite.client.tide.Context;
 import org.granite.client.tide.InstanceStore;
@@ -111,7 +113,7 @@ public class SimpleInstanceStore implements InstanceStore {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T[] allByType(Class<T> type, Context context) {
+    public <T> T[] allByType(Class<T> type, Context context, boolean create) {
         List<T> list = new ArrayList<T>();
         for (Object instance : instances.values()) {
             if (type.isInstance(instance))
@@ -119,6 +121,16 @@ public class SimpleInstanceStore implements InstanceStore {
         }
         T[] all = (T[])Array.newInstance(type, list.size());
         return list.size() > 0 ? list.toArray(all) : null;
+    }
+
+    @Override
+	public Map<String, Object> allByAnnotatedWith(Class<? extends Annotation> annotationClass, Context context) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        for (Entry<String, Object> entry : instances.entrySet()) {
+            if (entry.getValue().getClass().isAnnotationPresent(annotationClass))
+                map.put(entry.getKey(), entry.getValue());
+        }
+        return map.isEmpty() ? null : map;
     }
 
 }

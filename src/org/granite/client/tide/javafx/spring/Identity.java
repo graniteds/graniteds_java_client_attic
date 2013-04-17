@@ -23,6 +23,7 @@ package org.granite.client.tide.javafx.spring;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Named;
 
 import org.granite.client.tide.javafx.BaseIdentity;
 import org.granite.client.tide.javafx.ObservablePermission;
@@ -35,6 +36,7 @@ import org.granite.messaging.amf.RemoteClass;
  * @author William DRAI
  */
 @RemoteClass("org.granite.tide.spring.security.Identity")
+@Named
 public class Identity extends BaseIdentity {
 	
     protected Identity() {

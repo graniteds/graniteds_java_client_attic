@@ -23,10 +23,10 @@ package org.granite.client.tide.javafx;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.inject.Named;
-
 import javafx.fxml.FXMLLoader;
 import javafx.util.Callback;
+
+import javax.inject.Named;
 
 import org.granite.client.tide.Context;
 
@@ -34,24 +34,16 @@ import org.granite.client.tide.Context;
  * @author William DRAI
  */
 public class TideFXMLLoader {
-	
+
     public static Object load(final Context context, String url, Class<?> controllerClass) throws IOException {
         InputStream fxmlStream = null;
         try {
             fxmlStream = controllerClass.getResourceAsStream(url);
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(controllerClass.getResource(url));
-            loader.setControllerFactory(new Callback<Class<?>, Object>() {
-				@Override
-				public Object call(Class<?> type) {
-					return context.byType(type);
-				}
-            });
-            for (String name : context.allNames()) {
-            	Object instance = context.byName(name);
-            	if (instance != null && instance.getClass().isAnnotationPresent(Named.class))
-            		loader.getNamespace().put(name, instance);
-            }
+            loader.setControllerFactory(new ControllerFactory(context));
+        	loader.getNamespace().putAll(context.allByAnnotatedWith(Named.class));
+            
             return loader.load(fxmlStream);
         }
         finally {
@@ -87,5 +79,19 @@ public class TideFXMLLoader {
                 fxmlStream.close();
             }
         }
+    }
+    
+    public static class ControllerFactory implements Callback<Class<?>, Object> {
+    	
+    	private final Context context;
+    	
+    	public ControllerFactory(Context context) {
+    		this.context = context;
+    	}
+    	
+    	@Override
+    	public Object call(Class<?> type) {
+    		return context.byType(type);
+    	}
     }
 }

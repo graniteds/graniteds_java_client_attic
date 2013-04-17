@@ -26,6 +26,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
@@ -65,6 +66,11 @@ public class JavaFXTideClientExtension implements Extension {
 		event.addAnnotatedType(beanManager.createAnnotatedType(JavaFXPlatform.class));
 		event.addAnnotatedType(beanManager.createAnnotatedType(CDIEventBus.class));
 		event.addAnnotatedType(beanManager.createAnnotatedType(JavaFXCDIContextManager.class));
+	}
+	
+	public void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
+		log.debug("Register internal Tide scopes");
+		event.addContext(new ViewContext());
 	}
 	
 	public void processProducer(@Observes ProcessProducer<Object, Object> event, BeanManager beanManager) {

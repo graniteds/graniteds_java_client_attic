@@ -35,6 +35,7 @@ import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.inject.Named;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.Consumer;
@@ -81,6 +82,7 @@ import org.granite.tide.invocation.InvocationResult;
  * @author William DRAI
  */
 @PlatformConfigurable
+@Named
 public class ServerSession implements ContextAware {
 
 	private static Logger log = Logger.getLogger(ServerSession.class);
