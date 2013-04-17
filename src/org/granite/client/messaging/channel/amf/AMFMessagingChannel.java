@@ -195,6 +195,9 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 							case SUBSCRIBE:
 								result.setResult(messages[0].getHeader(AsyncMessage.DESTINATION_CLIENT_ID_HEADER));
 								break;
+
+							default:
+								break;
 							}
 						}
 					}

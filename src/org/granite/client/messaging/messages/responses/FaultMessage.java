@@ -103,17 +103,19 @@ public final class FaultMessage extends AbstractResponseMessage {
 	
 	public boolean isSecurityFault() {
 		switch (code) {
-		case UNKNOWN:
-			return unknownCode != null && unknownCode.startsWith("Server.Security.");
-			
-		case INVALID_CREDENTIALS:
-		case AUTHENTICATION_FAILED:
-		case NOT_LOGGED_IN:
-		case SESSION_EXPIRED:
-		case ACCESS_DENIED:
-			return true;
+			case UNKNOWN:
+				return unknownCode != null && unknownCode.startsWith("Server.Security.");
+				
+			case INVALID_CREDENTIALS:
+			case AUTHENTICATION_FAILED:
+			case NOT_LOGGED_IN:
+			case SESSION_EXPIRED:
+			case ACCESS_DENIED:
+				return true;
+	
+			default:
+				return false;
 		}
-		return false;
 	}
 
 	@Override
