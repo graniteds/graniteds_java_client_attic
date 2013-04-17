@@ -57,6 +57,7 @@ public class AMF3MessagingCodec implements MessagingCodec<Message[]> {
 		try {
 			AMF3Serializer serializer = new AMF3Serializer(output);
 			serializer.writeObject(messages);
+			serializer.close();
 		}
 		finally {
 			GraniteContext.release();
@@ -69,6 +70,8 @@ public class AMF3MessagingCodec implements MessagingCodec<Message[]> {
 		try {
 			AMF3Deserializer deserializer = new AMF3Deserializer(input);
 			Object[] objects = (Object[])deserializer.readObject();
+			deserializer.close();
+			
 			if (objects != null) {
 				Message[] messages = new Message[objects.length];
 				System.arraycopy(objects, 0, messages, 0, objects.length);
@@ -76,7 +79,9 @@ public class AMF3MessagingCodec implements MessagingCodec<Message[]> {
 				for (Message message : messages) {
 					if (message != null && Boolean.TRUE.equals(message.getHeader(Channel.BYTEARRAY_BODY_HEADER))) {
 						byte[] body = (byte[])message.getBody();
-						message.setBody(new AMF3Deserializer(new ByteArrayInputStream(body)).readObject());
+						deserializer = new AMF3Deserializer(new ByteArrayInputStream(body));
+						message.setBody(deserializer.readObject());
+						deserializer.close();
 					}
 				}
 				
