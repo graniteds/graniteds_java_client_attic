@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.annotation.PreDestroy;
+
 import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -69,6 +71,15 @@ public abstract class PagedCollection<E> extends AbstractPagedCollection<E> impl
 		if (!initializing)
 			return fullRefresh();
 		return false;
+	}
+	
+	
+	@Override
+	@PreDestroy
+	public void clear() {
+		helper.clear();
+		pageChangeHelper.clear();
+		super.clear();
 	}
 	
 	

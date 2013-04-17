@@ -65,5 +65,9 @@ public class ListenerHelper<L> {
     public boolean hasListeners() {
         return listeners != null;
     }
+    
+    public void clear() {
+    	listeners = null;
+    }
 	
 }

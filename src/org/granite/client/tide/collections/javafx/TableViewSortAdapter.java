@@ -20,6 +20,8 @@
 
 package org.granite.client.tide.collections.javafx;
 
+import org.granite.tide.data.model.SortInfo;
+
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TableColumn;
@@ -29,15 +31,12 @@ import javafx.scene.control.TableView;
 /**
  * @author William DRAI
  */
-public class TableViewSort<S> implements Sort {
+public class TableViewSortAdapter<S> implements SortAdapter {
 	
 	private TableView<S> tableView;
 	private S exampleData;
-	
-	private String[] order = new String[0];
-	private boolean[] desc = new boolean[0];
 
-	public TableViewSort(final TableView<S> tableView, final Class<S> exampleDataClass) {
+	public TableViewSortAdapter(final TableView<S> tableView, final Class<S> exampleDataClass) {
 		this.tableView = tableView;
 		try {
 			this.exampleData = exampleDataClass.newInstance();
@@ -47,14 +46,29 @@ public class TableViewSort<S> implements Sort {
 		}
 	}
 	
-	public void setTableView(TableView<S> tableView) {
-		this.tableView = tableView;
+	public void apply(SortInfo sortInfo) {
+		String[] order = sortInfo.getOrder();
+		boolean[] desc = sortInfo.getDesc();
+		
+		if (order != null && desc != null) {
+			// Apply current sort to attached TableView
+			tableView.getSortOrder().clear();
+			for (int i = 0; i < order.length; i++) {
+				for (TableColumn<S, ?> column : tableView.getColumns()) {
+					ObservableValue<?> property = column.getCellObservableValue(exampleData);
+					if (property instanceof ReadOnlyProperty<?> && ((ReadOnlyProperty<?>)property).getName().equals(order[i])) {
+						tableView.getSortOrder().add(column);
+						column.setSortType(desc[i] ? SortType.DESCENDING : SortType.ASCENDING);
+					}
+				}
+			}
+		}
 	}
 	
-	public void build() {
+	public void retrieve(SortInfo sortInfo) {
 		int i = 0;
-		order = new String[tableView.getSortOrder().size()];
-		desc = new boolean[tableView.getSortOrder().size()];
+		String[] order = new String[tableView.getSortOrder().size()];
+		boolean[] desc = new boolean[tableView.getSortOrder().size()];
 		for (TableColumn<S, ?> column : tableView.getSortOrder()) {
 			ObservableValue<?> property = column.getCellObservableValue(exampleData);
 			if (property instanceof ReadOnlyProperty<?>) {
@@ -63,15 +77,9 @@ public class TableViewSort<S> implements Sort {
 				i++;
 			}
 			else
-				throw new IllegalArgumentException("Call values must implement Property to apply TableViewSort adapter");
+				throw new IllegalArgumentException("Sortable cell values must implement Property to apply TableViewSort adapter");
 		}
-	}
-	
-	public String[] getOrder() {
-		return order;
-	}
-	
-	public boolean[] getDesc() {
-		return desc;
+		sortInfo.setOrder(order.length > 0 ? order : null);
+		sortInfo.setDesc(desc.length > 0 ? desc : null);
 	}
 }

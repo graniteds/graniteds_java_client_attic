@@ -21,10 +21,14 @@
 package org.granite.client.tide.collections.javafx;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+
+import javax.annotation.PreDestroy;
+import javax.inject.Named;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -44,6 +48,7 @@ import org.granite.client.tide.server.TideResultEvent;
 import org.granite.logging.Logger;
 import org.granite.tide.data.model.Page;
 import org.granite.tide.data.model.PageInfo;
+import org.granite.tide.data.model.SortInfo;
 import org.granite.util.TypeUtil;
 
 /**
@@ -63,10 +68,10 @@ import org.granite.util.TypeUtil;
  * 
  * 	@author William DRAI
  */
+@Named
 public class PagedQuery<E, F> extends PagedCollection<E> implements Component, PropertyHolder, NameAware, ContextAware, Initializable {
     
-    @SuppressWarnings("unused")
-	private static Logger log = Logger.getLogger("org.granite.client.tide.collections.javafx.PagedQuery");
+	private static Logger log = Logger.getLogger(PagedQuery.class);
 	
     protected Component component = null;
     
@@ -79,7 +84,12 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
     
     protected boolean usePage = false;
     
-    private ObservableMap<String, Object> filterMap = FXCollections.observableMap(new ConcurrentHashMap<String, Object>());
+	private SortInfo sortInfo = new SortInfo();
+	protected SortAdapter sortAdapter = null;
+    
+    private Map<String, Object> internalFilterMap = new HashMap<String, Object>();
+    private ObservableMap<String, Object> filterMap = FXCollections.observableMap(Collections.synchronizedMap(internalFilterMap));
+    private Class<F> filterClass = null;
     private ObjectProperty<F> filter = null;
 	
     
@@ -116,27 +126,67 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 		((ComponentImpl)component).setContext(context);
 	}
 	
+	
+	public void setSortAdapter(SortAdapter sortAdapter) {
+		this.sortAdapter = sortAdapter;
+		if (sortAdapter != null)
+			sortAdapter.apply(sortInfo);
+	}
+	
+	public SortAdapter getSortAdapter() {
+		return sortAdapter;
+	}
+	
+	
 	public ObjectProperty<F> filterProperty() {
 		return filter;
 	}
+	@SuppressWarnings("unchecked")
 	public F getFilter() {
-		return filter != null ? filter.get() : null;
-	}
-	public Map<String, Object> getFilterMap() {
-		return filterMap;
+		if (filter != null)
+			return filter.get();
+		try {
+			return (F)filterMap;
+		}
+		catch (ClassCastException e) {
+			return null;
+		}
 	}
 	public void setFilter(F filter) {
 		this.filter.set(filter);
 	}
 	@SuppressWarnings("unchecked")
 	public void setFilterClass(Class<F> filterClass) throws IllegalAccessException, InstantiationException {
+		if (Map.class.isAssignableFrom(filterClass))
+			return;
+		this.filterClass = filterClass;
 		this.filter = new SimpleObjectProperty<F>(this, "filter");
 		setFilter((F)TypeUtil.newInstance(filterClass, Object.class));
 	}
 	
+	@SuppressWarnings("unchecked")
+	public void resetFilter() {
+		internalFilterMap.clear();
+		if (filterClass != null) {
+			try {
+				setFilter((F)TypeUtil.newInstance(filterClass, Object.class));
+			}
+			catch (Exception e) {
+				log.error(e, "Could not reset typed filter for PagedQuery %s", getName());
+			}
+		}
+	}
+	
+	@Override
+	@PreDestroy
+	public void clear() {
+		resetFilter();
+		super.clear();
+	}
+	
 	@Override
 	public boolean refresh() {
-		if (getFilter() != null && this.context.getEntityManager().isDeepDirtyEntity(getFilter())) {
+		if (filter != null && this.context.getEntityManager().isDeepDirtyEntity(filter.get())) {
 			filterRefresh = true;
 			fullRefresh = true;
 		}
@@ -194,24 +244,30 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 		    max = last-first;
 		
 		PagedCollectionResponder findResponder = new PagedCollectionResponder(first, max);		
-		Object filter = this.filter != null ? getFilter() : filterMap;
+		Object filter = null;
+		if (this.filter != null)
+			filter = this.filter.get();
+		else {
+			// Copy filter map to avoid concurrent modifications
+			synchronized (internalFilterMap) {
+				filter = new HashMap<String, Object>(internalFilterMap);
+			}
+		}
 		
 		doFind(filter, first, max, findResponder);
 	}
 	
 	protected synchronized void doFind(Object filter, int first, int max, PagedCollectionResponder findResponder) {
 		// Force evaluation of max, results and count
-		String[] order = new String[0];
-		boolean[] desc = new boolean[0];
-		if (sort != null) {
-			sort.build();
-			order = sort.getOrder();
-			desc = sort.getDesc();
-			if (order.length == 0)
-				order = null;
-			if (desc.length == 0)
-				desc = null;
-		}
+		if (sortAdapter != null)
+			sortAdapter.retrieve(sortInfo);
+		
+		String[] order = sortInfo.getOrder();
+		if (order != null && order.length == 0)
+			order = null;
+		boolean[] desc = sortInfo.getDesc();
+		if (desc != null && desc.length == 0)
+			desc = null;
 		
 		boolean usePage = this.usePage;
 		try {

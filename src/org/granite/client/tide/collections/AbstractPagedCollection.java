@@ -29,7 +29,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
-import org.granite.client.tide.collections.javafx.Sort;
+import javax.annotation.PreDestroy;
+
 import org.granite.client.tide.data.EntityManager.UpdateKind;
 import org.granite.client.tide.events.TideEvent;
 import org.granite.client.tide.events.TideEventObserver;
@@ -82,17 +83,6 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	protected boolean filterRefresh = false;
 	
 
-	protected Sort sort = null;
-	
-	public void setSort(Sort sort) {
-		this.sort = sort;
-	}
-	
-	public Sort getSort() {
-		return sort;
-	}
-	
-	
 	public AbstractPagedCollection() {
 		super();
 	    log.debug("create collection");
@@ -158,6 +148,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	 * 	Clear collection content
 	 */
 	@Override
+	@PreDestroy
 	public void clear() {
 		initializing = true;
 		initSent = false;
@@ -416,6 +407,9 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 			}
 		}
 	    
+		if (initializing)
+			initSent = false;
+		
 		firePageChange(event);
 	}
 	
@@ -626,24 +620,6 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 //	    }
 //    }
 
-	
-	public static class SortField {
-		private String name;
-		private boolean direction;
-		
-		public SortField(String name, boolean direction) {
-			this.name = name;
-			this.direction = direction;
-		}
-		
-		public String getName() {
-			return name;
-		}
-		
-		public boolean getDirection() {
-			return direction;
-		}
-	}
 	
 	public class PagedCollectionIterator implements ListIterator<E> {
 		

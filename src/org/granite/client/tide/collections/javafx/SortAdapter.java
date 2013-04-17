@@ -20,14 +20,14 @@
 
 package org.granite.client.tide.collections.javafx;
 
+import org.granite.tide.data.model.SortInfo;
+
 /**
  * @author William DRAI
  */
-public interface Sort {
+public interface SortAdapter {
 	
-	public void build();
-
-	public String[] getOrder();
+	public void apply(SortInfo sortInfo);
 	
-	public boolean[] getDesc();
+	public void retrieve(SortInfo sortInfo);
 }

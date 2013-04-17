@@ -23,9 +23,10 @@ package org.granite.client.test.tide.javafx;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import javafx.collections.ObservableMap;
 
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.messages.Message;
@@ -129,7 +130,7 @@ public class TestPagedQuery {
 
     @Test
     public void testPagedQueryConcurrent() throws Exception {        
-        PagedQuery<Person, Map<String, Object>> personList = new PagedQuery<Person, Map<String, Object>>(serverSession);
+        PagedQuery<Person, ObservableMap<String, Object>> personList = new PagedQuery<Person, ObservableMap<String, Object>>(serverSession);
         ctx.set("personList", personList);
         
         MockRemoteService.setResponseBuilder(new ResponseBuilder() {
@@ -172,7 +173,7 @@ public class TestPagedQuery {
         
         for (int i = 0; i < 500; i++) {
         	Thread.sleep(1);
-        	personList.getFilterMap().put("lastName" + i, "Test");
+        	personList.getFilter().put("lastName" + i, "Test");
         }
         
         if (!sem.tryAcquire(500, TimeUnit.MILLISECONDS)) {
