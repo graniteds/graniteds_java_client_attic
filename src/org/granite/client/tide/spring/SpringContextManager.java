@@ -29,7 +29,6 @@ import org.granite.client.tide.data.Conflicts;
 import org.granite.client.tide.data.DataConflictListener;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.UpdateKind;
-import org.granite.client.tide.impl.DefaultViewScope;
 import org.granite.client.tide.impl.SimpleContextManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -82,7 +81,6 @@ public class SpringContextManager extends SimpleContextManager implements Applic
 		entityManager.addListener(new SpringDataConflictListener());
 		beanFactory.registerSingleton("entityManager", entityManager);
 		beanFactory.registerSingleton("dataManager", getContext(null).getDataManager());
-		beanFactory.registerSingleton("viewBeanCache", new DefaultViewScope());
 		beanFactory.registerScope("view", new ViewScope());
 	}
 	
