@@ -24,8 +24,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.granite.client.messaging.RemoteService;
+import org.granite.client.messaging.channel.ChannelFactory;
+import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
-import org.granite.client.messaging.channel.amf.AMFRemotingChannel;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
@@ -33,6 +34,7 @@ import org.granite.client.messaging.transport.TransportStatusHandler.LogEngineSt
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.example.addressbook.entity.Person;
 import org.granite.example.addressbook.entity.Person.Salutation;
+import org.granite.util.ContentType;
 
 /**
  * @author Franck WOLFF
@@ -63,7 +65,8 @@ public class CallGranitedsEjb3Sync {
 		transport.start();
 		
 		// Create a channel with the specified uri.
-		AMFRemotingChannel channel = new AMFRemotingChannel(transport, "my-graniteamf", uri, 2);
+		ChannelFactory factory = new ChannelFactory(ContentType.JMF_AMF);
+		RemotingChannel channel = factory.newRemotingChannel(transport, "my-graniteamf", uri, 2);
 
 		// Login (credentials will be sent with the first call).
 		channel.setCredentials(new UsernamePasswordCredentials("admin", "admin"));

@@ -55,8 +55,10 @@ public class JMFAMFRemotingChannel extends AMFRemotingChannel {
 		final AMF0Message amf0Message = codec.decode(is);
 		final int messagesCount = amf0Message.getBodyCount();
 		
-		if (messagesCount > 0) {
-			AMF0Body body = amf0Message.getBody(0);
+		AbstractResponseMessage response = null, previous = null;
+		
+		for (int i = 0; i < messagesCount; i++) {
+			AMF0Body body = amf0Message.getBody(i);
 			
 			if (!(body.getValue() instanceof AMF3Object))
 				throw new RuntimeException("Message should be an AMF3Object: " + body.getValue());
@@ -66,25 +68,16 @@ public class JMFAMFRemotingChannel extends AMFRemotingChannel {
 				throw new RuntimeException("Message should be an AcknowledgeMessage: " + bodyObject.getValue());
 			
 			AcknowledgeMessage message = (AcknowledgeMessage)bodyObject.getValue();
+			AbstractResponseMessage current = convertFromAmf(message);
 			
-			final AbstractResponseMessage response = convertFromAmf(message);
-			
-			AbstractResponseMessage current = response;
-			for (int i = 1; i < messagesCount; i++) {
-				body = amf0Message.getBody(i);
-				
-				if (!(body.getValue() instanceof AcknowledgeMessage))
-					throw new RuntimeException("Message should be an AcknowledgeMessage: " + body.getValue());
-				
-				message = (AcknowledgeMessage)body.getValue();
-				AbstractResponseMessage next = convertFromAmf(message);
-				current.setNext(next);
-				current = next;
+			if (response == null)
+				response = previous = current;
+			else {
+				previous.setNext(current);
+				previous = current;
 			}
-			
-			return response;
 		}
 		
-		return null;
+		return response;
 	}
 }
