@@ -29,15 +29,12 @@ import java.util.Map;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.InstanceStore;
 import org.granite.client.tide.InstanceStoreFactory;
-import org.granite.logging.Logger;
 import org.springframework.context.ApplicationContext;
 
 /**
  * @author William DRAI
  */
 public class SpringInstanceStoreFactory implements InstanceStoreFactory {
-	
-	private static final Logger log = Logger.getLogger(SpringInstanceStoreFactory.class);
 	
 	private final ApplicationContext applicationContext;
 	
