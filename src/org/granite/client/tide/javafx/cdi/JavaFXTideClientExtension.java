@@ -18,7 +18,7 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide.cdi;
+package org.granite.client.tide.javafx.cdi;
 
 import java.util.Set;
 
@@ -46,6 +46,9 @@ import org.granite.client.tide.EventBus;
 import org.granite.client.tide.NameAware;
 import org.granite.client.tide.Platform;
 import org.granite.client.tide.PlatformConfigurable;
+import org.granite.client.tide.cdi.CDIContextManager;
+import org.granite.client.tide.cdi.CDIEventBus;
+import org.granite.client.tide.cdi.ViewContext;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.javafx.JavaFXDataManager;
 import org.granite.client.tide.javafx.JavaFXPlatform;
