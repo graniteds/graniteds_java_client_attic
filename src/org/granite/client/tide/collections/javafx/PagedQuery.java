@@ -137,6 +137,12 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 		return sortAdapter;
 	}
 	
+	public void resetSort() {
+		this.sortAdapter = null;
+		sortInfo.setOrder(null);
+		sortInfo.setDesc(null);
+	}
+	
 	
 	public ObjectProperty<F> filterProperty() {
 		return filter;
@@ -180,8 +186,13 @@ public class PagedQuery<E, F> extends PagedCollection<E> implements Component, P
 	@Override
 	@PreDestroy
 	public void clear() {
-		resetFilter();
 		super.clear();
+	}
+	
+	public void reset() {
+		resetFilter();
+		resetSort();
+		clear();
 	}
 	
 	@Override

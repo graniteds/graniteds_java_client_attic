@@ -76,7 +76,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	/**
 	 * 	@private
 	 */
-	protected boolean fullRefresh;
+	protected boolean fullRefresh = false;
 	/**
 	 * 	@private
 	 */
@@ -156,7 +156,8 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 		clearLocalIndex();
 		first = 0;
 		last = first+max;
-		// sort = null;
+		fullRefresh = false;
+		filterRefresh = false;
 	}
 	
 	
