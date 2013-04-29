@@ -70,7 +70,6 @@ import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.Update;
 import org.granite.client.tide.data.spi.MergeContext;
-import org.granite.client.util.javafx.ListenerHelper;
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.io.convert.Converters;
 import org.granite.tide.Expression;
@@ -420,13 +419,13 @@ public class ServerSession implements ContextAware {
 			else
 				busyCount--;
 			status.setBusy(busyCount > 0);
-			transportIOListeners.fireEvent(status.isBusy());
+			notifyIOListeners(status.isBusy());
 		}
 		
 		@Override
 		public void handleException(TransportException e) {
 			log.warn(e, "Transport failed");
-			transportExceptionListeners.fireEvent(e);
+			notifyExceptionListeners(e);
 		}
 	};
 	
@@ -885,21 +884,21 @@ public class ServerSession implements ContextAware {
 	}
 	
 	
-	private ListenerHelper<TransportIOListener> transportIOListeners = new ListenerHelper<TransportIOListener>(TransportIOListener.class);
-	private ListenerHelper<TransportExceptionListener> transportExceptionListeners = new ListenerHelper<TransportExceptionListener>(TransportExceptionListener.class);
+	private List<TransportIOListener> transportIOListeners = new ArrayList<TransportIOListener>();
+	private List<TransportExceptionListener> transportExceptionListeners = new ArrayList<TransportExceptionListener>();
 	
 	public void addListener(TransportIOListener listener) {
-		transportIOListeners.addListener(listener);
+		transportIOListeners.add(listener);
 	}
 	public void removeListener(TransportIOListener listener) {
-		transportIOListeners.removeListener(listener);
+		transportIOListeners.remove(listener);
 	}
 	
 	public void addListener(TransportExceptionListener listener) {
-		transportExceptionListeners.addListener(listener);
+		transportExceptionListeners.add(listener);
 	}
 	public void removeListener(TransportExceptionListener listener) {
-		transportExceptionListeners.removeListener(listener);
+		transportExceptionListeners.remove(listener);
 	}
 	
 	public interface TransportIOListener {		
@@ -908,6 +907,16 @@ public class ServerSession implements ContextAware {
 	
 	public interface TransportExceptionListener {		
 		public void handleException(TransportException e);
+	}
+	
+	public void notifyIOListeners(boolean busy) {
+		for (TransportIOListener listener : transportIOListeners)
+			listener.handleIO(busy);
+	}
+	
+	public void notifyExceptionListeners(TransportException e) {
+		for (TransportExceptionListener listener : transportExceptionListeners)
+			listener.handleException(e);
 	}
     
 	
