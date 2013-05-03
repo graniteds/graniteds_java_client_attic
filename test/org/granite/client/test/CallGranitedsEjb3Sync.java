@@ -27,11 +27,14 @@ import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.channel.ChannelFactory;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
+import org.granite.client.messaging.jmf.ClientSharedContextFactory;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler.LogEngineStatusHandler;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
+import org.granite.client.test.model.Person;
+import org.granite.client.test.model.Person.Salutation;
 import org.granite.util.ContentType;
 
 /**
@@ -62,6 +65,10 @@ public class CallGranitedsEjb3Sync {
 		});
 		transport.start();
 		
+		// Initialize the client shared context by scanning classpath for classes
+		// annotated with @RemoteAlias (see test/META-INF/messaging-scan.properties).
+		ClientSharedContextFactory.initialize();
+		
 		// Create a channel with the specified uri.
 		ChannelFactory factory = new ChannelFactory(ContentType.JMF_AMF);
 		RemotingChannel channel = factory.newRemotingChannel(transport, "my-graniteamf", uri, 2);
@@ -84,21 +91,19 @@ public class CallGranitedsEjb3Sync {
 			System.out.println();
 			System.out.println("Creating new person...");
 			
-//			// Create a new Person entity.
-//			Person person  = new Person();
-//			person.setSalutation(Salutation.Mr);
-//			person.setFirstName("John");
-//			person.setLastName("Doe");
-//			
-//			// Call the createPerson method on the destination (PersonService) with
-//			// the new person as its parameter.
-//			message = ro.newInvocation("createPerson", person).invoke().get();
-//			System.out.println(message);
+			// Create a new Person entity.
+			Person person  = new Person();
+			person.setSalutation(Salutation.Mr);
+			person.setFirstName("John");
+			person.setLastName("Doe");
+			
+			// Call the createPerson method on the destination (PersonService) with
+			// the new person as its parameter.
+			message = ro.newInvocation("createPerson", person).invoke().get();
+			System.out.println(message);
 			
 			System.out.println();
 			System.out.println("Fetching all persons...");
-			
-			channel.setCredentials(new UsernamePasswordCredentials("admin", "admin"));
 
 			message = ro.newInvocation("findAllPersons").invoke().get();
 			System.out.println(message);

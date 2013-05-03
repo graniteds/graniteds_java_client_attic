@@ -23,6 +23,7 @@ package org.granite.client.test;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResponseListener;
@@ -39,7 +40,6 @@ import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler.LogEngineStatusHandler;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
-import org.granite.client.persistence.NoSuchPropertyException;
 import org.granite.client.persistence.Persistence;
 import org.granite.client.persistence.Persistence.Property;
 import org.granite.util.ContentType;
@@ -109,7 +109,7 @@ public class CallGranitedsEjb3 {
 							property = Persistence.getUidProperty(entity);
 							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
 						}
-						catch (NoSuchPropertyException e) {
+						catch (IllegalAccessException e) {
 							e.printStackTrace();
 						}
 						sb.append("\n    }");
@@ -140,16 +140,13 @@ public class CallGranitedsEjb3 {
 			}
 		};
 		
-		ro.newInvocation("findAllCountries").addListener(listener).invoke();
-		sem.acquire(1);
-		
-//		ro.newInvocation("findAllPersons").addListener(listener).appendInvocation("findAllCountries").invoke();
-//		ro.newInvocation("findAllPersons").addListener(listener).setTimeToLive(5, TimeUnit.MINUTES).invoke();
-//		ro.newInvocation("findAllPersons").addListener(listener).invoke();
-//		ro.newInvocation("findAllPersons").addListener(listener).invoke();
-//		ro.newInvocation("findAllPersons").setTimeToLive(10, TimeUnit.MILLISECONDS).addListener(listener).invoke();
-//
-//		sem.acquire(5);
+		ro.newInvocation("findAllPersons").addListener(listener).appendInvocation("findAllCountries").invoke();
+		ro.newInvocation("findAllPersons").addListener(listener).setTimeToLive(5, TimeUnit.MINUTES).invoke();
+		ro.newInvocation("findAllPersons").addListener(listener).invoke();
+		ro.newInvocation("findAllPersons").addListener(listener).invoke();
+		ro.newInvocation("findAllPersons").setTimeToLive(10, TimeUnit.MILLISECONDS).addListener(listener).invoke();
+
+		sem.acquire(5);
 	
 		// Stop transport (must be done!)
 		transport.stop();
