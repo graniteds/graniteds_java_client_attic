@@ -277,6 +277,7 @@
             <batchtest todir="test-reports" fork="true">
                 <fileset dir="test">
                     <include name="**/Test*.java"/>
+                    <exclude name="**/Util.class"/>
                     <exclude name="org/granite/client/test/websocket/**"/>
                 </fileset>
             </batchtest>
