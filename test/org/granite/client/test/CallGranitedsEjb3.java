@@ -21,8 +21,8 @@
 package org.granite.client.test;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResponseListener;
@@ -33,11 +33,15 @@ import org.granite.client.messaging.channel.UsernamePasswordCredentials;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.jmf.ClientSharedContextFactory;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler.LogEngineStatusHandler;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
+import org.granite.client.persistence.NoSuchPropertyException;
+import org.granite.client.persistence.Persistence;
+import org.granite.client.persistence.Persistence.Property;
 import org.granite.util.ContentType;
 
 /**
@@ -68,6 +72,10 @@ public class CallGranitedsEjb3 {
 		});
 		transport.start();
 		
+		// Initialize the client shared context by scanning classpath for classes
+		// annotated with @RemoteAlias (see test/META-INF/messaging-scan.properties).
+		ClientSharedContextFactory.initialize();
+		
 		// Create a channel with the specified uri.
 		ChannelFactory factory = new ChannelFactory(ContentType.JMF_AMF);
 		RemotingChannel channel = factory.newRemotingChannel(transport, "my-graniteamf", uri, 2);
@@ -85,8 +93,29 @@ public class CallGranitedsEjb3 {
 			@Override
 			public void onResult(ResultEvent event) {
 				StringBuilder sb = new StringBuilder("onResult {");
-				for (ResponseMessage response : event.getResponse())
+				for (ResponseMessage response : event.getResponse()) {
 					sb.append("\n    response=").append(response.toString().replace("\n", "\n    "));
+
+					List<?> data = (List<?>)response.getData();
+					
+					for (Object entity : data) {
+						sb.append("\n\n    " + entity.getClass().getName() + " {");
+						try {
+							sb.append("\n        boolean initialized: " + Persistence.isInitialized(entity));
+							Property property = Persistence.getIdProperty(entity);
+							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
+							property = Persistence.getVersionProperty(entity);
+							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
+							property = Persistence.getUidProperty(entity);
+							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
+						}
+						catch (NoSuchPropertyException e) {
+							e.printStackTrace();
+						}
+						sb.append("\n    }");
+					}
+
+				}
 				sb.append("\n}");
 				System.out.println(sb);
 				
@@ -111,13 +140,16 @@ public class CallGranitedsEjb3 {
 			}
 		};
 		
-		ro.newInvocation("findAllPersons").addListener(listener).appendInvocation("findAllCountries").invoke();
-		ro.newInvocation("findAllPersons").addListener(listener).setTimeToLive(5, TimeUnit.MINUTES).invoke();
-		ro.newInvocation("findAllPersons").addListener(listener).invoke();
-		ro.newInvocation("findAllPersons").addListener(listener).invoke();
-		ro.newInvocation("findAllPersons").setTimeToLive(10, TimeUnit.MILLISECONDS).addListener(listener).invoke();
-
-		sem.acquire(5);
+		ro.newInvocation("findAllCountries").addListener(listener).invoke();
+		sem.acquire(1);
+		
+//		ro.newInvocation("findAllPersons").addListener(listener).appendInvocation("findAllCountries").invoke();
+//		ro.newInvocation("findAllPersons").addListener(listener).setTimeToLive(5, TimeUnit.MINUTES).invoke();
+//		ro.newInvocation("findAllPersons").addListener(listener).invoke();
+//		ro.newInvocation("findAllPersons").addListener(listener).invoke();
+//		ro.newInvocation("findAllPersons").setTimeToLive(10, TimeUnit.MILLISECONDS).addListener(listener).invoke();
+//
+//		sem.acquire(5);
 	
 		// Stop transport (must be done!)
 		transport.stop();

@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.granite.client.configuration.Configuration;
+import org.granite.client.messaging.jmf.ClientSharedContextFactory;
 import org.granite.messaging.amf.AMF0Message;
 import org.granite.messaging.jmf.JMFDeserializer;
 import org.granite.messaging.jmf.JMFSerializer;
@@ -46,13 +47,13 @@ public class JMFAMF0MessagingCodec extends AMF0MessagingCodec {
 
 	@Override
 	public void encode(AMF0Message message, OutputStream output) throws IOException {
-		JMFSerializer serializer = new JMFSerializer(output, JMFSharedContextFactory.getInstance());
+		JMFSerializer serializer = new JMFSerializer(output, ClientSharedContextFactory.getInstance());
 		serializer.writeObject(message);
 	}
 
 	@Override
 	public AMF0Message decode(InputStream input) throws IOException {
-		JMFDeserializer deserializer = new JMFDeserializer(input, JMFSharedContextFactory.getInstance());
+		JMFDeserializer deserializer = new JMFDeserializer(input, ClientSharedContextFactory.getInstance());
 		try {
 			return (AMF0Message)deserializer.readObject();
 		}

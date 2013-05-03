@@ -32,8 +32,6 @@ import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler.LogEngineStatusHandler;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
-import org.granite.example.addressbook.entity.Person;
-import org.granite.example.addressbook.entity.Person.Salutation;
 import org.granite.util.ContentType;
 
 /**
@@ -86,16 +84,16 @@ public class CallGranitedsEjb3Sync {
 			System.out.println();
 			System.out.println("Creating new person...");
 			
-			// Create a new Person entity.
-			Person person  = new Person();
-			person.setSalutation(Salutation.Mr);
-			person.setFirstName("John");
-			person.setLastName("Doe");
-			
-			// Call the createPerson method on the destination (PersonService) with
-			// the new person as its parameter.
-			message = ro.newInvocation("createPerson", person).invoke().get();
-			System.out.println(message);
+//			// Create a new Person entity.
+//			Person person  = new Person();
+//			person.setSalutation(Salutation.Mr);
+//			person.setFirstName("John");
+//			person.setLastName("Doe");
+//			
+//			// Call the createPerson method on the destination (PersonService) with
+//			// the new person as its parameter.
+//			message = ro.newInvocation("createPerson", person).invoke().get();
+//			System.out.println(message);
 			
 			System.out.println();
 			System.out.println("Fetching all persons...");

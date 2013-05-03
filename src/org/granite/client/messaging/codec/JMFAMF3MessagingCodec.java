@@ -27,6 +27,7 @@ import java.io.OutputStream;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.channel.Channel;
+import org.granite.client.messaging.jmf.ClientSharedContextFactory;
 import org.granite.messaging.jmf.JMFDeserializer;
 import org.granite.messaging.jmf.JMFSerializer;
 import org.granite.util.ContentType;
@@ -48,13 +49,13 @@ public class JMFAMF3MessagingCodec implements MessagingCodec<Message[]> {
 
 	@Override
 	public void encode(Message[] messages, OutputStream output) throws IOException {
-		JMFSerializer serializer = new JMFSerializer(output, JMFSharedContextFactory.getInstance());
+		JMFSerializer serializer = new JMFSerializer(output, ClientSharedContextFactory.getInstance());
 		serializer.writeObject(messages);
 	}
 
 	@Override
 	public Message[] decode(InputStream input) throws IOException {
-		JMFDeserializer deserializer = new JMFDeserializer(input, JMFSharedContextFactory.getInstance());
+		JMFDeserializer deserializer = new JMFDeserializer(input, ClientSharedContextFactory.getInstance());
 		
 		Message[] messages = null;
 		try {
@@ -63,7 +64,7 @@ public class JMFAMF3MessagingCodec implements MessagingCodec<Message[]> {
 				for (Message message : messages) {
 					if (message != null && Boolean.TRUE.equals(message.getHeader(Channel.BYTEARRAY_BODY_HEADER))) {
 						byte[] body = (byte[])message.getBody();
-						deserializer = new JMFDeserializer(new ByteArrayInputStream(body), JMFSharedContextFactory.getInstance());
+						deserializer = new JMFDeserializer(new ByteArrayInputStream(body), ClientSharedContextFactory.getInstance());
 						message.setBody(deserializer.readObject());
 					}
 				}
