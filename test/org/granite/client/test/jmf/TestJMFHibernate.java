@@ -15,9 +15,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.granite.client.test.jmf.TestUtil.ByteArrayJMFDeserializer;
-import org.granite.client.test.jmf.TestUtil.ByteArrayJMFDumper;
-import org.granite.client.test.jmf.TestUtil.ByteArrayJMFSerializer;
+import org.granite.client.test.jmf.Util.ByteArrayJMFDeserializer;
+import org.granite.client.test.jmf.Util.ByteArrayJMFDumper;
+import org.granite.client.test.jmf.Util.ByteArrayJMFSerializer;
 import org.granite.hibernate.jmf.PersistentBagCodec;
 import org.granite.hibernate.jmf.PersistentListCodec;
 import org.granite.hibernate.jmf.PersistentMapCodec;
@@ -798,9 +798,9 @@ public class TestJMFHibernate {
 		byte[] bytes = serializer.toByteArray();
 		
 		
-		PrintStream ps = TestUtil.newNullPrintStream();
+		PrintStream ps = Util.newNullPrintStream();
 		if (dump) {
-			System.out.println(bytes.length + "B. " + TestUtil.toHexString(bytes));
+			System.out.println(bytes.length + "B. " + Util.toHexString(bytes));
 			ps = System.out;
 		}
 		
