@@ -34,6 +34,7 @@ import javafx.beans.value.ObservableValue;
 import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 import org.granite.client.tide.Context;
+import org.granite.client.tide.Identity;
 import org.granite.client.tide.impl.ComponentImpl;
 import org.granite.client.tide.server.ExceptionHandler;
 import org.granite.client.tide.server.ServerSession;
@@ -42,10 +43,11 @@ import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
 
+
 /**
  * @author William DRAI
  */
-public abstract class BaseIdentity extends ComponentImpl implements ExceptionHandler {
+public abstract class BaseIdentity extends ComponentImpl implements Identity, ExceptionHandler {
 	
 	private BooleanProperty loggedIn = new SimpleBooleanProperty(this, "loggedIn");
 	private StringProperty username = new ReadOnlyStringWrapper(this, "username", null);
@@ -79,15 +81,19 @@ public abstract class BaseIdentity extends ComponentImpl implements ExceptionHan
     public BaseIdentity(final ServerSession serverSession) {
     	super(serverSession);
     	
-        this.loggedIn.set(false);
-        this.loggedIn.addListener(new ChangeListener<Boolean>() {
+    	this.loggedIn.set(false);
+    	this.loggedIn.addListener(new ChangeListener<Boolean>() {
 			@Override
 			public void changed(ObservableValue<? extends Boolean> property, Boolean oldValue, Boolean newValue) {
 				if (Boolean.TRUE.equals(newValue)) {
 					initSecurityCache();
 					serverSession.afterLogin();
 				}
-			}        	
+				else {
+					BaseIdentity.this.username.set(null);
+			        clearSecurityCache();
+				}
+			}
         });
     }
     
@@ -106,16 +112,23 @@ public abstract class BaseIdentity extends ComponentImpl implements ExceptionHan
 					BaseIdentity.this.username.set(event.getResult());
 					BaseIdentity.this.loggedIn.set(true);
 				}
+				else if (isLoggedIn()) {
+					BaseIdentity.this.loggedIn.set(false);
+					
+					// Session expired, directly mark the channel as logged out
+					getServerSession().sessionExpired();
+				}
 				
-				tideResponder.result(event);
+				if (tideResponder != null)
+					tideResponder.result(event);
 			}
 			
 			@Override
 			public void fault(TideFaultEvent event) {
-				BaseIdentity.this.username.set(null);
 				BaseIdentity.this.loggedIn.set(false);
 				
-				tideResponder.fault(event);
+				if (tideResponder != null)
+					tideResponder.fault(event);
 			}
     	});
     }
@@ -136,9 +149,6 @@ public abstract class BaseIdentity extends ComponentImpl implements ExceptionHan
 			@Override
 			public void update(Observable logout, Object event) {
 		        BaseIdentity.this.loggedIn.set(false);
-		        BaseIdentity.this.username.set(null);
-		        
-		        clearSecurityCache();
 		        
 		        if (tideResponder != null) {
 					if (event instanceof TideResultEvent)
@@ -162,6 +172,7 @@ public abstract class BaseIdentity extends ComponentImpl implements ExceptionHan
      * 	Clear the security cache
      */
     public abstract void clearSecurityCache();
+
     
 	@Override
 	public boolean accepts(FaultMessage emsg) {
@@ -172,10 +183,10 @@ public abstract class BaseIdentity extends ComponentImpl implements ExceptionHan
 	public void handle(Context context, FaultMessage emsg, TideFaultEvent faultEvent) {
 		if (isLoggedIn()) {
 			setLoggedIn(false);
+			
 			// Session expired, directly mark the channel as logged out
 			getServerSession().sessionExpired();
 		}
 	}
-	
 }
 

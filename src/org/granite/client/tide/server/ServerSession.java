@@ -24,6 +24,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,10 @@ import java.util.Observer;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -56,6 +61,7 @@ import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage.Code;
+import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler;
@@ -64,6 +70,7 @@ import org.granite.client.messaging.transport.jetty.JettyWebSocketTransport;
 import org.granite.client.tide.BeanManager;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
+import org.granite.client.tide.Identity;
 import org.granite.client.tide.PlatformConfigurable;
 import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.data.EntityManager;
@@ -77,6 +84,7 @@ import org.granite.tide.invocation.ContextUpdate;
 import org.granite.tide.invocation.InvocationResult;
 import org.granite.util.ContentType;
 
+
 /**
  * @author William DRAI
  */
@@ -86,7 +94,9 @@ public class ServerSession implements ContextAware {
 
 	private static Logger log = Logger.getLogger(ServerSession.class);
 	
+	public static final String SERVER_TIME_TAG = "org.granite.time";
 	public static final String SESSION_ID_TAG = "org.granite.sessionId";
+	public static final String SESSION_EXP_TAG = "org.granite.sessionExp";
     public static final String CONVERSATION_TAG = "conversationId";
     public static final String CONVERSATION_PROPAGATION_TAG = "conversationPropagation";
     public static final String IS_LONG_RUNNING_CONVERSATION_TAG = "isLongRunningConversation";
@@ -398,12 +408,42 @@ public class ServerSession implements ContextAware {
 		isFirstCall = false;
 	}
 	
+	private ScheduledExecutorService sessionExpirationTimer = Executors.newSingleThreadScheduledExecutor();
+	private ScheduledFuture<?> sessionExpirationFuture = null;
+	
+	private Runnable sessionExpirationTask = new Runnable() {
+		@Override
+		public void run() {
+			Identity identity = context.byType(Identity.class);
+			identity.checkLoggedIn(null);
+		}
+	};
+	
+	private void rescheduleSessionExpirationTask(long serverTime, int sessionExpirationDelay) {
+		Identity identity = context.byType(Identity.class);
+		if (identity == null || !identity.isLoggedIn())	// No session expiration tracking if user not logged in
+			return;
+		
+		long clientOffset = serverTime - new Date().getTime();
+		if (sessionExpirationFuture != null)
+			sessionExpirationFuture.cancel(false);
+		
+		sessionExpirationFuture = sessionExpirationTimer.schedule(sessionExpirationTask, clientOffset + sessionExpirationDelay*1000L + 1500L, TimeUnit.MILLISECONDS);
+	}
+	
 	public void handleResultEvent(Event event) {
-		if (event instanceof ResultEvent)
-			sessionId = (String)((ResultEvent)event).getMessage().getHeader(SESSION_ID_TAG);
+		if (event instanceof ResultEvent) {
+			ResultMessage message = ((ResultEvent)event).getMessage();
+			sessionId = (String)message.getHeader(SESSION_ID_TAG);
+			if (sessionId != null) {
+				long serverTime = (Long)message.getHeader(SERVER_TIME_TAG);
+				int sessionExpirationDelay = (Integer)message.getHeader(SESSION_EXP_TAG);
+				rescheduleSessionExpirationTask(serverTime, sessionExpirationDelay);
+			}
+		}
 		else if (event instanceof IncomingMessageEvent<?>)
 			sessionId = (String)((IncomingMessageEvent<?>)event).getMessage().getHeader(SESSION_ID_TAG);
-
+		
 		if (messagingChannel != null && sessionId != null && messagingChannel instanceof SessionAwareChannel)
 			((SessionAwareChannel)messagingChannel).setSessionId(sessionId);
 		isFirstCall = false;
@@ -412,7 +452,12 @@ public class ServerSession implements ContextAware {
 	
 	public void handleFaultEvent(FaultEvent event, FaultMessage emsg) {
 		sessionId = (String)event.getMessage().getHeader(SESSION_ID_TAG);
-
+		if (sessionId != null) {
+			long serverTime = (Long)event.getMessage().getHeader(SERVER_TIME_TAG);
+			int sessionExpirationDelay = (Integer)event.getMessage().getHeader(SESSION_EXP_TAG);
+			rescheduleSessionExpirationTask(serverTime, sessionExpirationDelay);
+		}
+		
 		if (messagingChannel != null && sessionId != null && messagingChannel instanceof SessionAwareChannel)
 			((SessionAwareChannel)messagingChannel).setSessionId(sessionId);
 		
@@ -488,6 +533,11 @@ public class ServerSession implements ContextAware {
 	 *  @param componentName component name of identity
 	 */
 	public void logout(final Observer logoutObserver) {
+		if (sessionExpirationFuture != null) {
+			sessionExpirationFuture.cancel(false);
+			sessionExpirationFuture = null;
+		}
+		
 		logoutState.logout(logoutObserver, new TimerTask() {
 			@Override
 			public void run() {
