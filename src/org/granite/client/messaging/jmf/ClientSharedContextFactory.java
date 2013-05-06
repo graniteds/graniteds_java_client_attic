@@ -21,12 +21,16 @@
 package org.granite.client.messaging.jmf;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.granite.client.messaging.RemoteAlias;
+import org.granite.client.messaging.jmf.ext.ClientEntityCodec;
 import org.granite.logging.Logger;
 import org.granite.messaging.jmf.DefaultCodecRegistry;
+import org.granite.messaging.jmf.codec.ExtendedObjectCodec;
 import org.granite.scan.ScannedItem;
 import org.granite.scan.ScannedItemHandler;
 import org.granite.scan.Scanner;
@@ -56,11 +60,14 @@ public class ClientSharedContextFactory {
         } catch (Exception e) {
             log.error(e, "Could not scan classpath for configuration");
         }
- 		initialize(clientToServerAliases);
+        
+        List<ExtendedObjectCodec> extendedCodecs = new ArrayList<ExtendedObjectCodec>();
+        extendedCodecs.add(new ClientEntityCodec());
+ 		initialize(extendedCodecs, clientToServerAliases);
 	}
 	
-	public static synchronized void initialize(Map<String, String> clientToServerAliases) {
-		context = new DefaultClientSharedContext(new DefaultCodecRegistry(), null, JMFAMFUtil.AMF_DEFAULT_STORED_STRINGS);
+	public static synchronized void initialize(List<ExtendedObjectCodec> extendedCodecs, Map<String, String> clientToServerAliases) {
+		context = new DefaultClientSharedContext(new DefaultCodecRegistry(extendedCodecs), null, JMFAMFUtil.AMF_DEFAULT_STORED_STRINGS);
 		
 		if (clientToServerAliases != null) {
 			for (Map.Entry<String, String> clientToServerAlias : clientToServerAliases.entrySet())

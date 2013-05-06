@@ -37,6 +37,7 @@ import org.granite.client.persistence.collection.PersistentCollection;
 public class Persistence {
 
 	private static final String INITIALIZED_FIELD_NAME = "__initialized__";
+	private static final String DETACHED_STATE_FIELD_NAME = "__detachedState__";
 	
 	private static final PropertyAccessor NULL_PROPERTY_ACCESSOR = new MethodAccessor(null, null, null);
 	
@@ -55,6 +56,15 @@ public class Persistence {
 	}
 	
 	private static final ConcurrentMap<Class<?>, Field> initializedFields = new ConcurrentHashMap<Class<?>, Field>();
+	private static final ConcurrentMap<Class<?>, Field> detachedStateFields = new ConcurrentHashMap<Class<?>, Field>();
+
+	public static Field getInitializedField(Class<?> cls) {
+		return findField(cls, initializedFields, INITIALIZED_FIELD_NAME, Boolean.TYPE);
+	}
+
+	public static Field getDetachedStateField(Class<?> cls) {
+		return findField(cls, detachedStateFields, DETACHED_STATE_FIELD_NAME, String.class);
+	}
 	
 	public static boolean isInitialized(Object o) {
 		if (o instanceof PersistentCollection)
@@ -75,30 +85,96 @@ public class Persistence {
 			throw new RuntimeException("Could not get field " + field + " value on object " + o, e);
 		}
 	}
+	
+	public static void setInitialized(Object o, boolean value) throws IllegalAccessException {
+		Class<?> cls = o.getClass();
+		if (!cls.isAnnotationPresent(Entity.class))
+			throw new IllegalAccessException("Not annotated with @Entity: " + cls);
+		
+		Field field = findField(cls, initializedFields, INITIALIZED_FIELD_NAME, Boolean.TYPE);
+		if (field == null)
+			throw new IllegalAccessException("Could not find field " + INITIALIZED_FIELD_NAME + " in " + o);
+		
+		try {
+			field.setBoolean(o, value);
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Could not set field " + field + " on object " + o + " to value " + value, e);
+		}		
+	}
+	
+	public static String getDetachedState(Object o) throws IllegalAccessException {
+		Class<?> cls = o.getClass();
+		if (!cls.isAnnotationPresent(Entity.class))
+			return null;
 
-	public static Property getIdProperty(Object entity) throws NoSuchPropertyException {
-		PropertyAccessor accessor = findPropertyAccessor(entity.getClass(), idAccessors, Id.class);
-		if (accessor == null)
-			throw newNoSuchPropertyException(entity.getClass(), Id.class);
-		return new Property(entity, accessor);
+		Field field = findField(cls, detachedStateFields, DETACHED_STATE_FIELD_NAME, String.class);
+		if (field == null)
+			throw new IllegalAccessException("Could not find field " + DETACHED_STATE_FIELD_NAME + " in " + o);
+		
+		return (String)field.get(o);
+	}
+	
+	public static void setDetachedState(Object o, String value) throws IllegalAccessException {
+		Class<?> cls = o.getClass();
+		if (!cls.isAnnotationPresent(Entity.class))
+			throw new IllegalAccessException("Not annotated with @Entity: " + cls);
+		
+		Field field = findField(cls, detachedStateFields, DETACHED_STATE_FIELD_NAME, String.class);
+		if (field == null)
+			throw new IllegalAccessException("Could not find field " + DETACHED_STATE_FIELD_NAME + " in " + o);
+		
+		try {
+			field.set(o, value);
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Could not set field " + field + " on object " + o + " to value " + value, e);
+		}		
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T getId(Object entity) throws IllegalAccessException {
+		return (T)getIdProperty(entity).getValue();
 	}
 
-	public static Property getUidProperty(Object entity) throws NoSuchPropertyException {
-		PropertyAccessor accessor = findPropertyAccessor(entity.getClass(), uidAccessors, Uid.class);
-		if (accessor == null)
-			throw newNoSuchPropertyException(entity.getClass(), Uid.class);
-		return new Property(entity, accessor);
+	public static void setId(Object entity, Object value) throws IllegalAccessException {
+		getIdProperty(entity).setValue(value);
+	}
+	
+	public static String getUid(Object entity) throws IllegalAccessException {
+		return (String)getUidProperty(entity).getValue();
+	}
+	
+	public static void setUid(Object entity, String value) throws IllegalAccessException {
+		getUidProperty(entity).setValue(value);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T getVersion(Object entity) throws IllegalAccessException {
+		return (T)getVersionProperty(entity).getValue();
 	}
 
-	public static Property getVersionProperty(Object entity) throws NoSuchPropertyException {
-		PropertyAccessor accessor = findPropertyAccessor(entity.getClass(), versionAccessors, Version.class);
+	public static Property getIdProperty(Object entity) throws IllegalAccessException {
+		return getProperty(entity, idAccessors, Id.class);
+	}
+
+	public static Property getUidProperty(Object entity) throws IllegalAccessException {
+		return getProperty(entity, uidAccessors, Uid.class);
+	}
+
+	public static Property getVersionProperty(Object entity) throws IllegalAccessException {
+		return getProperty(entity, versionAccessors, Version.class);
+	}
+	
+	private static Property getProperty(Object entity, ConcurrentMap<Class<?>, PropertyAccessor> cache, Class<? extends Annotation> annotationClass) throws IllegalAccessException {
+		PropertyAccessor accessor = findPropertyAccessor(entity.getClass(), cache, annotationClass);
 		if (accessor == null)
-			throw newNoSuchPropertyException(entity.getClass(), Version.class);
+			throw newIllegalAccessException(entity.getClass(), annotationClass);
 		return new Property(entity, accessor);
 	}
 	
-	private static final NoSuchPropertyException newNoSuchPropertyException(Class<?> cls, Class<? extends Annotation> annotationClass) {
-		return new NoSuchPropertyException("Could not find property annotated with " + annotationClass + " in " + cls);
+	private static IllegalAccessException newIllegalAccessException(Class<?> cls, Class<? extends Annotation> annotationClass) {
+		return new IllegalAccessException("Could not find property annotated with " + annotationClass + " in " + cls);
 	}
 	
 	private static Field findField(Class<?> cls, ConcurrentMap<Class<?>, Field> cache, String name, Class<?> type) {
@@ -254,8 +330,8 @@ public class Persistence {
 		boolean isReadable();
 		boolean isWritable();
 		
-		Object get(Object obj);
-		void set(Object obj, Object value);
+		Object get(Object obj) throws IllegalAccessException;
+		void set(Object obj, Object value) throws IllegalAccessException;
 	}
 	
 	static class FieldAccessor implements PropertyAccessor {
@@ -288,19 +364,27 @@ public class Persistence {
 			return true;
 		}
 
-		public Object get(Object obj) {
+		public Object get(Object obj) throws IllegalAccessException {
 			try {
 				return field.get(obj);
-			} catch (Exception e) {
-				throw new RuntimeException("Could not get field " + field + " value on object " + obj, e);
+			}
+			catch (IllegalAccessException e) {
+				throw e;
+			}
+			catch (Exception e) {
+				throw new IllegalAccessException("Could not get field " + field + " value on object " + obj + ": " + e.toString());
 			}
 		}
 
-		public void set(Object obj, Object value) {
+		public void set(Object obj, Object value) throws IllegalAccessException {
 			try {
 				field.set(obj, value);
-			} catch (Exception e) {
-				throw new RuntimeException("Could not set field " + field + " value on object " + obj + " to " + value, e);
+			}
+			catch (IllegalAccessException e) {
+				throw e;
+			}
+			catch (Exception e) {
+				throw new IllegalAccessException("Could not set field " + field + " on object " + obj + " to value " + value + ": " + e.toString());
 			}
 		}
 	}
@@ -349,19 +433,27 @@ public class Persistence {
 			return setter != null;
 		}
 
-		public Object get(Object obj) {
+		public Object get(Object obj) throws IllegalAccessException {
 			try {
 				return getter.invoke(obj);
-			} catch (Exception e) {
-				throw new RuntimeException("Could not invoke getter " + getter + " on object " + obj, e);
+			}
+			catch (IllegalAccessException e) {
+				throw e;
+			}
+			catch (Exception e) {
+				throw new IllegalAccessException("Could not invoke getter " + getter + " on object " + obj + ": " + e.toString());
 			}
 		}
 
-		public void set(Object obj, Object value) {
+		public void set(Object obj, Object value) throws IllegalAccessException {
 			try {
 				setter.invoke(obj, value);
-			} catch (Exception e) {
-				throw new RuntimeException("Could not invoke setter " + setter + " on object " + obj + " with " + value, e);
+			}
+			catch (IllegalAccessException e) {
+				throw e;
+			}
+			catch (Exception e) {
+				throw new IllegalAccessException("Could not invoke setter " + setter + " on object " + obj + " with " + value + ": " + e.toString());
 			}
 		}
 	}
@@ -392,11 +484,11 @@ public class Persistence {
 			return accessor.isWritable();
 		}
 
-		public Object getValue() {
+		public Object getValue() throws IllegalAccessException {
 			return accessor.get(obj);
 		}
 
-		public void setValue(Object value) {
+		public void setValue(Object value) throws IllegalAccessException {
 			accessor.set(obj, value);
 		}
 	}

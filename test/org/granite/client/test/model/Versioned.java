@@ -1,13 +1,10 @@
 package org.granite.client.test.model;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.Serializable;
 
 import org.granite.client.persistence.Version;
 
-public abstract class Versioned implements Externalizable {
+public abstract class Versioned implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -17,14 +14,4 @@ public abstract class Versioned implements Externalizable {
     public Integer getVersion() {
         return version;
     }
-
-	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		version = (Integer)in.readObject();
-	}
-
-	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeObject(version);
-	}
 }
