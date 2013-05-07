@@ -118,7 +118,8 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 			}
 		}
 	    
-		getStatusHandler().handleIO(true);
+		if (!message.isConnect())
+			getStatusHandler().handleIO(true);
 		
 		try {
 		    HttpPost request = new HttpPost(channel.getUri());
@@ -140,7 +141,8 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 			final Future<HttpResponse> future = httpClient.execute(request, new FutureCallback<HttpResponse>() {
 	
 	            public void completed(HttpResponse response) {
-	        		getStatusHandler().handleIO(false);
+	            	if (!message.isConnect())
+	            		getStatusHandler().handleIO(false);
 
 	        		InputStream is = null;
 	        		try {
@@ -160,14 +162,16 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 	            }
 	
 	            public void failed(Exception e) {
-	            	getStatusHandler().handleIO(false);
+	            	if (!message.isConnect())
+	            		getStatusHandler().handleIO(false);
 	
 	            	channel.onError(message, e);
 	            	getStatusHandler().handleException(new TransportIOException(message, "Request failed", e));
 	            }
 	
 	            public void cancelled() {
-	            	getStatusHandler().handleIO(false);
+	            	if (!message.isConnect())
+	            		getStatusHandler().handleIO(false);
 	            	
 	            	channel.onCancelled(message);
 	            }
@@ -188,7 +192,8 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 			};
 		}
 		catch (Exception e) {
-			getStatusHandler().handleIO(false);
+        	if (!message.isConnect())
+        		getStatusHandler().handleIO(false);
 			
 			TransportIOException f = new TransportIOException(message, "Request failed", e);
         	getStatusHandler().handleException(f);
