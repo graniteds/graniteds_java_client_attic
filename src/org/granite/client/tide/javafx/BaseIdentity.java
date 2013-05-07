@@ -125,8 +125,6 @@ public abstract class BaseIdentity extends ComponentImpl implements Identity, Ex
 			
 			@Override
 			public void fault(TideFaultEvent event) {
-				BaseIdentity.this.loggedIn.set(false);
-				
 				if (tideResponder != null)
 					tideResponder.fault(event);
 			}
