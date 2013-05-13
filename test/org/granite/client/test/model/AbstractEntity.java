@@ -9,6 +9,7 @@ public abstract class AbstractEntity extends Versioned {
 
 	private static final long serialVersionUID = 1L;
 
+	@SuppressWarnings("unused")
 	private boolean __initialized__ = true;
 	@SuppressWarnings("unused")
 	private String __detachedState__ = null;
@@ -18,10 +19,6 @@ public abstract class AbstractEntity extends Versioned {
 	@Uid
 	private String uid;
     private boolean restricted;
-
-    public boolean is__initialized__() {
-		return __initialized__;
-	}
 
 	public Integer getId() {
         return id;
