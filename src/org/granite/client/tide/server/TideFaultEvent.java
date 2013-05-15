@@ -45,7 +45,11 @@ public class TideFaultEvent extends TideRpcEvent {
         this.serverSession = serverSession;
         this.componentListener = componentListener;
     }
-
+    
+    public int getCallId() {
+    	return componentListener.hashCode();
+    }
+    
     public Fault getFault() {
         return fault;
     }
