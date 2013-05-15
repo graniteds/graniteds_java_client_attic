@@ -21,6 +21,7 @@
 package org.granite.client.tide.server;
 
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import org.granite.client.tide.Context;
 
@@ -34,11 +35,15 @@ public class TideFaultEvent extends TideRpcEvent {
     
     private Fault fault;
     private Map<String, Object> extendedData;
+    private ServerSession serverSession;
+    private ComponentListener<?> componentListener;
 
-    public TideFaultEvent(Context context, ServerSession serverSession, ComponentListener<?> componentResponder, Fault fault, Map<String, Object> extendedData) {
-        super(context, serverSession, componentResponder);
+    public TideFaultEvent(Context context, ServerSession serverSession, ComponentListener<?> componentListener, Fault fault, Map<String, Object> extendedData) {
+        super(context, serverSession, componentListener);
         this.fault = fault;
         this.extendedData = extendedData;
+        this.serverSession = serverSession;
+        this.componentListener = componentListener;
     }
 
     public Fault getFault() {
@@ -55,6 +60,10 @@ public class TideFaultEvent extends TideRpcEvent {
     
     public void setExtendedData(Map<String, Object> extendedData) {
         this.extendedData = extendedData;
+    }
+    
+    public Future<?> retry() {
+    	return componentListener.invoke(serverSession);
     }
 
 }

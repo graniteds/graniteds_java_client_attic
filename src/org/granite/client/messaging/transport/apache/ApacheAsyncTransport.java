@@ -143,7 +143,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 	            public void completed(HttpResponse response) {
 	            	if (!message.isConnect())
 	            		getStatusHandler().handleIO(false);
-
+	            	
 	        		InputStream is = null;
 	        		try {
 	        			is = response.getEntity().getContent();

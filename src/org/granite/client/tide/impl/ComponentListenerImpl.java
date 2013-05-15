@@ -21,7 +21,10 @@
 package org.granite.client.tide.impl;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+import org.granite.client.messaging.RemoteService;
+import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.events.CancelledEvent;
 import org.granite.client.messaging.events.FailureEvent;
 import org.granite.client.messaging.events.FaultEvent;
@@ -31,7 +34,10 @@ import org.granite.client.tide.Context;
 import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ComponentListener;
 import org.granite.client.tide.server.FaultException;
+import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideResponder;
+import org.granite.messaging.amf.RemoteClass;
+import org.granite.tide.invocation.InvocationCall;
 
 /**
  * @author William DRAI
@@ -129,28 +135,61 @@ public class ComponentListenerImpl<T> implements ComponentListener<T> {
 
 	@Override
 	public void onFailure(final FailureEvent event) {
+		Runnable h = handler.issue(sourceContext, event, info, componentName, operation, tideResponder, this);
 		synchronized (this) {
 			exception = new ExecutionException(event.getCause());
 			if (waiting)
 				notifyAll();
+			else
+				sourceContext.callLater(h);
 		}
 	}
 
 	@Override
 	public void onTimeout(TimeoutEvent event) {
+		Runnable h = handler.issue(sourceContext, event, info, componentName, operation, tideResponder, this);
 		synchronized (this) {
 			exception = new InterruptedException("timeout");
 			if (waiting)
 				notifyAll();
+			else
+				sourceContext.callLater(h);
 		}
 	}
 
 	@Override
 	public void onCancelled(CancelledEvent event) {
+		Runnable h = handler.issue(sourceContext, event, info, componentName, operation, tideResponder, this);
 		synchronized (this) {
 			exception = new InterruptedException("cancel");
 			if (waiting)
 				notifyAll();
+			else
+				sourceContext.callLater(h);
 		}
 	}
+	
+	@Override
+    public Future<T> invoke(ServerSession serverSession) {
+        
+    	Object[] call = new Object[5];
+    	call[0] = getComponent().getName();
+    	String componentClassName = null;
+    	if (getComponent().getClass() != ComponentImpl.class) {
+    		RemoteClass remoteClass = getComponent().getClass().getAnnotation(RemoteClass.class);
+    		componentClassName = remoteClass != null ? remoteClass.value() : getComponent().getClass().getName();
+    	}
+    	call[1] = componentClassName;
+    	call[2] = getOperation();
+    	call[3] = getArgs();
+    	call[4] = new InvocationCall();
+    	
+        RemoteService ro = serverSession.getRemoteService();
+        ResponseMessageFuture rmf = ro.newInvocation("invokeComponent", call).addListener(this).invoke();
+        
+        serverSession.checkWaitForLogout();
+        
+        return new FutureResult<T>(rmf, this);
+    }
+
 }

@@ -42,6 +42,7 @@ import org.granite.util.PublicByteArrayOutputStream;
 public class MockRemoteService extends RemoteService {
     
     private static ResponseBuilder responseBuilder = null;
+    private static boolean shouldFail = false;
     
     private static Executor executor = Executors.newSingleThreadExecutor();
     
@@ -53,6 +54,10 @@ public class MockRemoteService extends RemoteService {
     
     public static void setResponseBuilder(ResponseBuilder rb) {
     	responseBuilder = rb;
+    }
+    
+    public static void setShouldFail(boolean shouldFail) {
+    	MockRemoteService.shouldFail = shouldFail;
     }
     
     @Override
@@ -109,8 +114,14 @@ public class MockRemoteService extends RemoteService {
 						throw new TransportException("Message serialization failed: " + message.getId(), e);
 					}
 					
-					ResultMessage result = (ResultMessage)responseBuilder.buildResponseMessage(MockRemoteService.this, request);
-					token.dispatchResult(result);
+					if (shouldFail) {
+						token.dispatchFailure(new IOException("Connect failed"));
+						shouldFail = false;
+					}
+					else {
+						ResultMessage result = (ResultMessage)responseBuilder.buildResponseMessage(MockRemoteService.this, request);
+						token.dispatchResult(result);
+					}
 				}
 			});
 			return token;
