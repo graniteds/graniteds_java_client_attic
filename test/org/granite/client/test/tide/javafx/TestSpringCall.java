@@ -22,8 +22,6 @@ package org.granite.client.test.tide.javafx;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
@@ -35,28 +33,25 @@ import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.test.MockRemoteService;
 import org.granite.client.test.ResponseBuilder;
-import org.granite.client.test.tide.MockInstanceStoreFactory;
 import org.granite.client.test.tide.MockServiceFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
 import org.granite.client.tide.impl.ComponentImpl;
 import org.granite.client.tide.impl.DefaultPlatform;
-import org.granite.client.tide.impl.SimpleContextManager;
+import org.granite.client.tide.impl.SimpleEventBus;
 import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
-import org.granite.tide.invocation.InvocationResult;
+import org.granite.client.tide.spring.SpringContextManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import flex.messaging.io.ArrayCollection;
 
-
-public class TestSimpleCall {
+public class TestSpringCall {
     
     private ContextManager contextManager;
     private Context ctx;
@@ -65,8 +60,7 @@ public class TestSimpleCall {
     
     @Before
     public void setup() throws Exception {
-    	contextManager = new SimpleContextManager(new DefaultPlatform());
-        contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
+    	contextManager = new SpringContextManager(new DefaultPlatform(), new SimpleEventBus());
         ctx = contextManager.getContext();
         serverSession = new ServerSession("/test", "localhost", 8080);
         serverSession.setServiceFactory(new MockServiceFactory());
@@ -80,7 +74,7 @@ public class TestSimpleCall {
     }
     
     @Test
-    public void testSimpleCall() throws Exception {        
+    public void testSimpleSpringCall() throws Exception {        
         Component personService = new ComponentImpl(serverSession);
         ctx.set("personService", personService);
         MockRemoteService.setResponseBuilder(new ResponseBuilder() {
@@ -127,27 +121,13 @@ public class TestSimpleCall {
         
         System.out.println("findAllPersons get(): " + persons);
         Assert.assertEquals("Persons result", 2, persons.size());
-        
-        // Create a new Person entity.
-        Person person  = new Person();
-        person.setFirstName("Franck");
-        person.setLastName("Wolff");
-        
-        // Call the createPerson method on the destination (PersonService) with
-        // the new person as its parameter.
-        Future<Person> fperson = personService.call("createPerson", person);
-        person = fperson.get();
-        
-        System.out.println("createPerson get(): " + person);
-        Assert.assertEquals("Person", "Wolff", person.getLastName());
-        
-        System.out.println("Done.");
     }
-
+    
     @Test
-    public void testSimpleSetCall() throws Exception {        
+    public void testRetryAfterFaultSpringCall() throws Exception {        
         Component personService = new ComponentImpl(serverSession);
         ctx.set("personService", personService);
+        
         MockRemoteService.setResponseBuilder(new ResponseBuilder() {
             @Override
             public Message buildResponseMessage(RemoteService service, RequestMessage request) {
@@ -158,104 +138,41 @@ public class TestSimpleCall {
                 
                 String method = (String)invocation.getParameters()[2];
                 Object[] args = ((Object[])invocation.getParameters()[3]);
-
-//        		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
-//        		byte[] buf = new byte[10000];
-//        		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-//        		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
-//        		Object entity = in.readObject();
                 
-                Object result = null;
                 if (method.equals("findAllPersons") && args.length == 0) {
-                    ArrayCollection set = new ArrayCollection();
-                    set.add(new Person());
-                    set.add(new Person());
-                    result = set;
-                }
-                else if (method.equals("findMapPersons") && args.length == 0) {
-                	
-                    ArrayCollection set = new ArrayCollection();
-                    set.add(new Person());
-                    set.add(new Person());
-                    result = set;
+                    List<Person> list = new ArrayList<Person>();
+                    list.add(new Person());
+                    list.add(new Person());
+                    return new ResultMessage(null, null, list);
                 }
                 else if (method.equals("createPerson") && args.length == 1) {
                     Person person = (Person)args[0];
                     Person p = new Person();
                     p.setFirstName(person.getFirstName());
                     p.setLastName(person.getLastName());
-                    result = p;
+                    return new ResultMessage(null, null, p);
                 }
-                
-                InvocationResult invResult = new InvocationResult(result);
-                return new ResultMessage(null, null, invResult);
+                return null;
             }
         });
         
-        final Object[] res = new Object[1];
-        Future<Set<Person>> fpersons = personService.call("findAllPersons", new TideResponder<Set<Person>>() {
-			@Override
-			public void result(TideResultEvent<Set<Person>> event) {
-		        System.out.println("findAllPersons result(): " + event.getResult());
-				res[0] = event.getResult();
-			}
-
-			@Override
-			public void fault(TideFaultEvent event) {
-				event.getFault();
-			}
-        });
-        
-        Set<Person> persons = fpersons.get();
-        Object persons2 = res[0];
-        
-        // (Set<Person>)res[0];
-        System.out.println("findAllPersons get(): " + persons);
-        Assert.assertTrue("Persons set", persons instanceof Set);
-        Assert.assertEquals("Persons result", 2, persons.size());
-        Assert.assertSame("get() == TideResultEvent", persons, persons2);
-        
-        res[0] = null;
-        final Semaphore sem = new Semaphore(0);
-        
-        personService.call("findAllPersons", new TideResponder<Set<Person>>() {
-			@Override
-			public void result(TideResultEvent<Set<Person>> event) {
-				System.out.println("findAllPersons result(): " + event.getResult());
-				res[0] = event.getResult();
-				sem.release();
-			}
-
-			@Override
-			public void fault(TideFaultEvent event) {
-				event.getFault();
-			}
-        });
-        
-        sem.acquire();
-        persons2 = res[0];
-        Assert.assertTrue("Persons set", persons2 instanceof Set);
-    }
-    
-    @Test
-    public void testIOErrorCall() throws Exception {        
-        Component personService = new ComponentImpl(serverSession);
-        ctx.set("personService", personService);
         MockRemoteService.setShouldFail(true);
         
-        final Semaphore sem = new Semaphore(0);
-        
         final TideFaultEvent[] faultEvent = new TideFaultEvent[1];
+        @SuppressWarnings("unchecked")
+		final List<Person>[] result = new List[1];
+        
+        final Semaphore sem = new Semaphore(0);
         
         personService.call("findAllPersons", new TideResponder<List<Person>>() {
 			@Override
 			public void result(TideResultEvent<List<Person>> event) {
-		        System.out.println("findAllPersons result(): " + event.getResult());
+				result[0] = event.getResult();
+				sem.release();
 			}
 			
 			@Override
 			public void fault(TideFaultEvent event) {
-		        System.out.println("findAllPersons fault(): " + event.getFault());
 				faultEvent[0] = event;
 				sem.release();
 			}
@@ -263,43 +180,17 @@ public class TestSimpleCall {
         
         sem.acquire();
         
-        Assert.assertNotNull("Fault async", faultEvent[0]);
+        Assert.assertNotNull("Fault", faultEvent[0]);
+
+        Thread.sleep(500);
+                
+        faultEvent[0].retry();
+        
+        sem.acquire();
+        
+        List<Person> persons = result[0];
+        System.out.println("findAllPersons get(): " + persons);
+        Assert.assertEquals("Persons result", 2, persons.size());
     }
-        
-    @Test
-    public void testIOErrorCall2() throws Exception {        
-        Component personService = new ComponentImpl(serverSession);
-        ctx.set("personService", personService);
-        
-        MockRemoteService.setShouldFail(true);
-        final TideFaultEvent[] faultEvent = new TideFaultEvent[1];
-        
-        final Semaphore sem = new Semaphore(0);
-        
-        boolean exceptionThrown = false;
-        try {
-	        Future<List<Person>> res = personService.call("findAllPersons", new TideResponder<List<Person>>() {
-				@Override
-				public void result(TideResultEvent<List<Person>> event) {
-				}
-				
-				@Override
-				public void fault(TideFaultEvent event) {
-			        System.out.println("findAllPersons fault(): " + event.getFault());
-					faultEvent[0] = event;
-					sem.release();
-				}
-	        });
-	        
-	        sem.acquire();
-	        
-	        res.get();
-        }
-        catch (ExecutionException e) {
-        	exceptionThrown = true;
-        }
-        
-        Assert.assertTrue("Exception sync", exceptionThrown);
-        Assert.assertNotNull("Fault sync", faultEvent[0]);
-    }
+
 }

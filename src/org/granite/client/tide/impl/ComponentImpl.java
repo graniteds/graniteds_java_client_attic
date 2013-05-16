@@ -26,9 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import org.granite.client.messaging.RemoteService;
-import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.events.FaultEvent;
+import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
@@ -43,7 +42,6 @@ import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TrackingContext;
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
-import org.granite.tide.invocation.InvocationCall;
 
 /**
  * @author William DRAI
@@ -204,6 +202,12 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
                     String operation, TideResponder<T> tideResponder, ComponentListener<T> componentListener) {
             	return new FaultHandler(serverSession, context, componentName, operation, event, info, tideResponder, componentListener);
             }
+            
+            @Override
+            public Runnable issue(Context context, IssueEvent event, Object info, String componentName,
+                    String operation, TideResponder<T> tideResponder, ComponentListener<T> componentListener) {
+            	return new FaultHandler(serverSession, context, componentName, operation, event, info, tideResponder, componentListener);
+            }
         };
         ComponentListener<T> componentListener = new ComponentListenerImpl<T>(context, h, component, operation, args, null, tideResponder);
         
@@ -227,23 +231,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
 //        for each (var app:IArgumentPreprocessor in allByType(IArgumentPreprocessor, true))
 //            componentResponder.args = app.preprocess(method, args);
         
-    	Object[] call = new Object[5];
-    	call[0] = componentListener.getComponent().getName();
-    	String componentClassName = null;
-    	if (componentListener.getComponent().getClass() != ComponentImpl.class) {
-    		RemoteClass remoteClass = componentListener.getComponent().getClass().getAnnotation(RemoteClass.class);
-    		componentClassName = remoteClass != null ? remoteClass.value() : componentListener.getComponent().getClass().getName();
-    	}
-    	call[1] = componentClassName;
-    	call[2] = componentListener.getOperation();
-    	call[3] = componentListener.getArgs();
-    	call[4] = new InvocationCall();
-
-        RemoteService ro = serverSession.getRemoteService();
-        ResponseMessageFuture rmf = ro.newInvocation("invokeComponent", call).addListener(componentListener).invoke();
-        
-        serverSession.checkWaitForLogout();
-        
-        return new FutureResult<T>(rmf, componentListener);
+        return componentListener.invoke(serverSession);
     }
+    
 }

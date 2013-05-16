@@ -33,6 +33,10 @@ public final class FaultMessage extends AbstractResponseMessage {
 	public static enum Code {
 		UNKNOWN,
 		
+		CLIENT_CALL_FAILED,
+		CLIENT_CALL_TIMED_OUT,
+		CLIENT_CALL_CANCELLED,
+		
 		SERVER_CALL_FAILED,
 		
 	    INVALID_CREDENTIALS,

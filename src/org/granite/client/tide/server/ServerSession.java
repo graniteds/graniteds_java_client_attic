@@ -425,13 +425,13 @@ public class ServerSession implements ContextAware {
 			return;
 		
 		long clientOffset = serverTime - new Date().getTime();
-		if (sessionExpirationFuture != null)
-			sessionExpirationFuture.cancel(false);
-		
 		sessionExpirationFuture = sessionExpirationTimer.schedule(sessionExpirationTask, clientOffset + sessionExpirationDelay*1000L + 1500L, TimeUnit.MILLISECONDS);
 	}
 	
 	public void handleResultEvent(Event event) {
+		if (sessionExpirationFuture != null)
+			sessionExpirationFuture.cancel(false);
+		
 		if (event instanceof ResultEvent) {
 			ResultMessage message = ((ResultEvent)event).getMessage();
 			sessionId = (String)message.getHeader(SESSION_ID_TAG);
@@ -451,6 +451,9 @@ public class ServerSession implements ContextAware {
 	}
 	
 	public void handleFaultEvent(FaultEvent event, FaultMessage emsg) {
+		if (sessionExpirationFuture != null)
+			sessionExpirationFuture.cancel(false);
+		
 		sessionId = (String)event.getMessage().getHeader(SESSION_ID_TAG);
 		if (sessionId != null) {
 			long serverTime = (Long)event.getMessage().getHeader(SERVER_TIME_TAG);
@@ -463,6 +466,10 @@ public class ServerSession implements ContextAware {
 		
         if (emsg != null && emsg.getCode().equals(Code.SERVER_CALL_FAILED))
         	status.setConnected(false);            
+	}
+	
+	public void handleIssueEvent(IssueEvent event) {
+    	status.setConnected(false);            
 	}
 	
 	private final TransportStatusHandler statusHandler = new TransportStatusHandler() {
@@ -517,7 +524,6 @@ public class ServerSession implements ContextAware {
 		log.info("Application session expired");
 		
 		sessionId = null;
-		isFirstCall = true;
 		
 		logoutState.sessionExpired();
 		
@@ -620,6 +626,8 @@ public class ServerSession implements ContextAware {
 		
 		if (messagingChannel != remotingChannel && messagingChannel.isAuthenticated())
 			messagingChannel.logout();
+		
+		isFirstCall = true;
 	}
 	
 	
