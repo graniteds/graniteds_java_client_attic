@@ -21,8 +21,6 @@
 -->
 <project name="graniteds-java-client" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
 
-	<property name="jarFile" value="granite-java-client.jar"/>
-
     <path id="gds.classpath">
         <fileset dir="libs">
             <include name="*.jar"/>
@@ -35,10 +33,10 @@
     </path>
 
 	<target name="jar">
-		<echo message="Building ${zipFile}" />
+		<echo message="Building client jars" />
 		
 		<mkdir dir="build"/>
-		<jar destfile="build/${jarFile}">
+		<jar destfile="build/granite-java-client.jar">
 			<fileset dir="bin">
 				<include name="**"/>
 				<exclude name="**/examples/**"/>
