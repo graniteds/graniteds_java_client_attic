@@ -298,22 +298,35 @@ public class ServerSession implements ContextAware {
 		
 		graniteURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.graniteUrlMapping);
 		remotingChannel = factory.newRemotingChannel(remotingTransport, configuration, "graniteamf", graniteURI, 1);
-
+		
 		if (useWebSocket)
 			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
 		else
 			gravityURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
 		messagingChannel = factory.newMessagingChannel(messagingTransport, configuration, "gravityamf", gravityURI);
+		
+		sessionExpirationTimer = Executors.newSingleThreadScheduledExecutor();
 	}
 	
 	@PreDestroy
 	public void stop()throws Exception {
-		if (remotingTransport != null)
-			remotingTransport.stop();		
+		if (sessionExpirationFuture != null) {
+			sessionExpirationFuture.cancel(false);
+			sessionExpirationFuture = null;
+		}
+		sessionExpirationTimer.shutdownNow();
+		sessionExpirationTimer = null;
+		
+		if (remotingTransport != null) {
+			remotingTransport.stop();	
+			remotingTransport = null;
+		}
 		remotingChannel = null;
 		
-		if (messagingTransport != null && messagingTransport != remotingTransport)
+		if (messagingTransport != null && messagingTransport != remotingTransport) {
 			messagingTransport.stop();		
+			messagingTransport = null;
+		}
 		messagingChannel = null;
 	}
 	
@@ -408,7 +421,7 @@ public class ServerSession implements ContextAware {
 		isFirstCall = false;
 	}
 	
-	private ScheduledExecutorService sessionExpirationTimer = Executors.newSingleThreadScheduledExecutor();
+	private ScheduledExecutorService sessionExpirationTimer = null;
 	private ScheduledFuture<?> sessionExpirationFuture = null;
 	
 	private Runnable sessionExpirationTask = new Runnable() {
