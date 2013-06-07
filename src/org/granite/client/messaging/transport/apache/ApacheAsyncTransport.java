@@ -111,7 +111,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 	@Override
 	public TransportFuture send(final Channel channel, final TransportMessage message) throws TransportException {
 		synchronized (this) {
-		    if (httpClient == null && httpClient.getStatus() != IOReactorStatus.ACTIVE) {
+		    if (httpClient == null || httpClient.getStatus() != IOReactorStatus.ACTIVE) {
 		    	TransportIOException e = new TransportIOException(message, "Apache HttpAsyncClient not started");
 		    	getStatusHandler().handleException(e);
 		    	throw e;
