@@ -21,7 +21,6 @@
 package org.granite.client.messaging.jmf.ext;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +30,8 @@ import org.granite.client.persistence.Persistence;
 import org.granite.messaging.jmf.ExtendedObjectInput;
 import org.granite.messaging.jmf.ExtendedObjectOutput;
 import org.granite.messaging.jmf.codec.ExtendedObjectCodec;
+import org.granite.messaging.jmf.reflect.FieldProperty;
+import org.granite.messaging.jmf.reflect.Property;
 
 /**
  * @author Franck WOLFF
@@ -45,7 +46,7 @@ public class ClientEntityCodec implements ExtendedObjectCodec {
         return out.getAlias(v.getClass().getName());
 	}
 
-	public void encode(ExtendedObjectOutput out, Object v) throws IOException, IllegalAccessException {
+	public void encode(ExtendedObjectOutput out, Object v) throws IOException, IllegalAccessException, InvocationTargetException {
 		boolean initialized = Persistence.isInitialized(v);
 		
 		out.writeBoolean(initialized);
@@ -54,11 +55,11 @@ public class ClientEntityCodec implements ExtendedObjectCodec {
 		if (!initialized)
 			out.writeObject(Persistence.getId(v));
 		else {
-			List<Field> fields = new ArrayList<Field>(out.getReflection().findSerializableFields(v.getClass()));
-			fields.remove(Persistence.getInitializedField(v.getClass()));
-			fields.remove(Persistence.getDetachedStateField(v.getClass()));
+			List<Property> fields = new ArrayList<Property>(out.getReflection().findSerializableFields(v.getClass()));
+			fields.remove(new FieldProperty(Persistence.getInitializedField(v.getClass())));
+			fields.remove(new FieldProperty(Persistence.getDetachedStateField(v.getClass())));
 
-			for (Field field : fields)
+			for (Property field : fields)
 				out.getAndWriteField(v, field);
 		}
 	}
@@ -92,11 +93,11 @@ public class ClientEntityCodec implements ExtendedObjectCodec {
 		if (!initialized)
 			Persistence.setId(v, in.readObject());
 		else {
-			List<Field> fields = new ArrayList<Field>(in.getReflection().findSerializableFields(v.getClass()));
-			fields.remove(Persistence.getInitializedField(v.getClass()));
-			fields.remove(Persistence.getDetachedStateField(v.getClass()));
+			List<Property> fields = new ArrayList<Property>(in.getReflection().findSerializableFields(v.getClass()));
+			fields.remove(new FieldProperty(Persistence.getInitializedField(v.getClass())));
+			fields.remove(new FieldProperty(Persistence.getDetachedStateField(v.getClass())));
 
-			for (Field field : fields)
+			for (Property field : fields)
 				in.readAndSetField(v, field);
 		}
 	}
