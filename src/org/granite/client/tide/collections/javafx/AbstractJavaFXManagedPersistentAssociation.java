@@ -158,7 +158,7 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
     
     public void withInitialized(InitializationCallback callback) {
         if (isInitialized())
-            initializationCallback.call(this);
+            callback.call(this);
         else {
             initializationCallback = callback;
             requestInitialization();

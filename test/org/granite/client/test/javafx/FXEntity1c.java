@@ -1,5 +1,6 @@
 package org.granite.client.test.javafx;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import javafx.beans.property.ObjectProperty;
@@ -15,7 +16,9 @@ import org.granite.messaging.amf.RemoteClass;
 
 @JavaFXObject
 @RemoteClass("org.granite.client.test.javafx.Entity1c")
-public class FXEntity1c {
+public class FXEntity1c implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 	
     private boolean __initialized = true;
     @SuppressWarnings("unused")

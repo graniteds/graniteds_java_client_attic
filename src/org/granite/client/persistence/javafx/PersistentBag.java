@@ -21,284 +21,106 @@
 package org.granite.client.persistence.javafx;
 
 import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
 
 import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
-import org.granite.client.persistence.LazyableCollection;
 import org.granite.logging.Logger;
-import org.granite.messaging.amf.RemoteClass;
 
 /**
  * @author William DRAI
  */
-@RemoteClass("org.granite.messaging.persistence.ExternalizablePersistentBag")
-public class PersistentBag<T> implements Set<T>, ObservableList<T>, LazyableCollection, Externalizable {
+public class PersistentBag<T> extends org.granite.client.persistence.collection.PersistentBag<T> implements ObservableList<T>, Externalizable {
 	
 	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(PersistentBag.class);
 
-    @SuppressWarnings("unused")
-	private boolean initializing = false;
-    private boolean initialized = false;
-    private String metadata = null;
-    private boolean dirty = false;
-    
-    private ObservableList<T> oset;
-   
-    private ListChangeListener<T> listener = new ListChangeListener<T>() {
-        public void onChanged(ListChangeListener.Change<? extends T> change) {
-            if (!initialized)
-                return;
-            while (change.next()) {
-                if (change.wasAdded() || change.wasRemoved() || change.wasReplaced() || change.wasPermutated()) {
-                    dirty = true;
-                    break;
-                }
-            }
-        }
-    };
-
-    
     public PersistentBag() {
-        this.oset = FXCollections.observableArrayList();
-        this.initialized = true;
-        addListener(listener);
+    	this(true);
     }
 
-    public PersistentBag(Set<T> set) {
-        this.oset = FXCollections.observableArrayList(set);
-        this.initialized = true;
-        addListener(listener);
+    public PersistentBag(List<T> list) {
+    	super(FXCollections.observableList(list));
     }
     
     public PersistentBag(boolean initialized) {
-        this.oset = FXCollections.observableArrayList();
-        this.initialized = initialized;         
-        if (initialized)
-            addListener(listener);
-    }
-
-
-    public final boolean isInitialized() {
-        return initialized;
-    }
-
-    public void initializing() {
-        clear();
-        initializing = true;
-        dirty = false;
-        removeListener(listener);
-    }
-
-    public void initialize() {
-        initializing = false;
-        initialized = true;
-        dirty = false;
-        addListener(listener);
-    }
-
-    public void uninitialize() {
-        removeListener(listener);
-        initialized = false;
-        clear();
-        dirty = false;
+    	super();
+    	if (initialized)
+    		init(FXCollections.observableList(new ArrayList<T>()), false);
     }
     
-    public PersistentBag<T> clone(boolean uninitialize) {
-        PersistentBag<T> coll = new PersistentBag<T>(initialized && !uninitialize);
-        coll.metadata = metadata;
-        if (initialized) {
-            for (T obj : this)
-                coll.add(obj);
-        }
-        coll.dirty = dirty;
-        return coll; 
+    @Override
+    public ObservableList<T> getCollection() {
+    	return (ObservableList<T>)super.getCollection();
     }
-
+    
     public void addListener(InvalidationListener listener) {
-        oset.addListener(listener);
+        getCollection().addListener(listener);
     }
 
     public void removeListener(InvalidationListener listener) {
-        oset.removeListener(listener);
+    	getCollection().removeListener(listener);
     }
     
-    private Map<ListChangeListener<? super T>, ListChangeListener<? super T>> listenerWrappers = new IdentityHashMap<ListChangeListener<? super T>, ListChangeListener<? super T>>();
+    private Map<ListChangeListener<? super T>, ListChangeListener<? super T>> listenerWrappers 
+    	= new IdentityHashMap<ListChangeListener<? super T>, ListChangeListener<? super T>>();
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
 	public void addListener(ListChangeListener<? super T> listener) {
         ListChangeListener<? super T> listenerWrapper = new ListChangeListenerWrapper(this, listener);
         listenerWrappers.put(listener, listenerWrapper);
-        oset.addListener(listenerWrapper);
+        getCollection().addListener(listenerWrapper);
     }
 
-	public void removeListener(ListChangeListener<? super T> listener) {
+    public void removeListener(ListChangeListener<? super T> listener) {
         ListChangeListener<? super T> listenerWrapper = listenerWrappers.remove(listener);
         if (listenerWrapper != null)
-        	oset.removeListener(listenerWrapper);
+        	getCollection().removeListener(listenerWrapper);
     }
     
-
-    public boolean isEmpty() {
-        return oset.isEmpty();
-    }
-
-    public boolean contains(Object o) {
-        return oset.contains(o);
-    }
-
-    public Iterator<T> iterator() {
-        return oset.iterator();
-    }
-
-    public boolean add(T e) {
-        return oset.add(e);
-    }
-
-    public boolean remove(Object o) {
-        return oset.remove(o);
-    }
-
-    public boolean containsAll(Collection<?> c) {
-        return oset.containsAll(c);
-    }
-
     public boolean addAll(Collection<? extends T> c) {
-        return oset.addAll(c);
+        List<T> toAdd = new ArrayList<T>(c);
+        toAdd.removeAll(getCollection());
+        return getCollection().addAll(toAdd);
     }
 
     public boolean addAll(int index, Collection<? extends T> c) {
-        return oset.addAll(index, c);
-    }
-
-    public boolean removeAll(Collection<?> c) {
-        return oset.removeAll(c);
-    }
-
-    public boolean equals(Object o) {
-        return oset.equals(o);
-    }
-
-    public int hashCode() {
-        return oset.hashCode();
-    }
-
-    public T get(int index) {
-        return oset.get(index);
-    }
-
-    public void add(int index, T element) {
-        oset.add(index, element);
+        List<T> toAdd = new ArrayList<T>(c);
+        toAdd.removeAll(getCollection());
+        return getCollection().addAll(index, toAdd);
     }
 
     public boolean addAll(T... elements) {
-        return oset.addAll(elements);
-    }
-    
-    public void clear() {
-        oset.clear();
+        List<T> toAdd = Arrays.asList(elements);
+        toAdd.removeAll(getCollection());
+        return getCollection().addAll(toAdd);
     }
 
-    public int indexOf(Object o) {
-        return oset.indexOf(o);
-    }
-
-    public int lastIndexOf(Object o) {
-        return oset.lastIndexOf(o);
-    }
-
-    public ListIterator<T> listIterator() {
-        return oset.listIterator();
-    }
-
-    public ListIterator<T> listIterator(int index) {
-        return oset.listIterator(index);
-    }
-
-    public void remove(int arg0, int arg1) {
-        oset.remove(arg0, arg1);
-    }
-
-    public T remove(int index) {
-        return oset.remove(index);
+    public void remove(int first, int last) {
+    	getCollection().remove(first, last);
     }
 
     public boolean removeAll(T... elements) {
-        return oset.removeAll(elements);
-    }
-
-    public boolean retainAll(Collection<?> c) {
-        return oset.retainAll(c);
+        return getCollection().removeAll(elements);
     }
 
     public boolean retainAll(T... elements) {
-        return oset.retainAll(elements);
-    }
-
-    public T set(int index, T element) {
-        return oset.set(index, element);
+        return getCollection().retainAll(elements);
     }
 
     public boolean setAll(Collection<? extends T> coll) {
-        return oset.setAll(coll);
+        return getCollection().setAll(coll);
     }
 
     public boolean setAll(T... arg0) {
-        return oset.setAll(arg0);
-    }
-
-    public int size() {
-        return oset.size();
-    }
-
-    public Object[] toArray() {
-        return oset.toArray();
-    }
-
-    @SuppressWarnings("hiding")
-	public <T> T[] toArray(T[] a) {
-        return oset.toArray(a);
-    }
-
-    public List<T> subList(int fromIndex, int toIndex) {
-        return oset.subList(fromIndex, toIndex);
-    }
-    
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + (initialized ? "" : " (uninitialized)") + (dirty ? " (dirty)" : "") + ":" + oset.toString();
-    }
-
-    @SuppressWarnings("unchecked")
-    public void readExternal(ObjectInput input) throws IOException, ClassNotFoundException {
-        initialized = ((Boolean)input.readObject()).booleanValue();
-        metadata = (String)input.readObject();
-        if (initialized) {
-            dirty = ((Boolean)input.readObject()).booleanValue();
-            T[] array = (T[])input.readObject();
-            oset = FXCollections.observableArrayList(array);
-        }
-    }
-
-    public void writeExternal(ObjectOutput output) throws IOException {
-        output.writeObject(Boolean.valueOf(initialized));
-        output.writeObject(metadata);
-        if (initialized) {
-            output.writeObject(Boolean.valueOf(dirty));
-            output.writeObject(oset.toArray());
-        }
+        return getCollection().setAll(arg0);
     }
 }

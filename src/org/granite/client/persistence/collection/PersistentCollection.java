@@ -22,14 +22,42 @@ package org.granite.client.persistence.collection;
 
 import java.io.Externalizable;
 
+import org.granite.client.persistence.Loader;
+
+
 /**
  * @author Franck WOLFF
  */
 public interface PersistentCollection extends Externalizable {
 	
 	boolean wasInitialized();
+	void uninitialize();
+	void initialize();
+	void initializing();
+	
+	PersistentCollection clone(boolean uninitialize);
+	
+	Loader<PersistentCollection> getLoader();
+	void setLoader(Loader<PersistentCollection> loader);
 	
 	boolean isDirty();
 	void dirty();
 	void clearDirty();
+	
+    public void addListener(InitializationListener listener);
+    
+    public interface InitializationListener {
+        
+        public void initialized(PersistentCollection collection);
+        
+        public void uninitialized(PersistentCollection collection);
+    }
+    
+    public void withInitialized(InitializationCallback callback);
+    
+    public interface InitializationCallback {
+        
+        public void call(PersistentCollection collection);
+    }
+
 }

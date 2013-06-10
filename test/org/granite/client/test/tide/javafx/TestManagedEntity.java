@@ -35,9 +35,10 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
+import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.test.tide.javafx.PersonEmbedColl.ContactList;
-import org.granite.client.tide.collections.ManagedPersistentCollection;
+import org.granite.client.tide.collections.CollectionLoader;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.impl.EntityManagerImpl;
 import org.granite.client.tide.javafx.JavaFXDataManager;
@@ -454,9 +455,8 @@ public class TestManagedEntity {
          
         PersonEmbedColl p = (PersonEmbedColl)entityManager.mergeExternalData(p1);
 
-        Assert.assertTrue("Contacts wrapped", p.getContactList().getContacts() instanceof ManagedPersistentCollection);
-        Assert.assertEquals("Owner is person", p, ((ManagedPersistentCollection<Contact>)p.getContactList().getContacts()).getOwner());
-        Assert.assertEquals("PropertyName", "contactList.contacts", ((ManagedPersistentCollection<Contact>)p.getContactList().getContacts()).getPropertyName());
+        CollectionLoader loader = (CollectionLoader)((PersistentCollection)p.getContactList().getContacts()).getLoader();
+        Assert.assertNotNull("Contacts loader", loader);
     }
     
     @Test

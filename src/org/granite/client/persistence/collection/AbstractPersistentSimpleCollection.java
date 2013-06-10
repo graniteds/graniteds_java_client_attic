@@ -35,37 +35,41 @@ public abstract class AbstractPersistentSimpleCollection<E, C extends Collection
 	}
 
 	public int size() {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return 0;
 		return getCollection().size();
 	}
 
 	public boolean isEmpty() {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return true;
 		return getCollection().isEmpty();
 	}
 
 	public boolean contains(Object o) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return false;
 		return getCollection().contains(o);
 	}
 
 	public Iterator<E> iterator() {
-		checkInitialized();
-		return new IteratorProxy<E>(this, getCollection().iterator());
+		return new IteratorProxy<E>(getCollection().iterator());
 	}
 
 	public Object[] toArray() {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return null;
 		return getCollection().toArray();
 	}
 
 	public <T> T[] toArray(T[] a) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return null;
 		return getCollection().toArray(a);
 	}
 
 	public boolean add(E e) {
-		checkInitialized();
+		checkInitializedWrite();
 		if (getCollection().add(e)) {
 			dirty();
 			return true;
@@ -74,7 +78,7 @@ public abstract class AbstractPersistentSimpleCollection<E, C extends Collection
 	}
 
 	public boolean remove(Object o) {
-		checkInitialized();
+		checkInitializedWrite();
 		if (getCollection().remove(o)) {
 			dirty();
 			return true;
@@ -83,12 +87,13 @@ public abstract class AbstractPersistentSimpleCollection<E, C extends Collection
 	}
 
 	public boolean containsAll(Collection<?> c) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return false;
 		return getCollection().containsAll(c);
 	}
 
 	public boolean addAll(Collection<? extends E> c) {
-		checkInitialized();
+		checkInitializedWrite();
 		if (getCollection().addAll(c)) {
 			dirty();
 			return true;
@@ -97,7 +102,7 @@ public abstract class AbstractPersistentSimpleCollection<E, C extends Collection
 	}
 
 	public boolean removeAll(Collection<?> c) {
-		checkInitialized();
+		checkInitializedWrite();
 		if (getCollection().removeAll(c)) {
 			dirty();
 			return true;
@@ -106,7 +111,7 @@ public abstract class AbstractPersistentSimpleCollection<E, C extends Collection
 	}
 
 	public boolean retainAll(Collection<?> c) {
-		checkInitialized();
+		checkInitializedWrite();
 		if (getCollection().retainAll(c)) {
 			dirty();
 			return true;
@@ -115,7 +120,7 @@ public abstract class AbstractPersistentSimpleCollection<E, C extends Collection
 	}
 
 	public void clear() {
-		checkInitialized();
+		checkInitializedWrite();
 		if (!getCollection().isEmpty()) {
 			getCollection().clear();
 			dirty();

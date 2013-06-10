@@ -64,4 +64,11 @@ public class PersistentMap<K, V> extends AbstractPersistentMapCollection<K, V, M
 		else
 			init(null, false);
 	}
+	
+    public PersistentMap<K, V> clone(boolean uninitialize) {
+    	PersistentMap<K, V> map = new PersistentMap<K, V>();
+    	if (wasInitialized() && !uninitialize)
+    		map.init(getCollection(), isDirty());
+        return map;
+    }
 }

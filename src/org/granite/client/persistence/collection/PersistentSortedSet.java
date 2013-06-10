@@ -47,32 +47,36 @@ public class PersistentSortedSet<E> extends AbstractPersistentSimpleCollection<E
 	}
 
 	public Comparator<? super E> comparator() {
-		checkInitialized();
 		return getCollection().comparator();
 	}
 
 	public SortedSet<E> subSet(E fromElement, E toElement) {
-		checkInitialized();
-		return new SortedSetProxy<E>(this, getCollection().subSet(fromElement, toElement));
+		if (!checkInitializedRead())
+			return null;
+		return new SortedSetProxy<E>(getCollection().subSet(fromElement, toElement));
 	}
 
 	public SortedSet<E> headSet(E toElement) {
-		checkInitialized();
-		return new SortedSetProxy<E>(this, getCollection().headSet(toElement));
+		if (!checkInitializedRead())
+			return null;
+		return new SortedSetProxy<E>(getCollection().headSet(toElement));
 	}
 
 	public SortedSet<E> tailSet(E fromElement) {
-		checkInitialized();
-		return new SortedSetProxy<E>(this, getCollection().tailSet(fromElement));
+		if (!checkInitializedRead())
+			return null;
+		return new SortedSetProxy<E>(getCollection().tailSet(fromElement));
 	}
 
 	public E first() {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return null;
 		return getCollection().first();
 	}
 
 	public E last() {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return null;
 		return getCollection().last();
 	}
 
@@ -102,4 +106,11 @@ public class PersistentSortedSet<E> extends AbstractPersistentSimpleCollection<E
 		else
 			init(null, false);
 	}
+	
+    public PersistentSortedSet<E> clone(boolean uninitialize) {
+    	PersistentSortedSet<E> set = new PersistentSortedSet<E>();
+    	if (wasInitialized() && !uninitialize)
+    		set.init(getCollection(), isDirty());
+        return set; 
+    }
 }

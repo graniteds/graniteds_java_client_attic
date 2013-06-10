@@ -1,5 +1,6 @@
 package org.granite.client.test.javafx;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,8 +10,10 @@ import javax.persistence.OneToMany;
 
 
 @Entity
-public class Entity1 {
+public class Entity1 implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	@Basic
 	private String name;
 	

@@ -56,4 +56,11 @@ public class PersistentSet<E> extends AbstractPersistentSimpleCollection<E, Set<
 		else
 			init(null, false);
 	}
+	
+    public PersistentSet<E> clone(boolean uninitialize) {
+    	PersistentSet<E> set = new PersistentSet<E>();
+    	if (wasInitialized() && !uninitialize)
+    		set.init(getCollection(), isDirty());
+        return set; 
+    }
 }

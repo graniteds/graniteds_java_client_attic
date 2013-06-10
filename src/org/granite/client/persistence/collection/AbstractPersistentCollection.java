@@ -23,6 +23,7 @@ package org.granite.client.persistence.collection;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -34,15 +35,23 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 
 import org.granite.client.persistence.LazyInitializationException;
+import org.granite.client.persistence.Loader;
+import org.granite.logging.Logger;
 import org.granite.messaging.persistence.PersistentCollectionSnapshot;
+import org.granite.util.TypeUtil;
+
 
 /**
  * @author Franck WOLFF
  */
 public abstract class AbstractPersistentCollection<C> implements PersistentCollection {
+	
+	private static final Logger log = Logger.getLogger(AbstractPersistentCollection.class);
 
 	private volatile C collection = null;
 	private volatile boolean dirty = false;
+	private Loader<PersistentCollection> loader = new DefaultCollectionLoader();
+    private List<InitializationListener> listeners = new ArrayList<InitializationListener>();
 	
 	protected AbstractPersistentCollection() {
 	}
@@ -51,8 +60,22 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		this.collection = collection;
 		this.dirty = dirty;
 	}
+	
+	public Loader<PersistentCollection> getLoader() {
+		return this.loader;
+	}
+	public void setLoader(Loader<PersistentCollection> loader) {
+		this.loader = loader;
+	}
 
-	protected void checkInitialized() {
+	protected boolean checkInitializedRead() {
+		if (wasInitialized())
+			return true;
+		loader.load(this, null);
+		return false;
+	}
+	
+	protected void checkInitializedWrite() {
 		if (!wasInitialized())
 			throw new LazyInitializationException(getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(this)));
 	}
@@ -81,6 +104,21 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		dirty = false;
 	}
 	
+	
+	public PersistentCollection clone(boolean uninitialize) {
+		try {
+		    @SuppressWarnings("unchecked")
+			AbstractPersistentCollection<C> collection = TypeUtil.newInstance(getClass(), AbstractPersistentCollection.class);
+	    	if (wasInitialized() && !uninitialize)
+	    		collection.init(getCollection(), isDirty());
+	        return collection;
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Could not clone collection " + this.getClass().getName(), e);
+		}
+    }
+
+	
 	protected abstract PersistentCollectionSnapshot createSnapshot(boolean forReading);
 	protected abstract void updateFromSnapshot(ObjectInput in, PersistentCollectionSnapshot snapshot);
 
@@ -95,13 +133,11 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		updateFromSnapshot(in, snapshot);
 	}
 	
-	static class IteratorProxy<E> implements Iterator<E> {
+	class IteratorProxy<E> implements Iterator<E> {
 		
-		private final AbstractPersistentCollection<?> persistentCollection;
 		private final Iterator<E> iterator;
 		
-		public IteratorProxy(AbstractPersistentCollection<?> persistentCollection, Iterator<E> iterator) {
-			this.persistentCollection = persistentCollection;
+		public IteratorProxy(Iterator<E> iterator) {
 			this.iterator = iterator;
 		}
 
@@ -110,12 +146,15 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public E next() {
+			if (!checkInitializedRead())
+				return null;
 			return iterator.next();
 		}
 
 		public void remove() {
+			checkInitializedWrite();
 			iterator.remove();
-			persistentCollection.dirty();
+			dirty();
 		}
 
 		@Override
@@ -129,15 +168,13 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 	}
 	
-	static class ListIteratorProxy<E> implements ListIterator<E> {
+	class ListIteratorProxy<E> implements ListIterator<E> {
 		
-		private final AbstractPersistentCollection<?> persistentCollection;
 		private final ListIterator<E> iterator;
 
 		private E lastNextOrPrevious = null;
 		
-		public ListIteratorProxy(AbstractPersistentCollection<?> persistentCollection, ListIterator<E> iterator) {
-			this.persistentCollection = persistentCollection;
+		public ListIteratorProxy(ListIterator<E> iterator) {
 			this.iterator = iterator;
 		}
 		
@@ -146,6 +183,8 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public E next() {
+			if (!checkInitializedRead())
+				return null;
 			return (lastNextOrPrevious = iterator.next());
 		}
 
@@ -154,6 +193,8 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public E previous() {
+			if (!checkInitializedRead())
+				return null;
 			return (lastNextOrPrevious = iterator.previous());
 		}
 
@@ -166,21 +207,24 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public void remove() {
+			checkInitializedWrite();
 			iterator.remove();
 			lastNextOrPrevious = null;
-			persistentCollection.dirty();
+			dirty();
 		}
 
 		public void set(E e) {
+			checkInitializedWrite();
 			iterator.set(e);
 			if (e == null ? lastNextOrPrevious != null : !e.equals(lastNextOrPrevious))
-				persistentCollection.dirty();
+				dirty();
 		}
 
 		public void add(E e) {
+			checkInitializedWrite();
 			iterator.add(e);
 			lastNextOrPrevious = null;
-			persistentCollection.dirty();
+			dirty();
 		}
 
 		@Override
@@ -194,13 +238,11 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 	}
 	
-	static class CollectionProxy<E> implements Collection<E> {
+	class CollectionProxy<E> implements Collection<E> {
 		
-		protected final AbstractPersistentCollection<?> persistentCollection;
 		protected final Collection<E> collection;
 
-		public CollectionProxy(AbstractPersistentCollection<?> persistentCollection, Collection<E> collection) {
-			this.persistentCollection = persistentCollection;
+		public CollectionProxy(Collection<E> collection) {
 			this.collection = collection;
 		}
 
@@ -217,7 +259,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public Iterator<E> iterator() {
-			return new IteratorProxy<E>(persistentCollection, collection.iterator());
+			return new IteratorProxy<E>(collection.iterator());
 		}
 
 		public Object[] toArray() {
@@ -230,7 +272,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 
 		public boolean add(E e) {
 			if (collection.add(e)) {
-				persistentCollection.dirty();
+				dirty();
 				return true;
 			}
 			return false;
@@ -238,7 +280,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 
 		public boolean remove(Object o) {
 			if (collection.remove(o)) {
-				persistentCollection.dirty();
+				dirty();
 				return true;
 			}
 			return false;
@@ -250,7 +292,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 
 		public boolean addAll(Collection<? extends E> c) {
 			if (collection.addAll(c)) {
-				persistentCollection.dirty();
+				dirty();
 				return true;
 			}
 			return false;
@@ -258,7 +300,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 
 		public boolean removeAll(Collection<?> c) {
 			if (collection.removeAll(c)) {
-				persistentCollection.dirty();
+				dirty();
 				return true;
 			}
 			return false;
@@ -266,7 +308,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 
 		public boolean retainAll(Collection<?> c) {
 			if (collection.retainAll(c)) {
-				persistentCollection.dirty();
+				dirty();
 				return true;
 			}
 			return false;
@@ -275,7 +317,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		public void clear() {
 			if (!collection.isEmpty()) {
 				collection.clear();
-				persistentCollection.dirty();
+				dirty();
 			}
 		}
 
@@ -290,22 +332,22 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 	}
 	
-	static class SetProxy<E> extends CollectionProxy<E> implements Set<E> {
+	class SetProxy<E> extends CollectionProxy<E> implements Set<E> {
 
-		public SetProxy(AbstractPersistentCollection<?> persistentCollection, Set<E> collection) {
-			super(persistentCollection, collection);
+		public SetProxy(Set<E> collection) {
+			super(collection);
 		}
 	}
 	
-	static class ListProxy<E> extends CollectionProxy<E> implements List<E> {
+	class ListProxy<E> extends CollectionProxy<E> implements List<E> {
 
-		public ListProxy(AbstractPersistentCollection<?> persistentCollection, List<E> collection) {
-			super(persistentCollection, collection);
+		public ListProxy(List<E> collection) {
+			super(collection);
 		}
 
 		public boolean addAll(int index, Collection<? extends E> c) {
 			if (((List<E>)collection).addAll(index, c)) {
-				persistentCollection.dirty();
+				dirty();
 				return true;
 			}
 			return false;
@@ -314,22 +356,22 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		public E get(int index) {
 			return ((List<E>)collection).get(index);
 		}
-
+		
 		public E set(int index, E element) {
 			E previousElement = ((List<E>)collection).set(index, element);
 			if (previousElement == null ? element != null : !previousElement.equals(element))
-				persistentCollection.dirty();
+				dirty();
 			return previousElement;
 		}
 
 		public void add(int index, E element) {
 			((List<E>)collection).add(index, element);
-			persistentCollection.dirty();
+			dirty();
 		}
 
 		public E remove(int index) {
 			E removedElement = ((List<E>)collection).remove(index);
-			persistentCollection.dirty();
+			dirty();
 			return removedElement;
 		}
 
@@ -346,18 +388,18 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public ListIterator<E> listIterator(int index) {
-			return new ListIteratorProxy<E>(persistentCollection, ((List<E>)collection).listIterator(index));
+			return new ListIteratorProxy<E>(((List<E>)collection).listIterator(index));
 		}
 
 		public List<E> subList(int fromIndex, int toIndex) {
-			return new ListProxy<E>(persistentCollection, ((List<E>)collection).subList(fromIndex, toIndex));
+			return new ListProxy<E>(((List<E>)collection).subList(fromIndex, toIndex));
 		}
 	}
 	
-	static class SortedSetProxy<E> extends SetProxy<E> implements SortedSet<E> {
+	class SortedSetProxy<E> extends SetProxy<E> implements SortedSet<E> {
 
-		public SortedSetProxy(AbstractPersistentCollection<?> persistentCollection, SortedSet<E> collection) {
-			super(persistentCollection, collection);
+		public SortedSetProxy(SortedSet<E> collection) {
+			super(collection);
 		}
 
 		public Comparator<? super E> comparator() {
@@ -365,15 +407,15 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public SortedSet<E> subSet(E fromElement, E toElement) {
-			return new SortedSetProxy<E>(persistentCollection, ((SortedSet<E>)collection).subSet(fromElement, toElement));
+			return new SortedSetProxy<E>(((SortedSet<E>)collection).subSet(fromElement, toElement));
 		}
 
 		public SortedSet<E> headSet(E toElement) {
-			return new SortedSetProxy<E>(persistentCollection, ((SortedSet<E>)collection).headSet(toElement));
+			return new SortedSetProxy<E>(((SortedSet<E>)collection).headSet(toElement));
 		}
 
 		public SortedSet<E> tailSet(E fromElement) {
-			return new SortedSetProxy<E>(persistentCollection, ((SortedSet<E>)collection).tailSet(fromElement));
+			return new SortedSetProxy<E>(((SortedSet<E>)collection).tailSet(fromElement));
 		}
 
 		public E first() {
@@ -385,13 +427,11 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 	}
 	
-	static class SortedMapProxy<K, V> implements SortedMap<K, V> {
+	class SortedMapProxy<K, V> implements SortedMap<K, V> {
 		
-		protected final AbstractPersistentCollection<?> persistentCollection;
 		protected final SortedMap<K, V> sortedMap;
 		
-		public SortedMapProxy(AbstractPersistentCollection<?> persistentCollection, SortedMap<K, V> sortedMap) {
-			this.persistentCollection = persistentCollection;
+		public SortedMapProxy(SortedMap<K, V> sortedMap) {
 			this.sortedMap = sortedMap;
 		}
 
@@ -419,7 +459,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 			boolean containsKey = sortedMap.containsKey(key);
 			V previousValue = sortedMap.put(key, value);
 			if (!containsKey || (previousValue == null ? value != null : !previousValue.equals(value)))
-				persistentCollection.dirty();
+				dirty();
 			return previousValue;
 		}
 
@@ -427,7 +467,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 			boolean containsKey = sortedMap.containsKey(key);
 			V removedValue = sortedMap.remove(key);
 			if (containsKey)
-				persistentCollection.dirty();
+				dirty();
 			return removedValue;
 		}
 
@@ -439,7 +479,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		public void clear() {
 			if (!sortedMap.isEmpty()) {
 				sortedMap.clear();
-				persistentCollection.dirty();
+				dirty();
 			}
 		}
 
@@ -448,15 +488,15 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public SortedMap<K, V> subMap(K fromKey, K toKey) {
-			return new SortedMapProxy<K, V>(persistentCollection, sortedMap.subMap(fromKey, toKey));
+			return new SortedMapProxy<K, V>(sortedMap.subMap(fromKey, toKey));
 		}
 
 		public SortedMap<K, V> headMap(K toKey) {
-			return new SortedMapProxy<K, V>(persistentCollection, sortedMap.headMap(toKey));
+			return new SortedMapProxy<K, V>(sortedMap.headMap(toKey));
 		}
 
 		public SortedMap<K, V> tailMap(K fromKey) {
-			return new SortedMapProxy<K, V>(persistentCollection, sortedMap.tailMap(fromKey));
+			return new SortedMapProxy<K, V>(sortedMap.tailMap(fromKey));
 		}
 
 		public K firstKey() {
@@ -468,15 +508,15 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		}
 
 		public Set<K> keySet() {
-			return new SetProxy<K>(persistentCollection, sortedMap.keySet());
+			return new SetProxy<K>(sortedMap.keySet());
 		}
 
 		public Collection<V> values() {
-			return new CollectionProxy<V>(persistentCollection, sortedMap.values());
+			return new CollectionProxy<V>(sortedMap.values());
 		}
 
 		public Set<Entry<K, V>> entrySet() {
-			return new SetProxy<Entry<K, V>>(persistentCollection, sortedMap.entrySet());
+			return new SetProxy<Entry<K, V>>(sortedMap.entrySet());
 		}
 
 		@Override
@@ -489,4 +529,59 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 			return sortedMap.equals(obj);
 		}
 	}
+	
+	
+	private static class DefaultCollectionLoader implements Loader<PersistentCollection> {
+		
+		public void load(PersistentCollection collection, InitializationCallback callback) {
+			throw new LazyInitializationException(callback.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(callback)));
+		}
+		
+		public void onInitializing() {
+		}
+		
+		public void onInitialize() {
+		}
+		
+		public void onUninitialize() {			
+		}
+	}
+    
+    public void addListener(InitializationListener listener) {
+        if (!listeners.contains(listener))
+            listeners.add(listener);
+    }
+    
+    public void removeListener(InitializationListener listener) {
+        listeners.remove(listener);
+    }
+    
+    public void initializing() {
+    	loader.onInitializing();
+    }
+    
+    public void initialize() {
+    	loader.onInitialize();
+        
+        for (InitializationListener listener : listeners)
+            listener.initialized(this);
+        
+        log.debug("initialized");
+    }
+    
+    public void uninitialize() {
+        loader.onUninitialize();
+        
+        for (InitializationListener listener : listeners)
+            listener.uninitialized(this);
+        
+        log.debug("uninitialized");
+    }
+    
+    public void withInitialized(InitializationCallback callback) {
+        if (wasInitialized())
+            callback.call(this);
+        else
+        	loader.load(this, callback);
+    }
 }

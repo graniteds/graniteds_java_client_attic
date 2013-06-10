@@ -30,7 +30,7 @@ import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 
-import org.granite.client.persistence.LazyableCollection;
+import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.javafx.PersistentMap;
 import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.test.tide.MockInstanceStoreFactory;
@@ -822,7 +822,7 @@ public class TestDirtyCheckEntity {
           
          Assert.assertFalse("Classification not dirty", entityManager.isDirty());
          
-         ((LazyableCollection)child.getSuperclasses()).uninitialize();
+         ((PersistentCollection)child.getSuperclasses()).uninitialize();
           
          Assert.assertFalse("Classification not dirty after uninit", entityManager.isDirty());
      }
