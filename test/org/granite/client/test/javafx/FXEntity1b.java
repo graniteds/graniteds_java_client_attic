@@ -8,11 +8,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import org.granite.client.javafx.JavaFXObject;
+import org.granite.client.persistence.Entity;
 import org.granite.client.persistence.javafx.PersistentList;
 import org.granite.messaging.amf.RemoteClass;
 
 
 @JavaFXObject
+@Entity
 @RemoteClass("org.granite.client.test.javafx.Entity1b")
 public class FXEntity1b implements Serializable {
 
