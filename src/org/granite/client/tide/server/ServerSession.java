@@ -59,6 +59,7 @@ import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IncomingMessageEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.jmf.ClientSharedContextFactory;
 import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 import org.granite.client.messaging.messages.responses.ResultMessage;
@@ -293,6 +294,9 @@ public class ServerSession implements ContextAware {
 		
 		configuration.addConfigurator(remoteClassConfigurator);
 		configuration.load();
+		
+		if (contentType == ContentType.JMF_AMF)
+			ClientSharedContextFactory.initialize();
 		
 		ChannelFactory factory = new ChannelFactory(contentType);
 		
