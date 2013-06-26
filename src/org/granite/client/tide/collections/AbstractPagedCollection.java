@@ -312,7 +312,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
     		log.debug("Adjusting from %d-%d to %d-%d size %d", AbstractPagedCollection.this.first, AbstractPagedCollection.this.last, nextFirst, nextLast, list.size());
     		// Adjust internal list to expected results without triggering events
 	    	if (nextFirst > AbstractPagedCollection.this.first && nextFirst < AbstractPagedCollection.this.last) {
-    			getInternalWrappedList().subList(0, nextFirst - AbstractPagedCollection.this.first).clear();
+    			getInternalWrappedList().subList(0, Math.min(getInternalWrappedList().size(), nextFirst - AbstractPagedCollection.this.first)).clear();
 	    		for (int i = 0; i < nextFirst - AbstractPagedCollection.this.first && AbstractPagedCollection.this.last - nextFirst + i < list.size(); i++) {
 	    			E elt = list.get(AbstractPagedCollection.this.last - nextFirst + i);
     				getInternalWrappedList().add(elt);
