@@ -38,11 +38,7 @@ import java.util.concurrent.TimeoutException;
 import org.granite.client.messaging.AllInOneResponseListener;
 import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.ResponseListenerDispatcher;
-import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.events.Event;
-import org.granite.client.messaging.events.FaultEvent;
-import org.granite.client.messaging.events.IssueEvent;
-import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.messaging.events.Event.Type;
 import org.granite.client.messaging.messages.MessageChain;
 import org.granite.client.messaging.messages.RequestMessage;
@@ -52,12 +48,12 @@ import org.granite.client.messaging.messages.requests.LogoutMessage;
 import org.granite.client.messaging.messages.requests.PingMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.ResultMessage;
-//import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportFuture;
 import org.granite.client.messaging.transport.TransportMessage;
 import org.granite.client.messaging.transport.TransportStopListener;
 import org.granite.logging.Logger;
+//import org.granite.client.messaging.transport.HTTPTransport;
 
 /**
  * @author Franck WOLFF
@@ -386,25 +382,9 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 	
 	@Override
 	public ResponseMessageFuture logout(ResponseListener... listeners) {
-		ResponseListener[] ls = new ResponseListener[listeners.length+1];
-		ls[0] = new ResultFaultIssuesResponseListener() {
-			@Override
-			public void onResult(ResultEvent event) {
-				authenticated = false;
-			}
-			
-			@Override
-			public void onFault(FaultEvent event) {
-				authenticated = false;
-			}
-			
-			@Override
-			public void onIssue(IssueEvent event) {
-			}
-		};
-		for (int i = 0; i < listeners.length; i++)
-			ls[i+1] = listeners[i];
-		return send(new LogoutMessage(), ls);
+		credentials = null;
+		authenticated = false;
+		return send(new LogoutMessage(), listeners);
 	}
 
 	@Override
