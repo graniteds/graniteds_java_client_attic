@@ -24,7 +24,6 @@ import org.granite.client.persistence.Loader;
 import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.collection.PersistentCollection.InitializationCallback;
 import org.granite.client.tide.data.EntityManager;
-import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.server.ServerSession;
 
@@ -40,7 +39,7 @@ public class CollectionLoader implements Loader<PersistentCollection> {
     
     private final ServerSession serverSession;
     
-    private final Identifiable entity;
+    private final Object entity;
     private final String propertyName;
     
     private boolean localInitializing = false;
@@ -48,7 +47,7 @@ public class CollectionLoader implements Loader<PersistentCollection> {
     private InitializationCallback initializationCallback = null;
     
     
-	public CollectionLoader(ServerSession serverSession, Identifiable entity, String propertyName) {
+	public CollectionLoader(ServerSession serverSession, Object entity, String propertyName) {
     	this.serverSession = serverSession;
         this.entity = entity;
         this.propertyName = propertyName;

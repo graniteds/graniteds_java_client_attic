@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.spi.DataManager.ChangeKind;
 import org.granite.client.tide.server.TrackingContext;
 
@@ -38,7 +37,7 @@ public interface DirtyCheckContext {
 
     public void clear(boolean notify);
 
-    public void markNotDirty(Object object, Identifiable entity);
+    public void markNotDirty(Object object, Object entity);
     
     public boolean checkAndMarkNotDirty(MergeContext mergeContext, Object local, Object received, Object parent);
     
@@ -52,9 +51,9 @@ public interface DirtyCheckContext {
 
     public Map<String, Object> getSavedProperties(Object localEntity);
     
-    public void addUnsaved(Identifiable entity);
+    public void addUnsaved(Object entity);
     
-    public void resetEntity(MergeContext mergeContext, Object entity, Identifiable parent, Set<Object> cache);
+    public void resetEntity(MergeContext mergeContext, Object entity, Object parent, Set<Object> cache);
 
     public void resetAllEntities(MergeContext mergeContext, Set<Object> cache);
 

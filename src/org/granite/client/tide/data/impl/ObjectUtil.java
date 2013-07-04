@@ -20,13 +20,15 @@
 
 package org.granite.client.tide.data.impl;
 
+import static org.granite.client.persistence.Persistence.getId;
+import static org.granite.client.persistence.Persistence.getUid;
+import static org.granite.client.persistence.Persistence.isEntity;
+import static org.granite.client.persistence.Persistence.isInitialized;
+
 import java.util.Date;
 
 import org.granite.client.tide.PropertyHolder;
-import org.granite.client.tide.data.Identifiable;
-import org.granite.client.tide.data.Lazyable;
 import org.granite.client.tide.data.spi.DataManager;
-import org.granite.client.tide.data.spi.EntityDescriptor;
 
 /**
  * @author William DRAI
@@ -50,17 +52,21 @@ public class ObjectUtil {
      *  @return true when objects are instances of the same entity
      */ 
     public static boolean objectEquals(DataManager dataManager, Object obj1, Object obj2) {
-        if ((obj1 instanceof PropertyHolder && obj2 instanceof Identifiable) || (obj1 instanceof Identifiable && obj2 instanceof PropertyHolder))
+        if ((obj1 instanceof PropertyHolder && isEntity(obj2)) || (isEntity(obj1) && obj2 instanceof PropertyHolder))
             return false;
         
-        if (obj1 instanceof Identifiable && obj2 instanceof Identifiable && obj1.getClass() == obj2.getClass()) {
-            if (obj1 instanceof Lazyable && (!((Lazyable)obj1).isInitialized() || !((Lazyable)obj2).isInitialized())) {
+        if (isEntity(obj1) && isEntity(obj2) && obj1.getClass() == obj2.getClass()) {
+            if (!isInitialized(obj1) || !isInitialized(obj2)) {
                 // Compare with identifier for uninitialized entities
-                EntityDescriptor edesc = dataManager.getEntityDescriptor(obj1);
-                if (edesc.getIdPropertyName() != null)
-                    return objectEquals(dataManager, dataManager.getProperty(obj1, edesc.getIdPropertyName()), dataManager.getProperty(obj2, edesc.getIdPropertyName()));
+            	try {
+                    return objectEquals(dataManager, getId(obj1), getId(obj2));
+            	}
+            	catch (Exception e) {
+            		// No @Id;
+            		return obj1.equals(obj2);
+            	}
             }
-            return ((Identifiable)obj1).getUid().equals(((Identifiable)obj2).getUid());
+            return getUid(obj1).equals(getUid(obj2));
         }
         
         if (obj1 == null)

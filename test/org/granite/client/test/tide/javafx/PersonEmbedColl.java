@@ -20,13 +20,19 @@
 
 package org.granite.client.test.tide.javafx;
 
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.javafx.PersistentList;
+
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyListProperty;
+import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
 
+@Entity
 public class PersonEmbedColl extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
@@ -48,56 +54,49 @@ public class PersonEmbedColl extends AbstractEntity {
     
     public StringProperty firstNameProperty() {
         return firstName;
-    }
-    
+    }    
     public String getFirstName() {
         return firstName.get();
-    }
-    
+    }    
     public void setFirstName(String firstName) {
         this.firstName.set(firstName);
     }
     
     public StringProperty lastNameProperty() {
         return lastName;
-    }
-    
+    }    
     public String getLastName() {
         return lastName.get();
-    }
-    
+    }    
     public void setLastName(String lastName) {
         this.lastName.set(lastName);
     }
     
     public static class ContactList {
         
-        private ObservableList<Contact> contacts = null;
+        private ReadOnlyListWrapper<Contact> contacts = new ReadOnlyListWrapper<Contact>(this, "contacts", new PersistentList<Contact>());
         
         public ContactList() {            
         }
         
         public ContactList(ObservableList<Contact> contacts) {
-            this.contacts = contacts;
+            this.contacts.set(contacts);
         }
         
+        public ReadOnlyListProperty<Contact> contactsProperty() {
+        	return contacts.getReadOnlyProperty();
+        }
         public ObservableList<Contact> getContacts() {
-            return contacts;
-        }
-        
-        public void setContacts(ObservableList<Contact> contacts) {
-            this.contacts = contacts;
+            return contacts.get();
         }
     }
     
     public ObjectProperty<ContactList> contactListProperty() {
         return contactList;
-    }
-    
+    }    
     public ContactList getContactList() {
         return contactList.get();
-    }
-    
+    }    
     public void setContactList(ContactList contactList) {
         this.contactList.set(contactList);
     }

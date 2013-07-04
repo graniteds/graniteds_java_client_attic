@@ -27,22 +27,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.granite.logging.Logger;
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.persistence.Persistence;
 import org.granite.client.tide.Context;
-import org.granite.tide.Expression;
 import org.granite.client.tide.collections.ManagedPersistentAssociation;
 import org.granite.client.tide.data.EntityManager;
-import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.RemoteInitializer;
+import org.granite.client.tide.server.ServerSession;
+import org.granite.logging.Logger;
+import org.granite.tide.Expression;
 import org.granite.tide.invocation.InvocationCall;
 import org.granite.tide.invocation.InvocationResult;
-import org.granite.client.tide.server.ServerSession;
 
 /**
  * @author William DRAI
@@ -80,7 +80,7 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 		
 		log.debug("initialize {0}", ObjectUtil.toString(object));
 		
-		if (!(object instanceof ManagedPersistentAssociation && ((ManagedPersistentAssociation)object).getOwner() instanceof Identifiable))
+		if (!(object instanceof ManagedPersistentAssociation && Persistence.isEntity(((ManagedPersistentAssociation)object).getOwner())))
 			return false;
 		
 		Object entity = ((ManagedPersistentAssociation)object).getOwner();

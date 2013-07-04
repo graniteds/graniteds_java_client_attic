@@ -32,29 +32,29 @@ import org.granite.logging.Logger;
 public class Conflict {
     
     @SuppressWarnings("unused")
-    private static Logger log = Logger.getLogger("org.granite.client.tide.data.Conflict");
+    private static Logger log = Logger.getLogger(Conflict.class);
 
     private Conflicts conflicts;
     
-    private Identifiable localEntity;
-    private Identifiable receivedEntity;
+    private Object localEntity;
+    private Object receivedEntity;
     private List<String> properties;
     private boolean resolved = false;
     
 
 
-    public Conflict(Conflicts conflicts, Identifiable localEntity, Identifiable receivedEntity, List<String> properties) {
+    public Conflict(Conflicts conflicts, Object localEntity, Object receivedEntity, List<String> properties) {
         this.conflicts = conflicts;
         this.localEntity = localEntity;
         this.receivedEntity = receivedEntity;
         this.properties = properties;
     }
     
-    public Identifiable getLocalEntity() {
+    public Object getLocalEntity() {
         return localEntity;
     }        
     
-    public Identifiable getReceivedEntity() {
+    public Object getReceivedEntity() {
         return receivedEntity;
     }
     

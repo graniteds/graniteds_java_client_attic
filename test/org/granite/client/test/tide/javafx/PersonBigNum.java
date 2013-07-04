@@ -23,12 +23,18 @@ package org.granite.client.test.tide.javafx;
 import java.math.BigInteger;
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyListProperty;
+import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.javafx.PersistentList;
 
+
+@Entity
 public class PersonBigNum extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
@@ -36,7 +42,7 @@ public class PersonBigNum extends AbstractEntity {
     private StringProperty firstName = new SimpleStringProperty(this, "firstName");
     private StringProperty lastName = new SimpleStringProperty(this, "lastName");
     private ObjectProperty<BigInteger> bigInt = new SimpleObjectProperty<BigInteger>(this, "bigInt");
-    private ObservableList<BigInteger> bigInts = null;
+    private ReadOnlyListWrapper<BigInteger> bigInts = new ReadOnlyListWrapper<BigInteger>(this, "bigInts", new PersistentList<BigInteger>());
     
     
     public PersonBigNum() {
@@ -85,11 +91,10 @@ public class PersonBigNum extends AbstractEntity {
         this.bigInt.set(bigInt);
     }
     
-    public ObservableList<BigInteger> getBigInts() {
-        return bigInts;
+    public ReadOnlyListProperty<BigInteger> bigIntsProperty() {
+    	return bigInts.getReadOnlyProperty();
     }
-    
-    public void setBigInts(ObservableList<BigInteger> bigInts) {
-        this.bigInts = bigInts;
+    public ObservableList<BigInteger> getBigInts() {
+        return bigInts.get();
     }
 }

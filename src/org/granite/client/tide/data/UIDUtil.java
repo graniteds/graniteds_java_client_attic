@@ -20,11 +20,31 @@
 
 package org.granite.client.tide.data;
 
+import org.granite.client.persistence.Persistence;
+import org.granite.util.UUIDUtil;
+
 /**
  * @author William DRAI
  */
-public interface Lazyable extends Identifiable {
+public abstract class UIDUtil {
 
-    public boolean isInitialized();
+    public static String getUid(Object uidObject) {
+    	if (Persistence.hasUid(uidObject)) {
+	    	String uid = Persistence.getUid(uidObject);
+	    	if (uid == null) {
+	    		uid = UUIDUtil.randomUUID();
+	    		Persistence.setUid(uidObject, uid);
+	    	}
+	    	return uid;
+    	}
+    	Object id = Persistence.getId(uidObject);
+    	if (id != null)
+    		return uidObject.getClass().getSimpleName() + ":" + id.toString();
+    	return uidObject.getClass().getSimpleName() + "::" + System.identityHashCode(uidObject);
+    }
+    
+    public static String getCacheKey(Object uidObject) {
+    	return uidObject.getClass().getName() + ":" + getUid(uidObject);
+    }
     
 }

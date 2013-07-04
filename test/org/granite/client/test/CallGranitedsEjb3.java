@@ -100,18 +100,13 @@ public class CallGranitedsEjb3 {
 					
 					for (Object entity : data) {
 						sb.append("\n\n    " + entity.getClass().getName() + " {");
-						try {
-							sb.append("\n        boolean initialized: " + Persistence.isInitialized(entity));
-							Property property = Persistence.getIdProperty(entity);
-							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
-							property = Persistence.getVersionProperty(entity);
-							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
-							property = Persistence.getUidProperty(entity);
-							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
-						}
-						catch (IllegalAccessException e) {
-							e.printStackTrace();
-						}
+						sb.append("\n        boolean initialized: " + Persistence.isInitialized(entity));
+						Property property = Persistence.getIdProperty(entity);
+						sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
+						property = Persistence.getVersionProperty(entity);
+						sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
+						property = Persistence.getUidProperty(entity);
+						sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
 						sb.append("\n    }");
 					}
 

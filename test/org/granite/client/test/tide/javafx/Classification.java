@@ -20,20 +20,27 @@
 
 package org.granite.client.test.tide.javafx;
 
-import org.granite.client.tide.data.Lazy;
-
+import javafx.beans.property.ReadOnlyListProperty;
+import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.Lazy;
+import org.granite.client.persistence.javafx.PersistentList;
 
+
+@Entity
 public class Classification extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
     
     private StringProperty name = new SimpleStringProperty(this, "name");
-    private ObservableList<Classification> subclasses = null;
-    private ObservableList<Classification> superclasses = null;
+    @Lazy
+    private ReadOnlyListWrapper<Classification> subclasses = new ReadOnlyListWrapper<Classification>(this, "subclasses", new PersistentList<Classification>());
+    @Lazy
+    private ReadOnlyListWrapper<Classification> superclasses = new ReadOnlyListWrapper<Classification>(this, "superclasses", new PersistentList<Classification>());
     
     
     public Classification() {
@@ -45,37 +52,31 @@ public class Classification extends AbstractEntity {
         this.name.set(name);
     }
     
-    public Classification(Long id, boolean initialized) {
-        super(id, initialized);
+    public Classification(Long id, boolean initialized, String detachedState) {
+        super(id, initialized, detachedState);
     }
     
     public StringProperty nameProperty() {
         return name;
-    }
-    
+    }    
     public String getName() {
         return name.get();
-    }
-    
+    }    
     public void setName(String name) {
         this.name.set(name);
     }
     
-    @Lazy
+    public ReadOnlyListProperty<Classification> subclassesProperty() {
+    	return subclasses.getReadOnlyProperty();
+    }
     public ObservableList<Classification> getSubclasses() {
-        return subclasses;
+        return subclasses.get();
     }
     
-    public void setSubclasses(ObservableList<Classification> subclasses) {
-        this.subclasses = subclasses;
+    public ReadOnlyListProperty<Classification> superclassesProperty() {
+    	return superclasses.getReadOnlyProperty();
     }
-    
-    @Lazy
     public ObservableList<Classification> getSuperclasses() {
-        return superclasses;
-    }
-    
-    public void setSuperclasses(ObservableList<Classification> superclasses) {
-        this.superclasses = superclasses;
+        return superclasses.get();
     }
 }

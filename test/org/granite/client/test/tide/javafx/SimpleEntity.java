@@ -20,10 +20,13 @@
 
 package org.granite.client.test.tide.javafx;
 
+import org.granite.client.persistence.Entity;
+
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 
+@Entity
 public class SimpleEntity extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
@@ -40,18 +43,16 @@ public class SimpleEntity extends AbstractEntity {
         this.name.set(name);
     }
     
-    public SimpleEntity(Long id, boolean initialized) {
-        super(id, initialized);
+    public SimpleEntity(Long id, boolean initialized, String detachedState) {
+        super(id, initialized, detachedState);
     }
     
     public StringProperty nameProperty() {
         return name;
-    }
-    
+    }    
     public String getName() {
         return name.get();
-    }
-    
+    }    
     public void setName(String name) {
         this.name.set(name);
     }

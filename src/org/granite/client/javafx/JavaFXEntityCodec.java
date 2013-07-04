@@ -37,8 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javafx.beans.value.ObservableValue;
 
+import org.granite.client.persistence.Id;
 import org.granite.client.tide.PropertyHolder;
-import org.granite.client.tide.data.Id;
 import org.granite.client.util.BeanUtil;
 import org.granite.logging.Logger;
 import org.granite.messaging.amf.io.util.FieldProperty;

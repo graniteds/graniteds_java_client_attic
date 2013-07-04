@@ -30,12 +30,10 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
 import org.granite.client.tide.data.EntityManager;
-import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.PersistenceManager;
-import org.granite.client.tide.javafx.JavaFXDataManager;
 
 
-public class ManagedEntityProperty<T extends Identifiable> extends SimpleObjectProperty<T> {
+public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
 
 	private EntityManager entityManager;
 	private JavaFXDataManager dataManager;
@@ -77,9 +75,9 @@ public class ManagedEntityProperty<T extends Identifiable> extends SimpleObjectP
 		return dirty.get();
 	}
 	
-	private ChangeListener<Identifiable> entityChangeListener = new ChangeListener<Identifiable>() {
+	private ChangeListener<Object> entityChangeListener = new ChangeListener<Object>() {
 		@Override
-		public void changed(ObservableValue<? extends Identifiable> observable, Identifiable oldValue, Identifiable newValue) {
+		public void changed(ObservableValue<?> observable, Object oldValue, Object newValue) {
 			if (oldValue != null) {
 				Property<Object> versionProperty = getVersionProperty(oldValue);
 				versionProperty.removeListener(versionChangeListener);

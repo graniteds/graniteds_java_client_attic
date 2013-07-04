@@ -20,6 +20,8 @@
 
 package org.granite.client.test.tide.javafx;
 
+import static org.granite.client.persistence.Persistence.isInitialized;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,8 +37,8 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
+import org.granite.client.persistence.Loader;
 import org.granite.client.persistence.collection.PersistentCollection;
-import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.test.tide.javafx.PersonEmbedColl.ContactList;
 import org.granite.client.tide.collections.CollectionLoader;
 import org.granite.client.tide.data.EntityManager;
@@ -139,11 +141,9 @@ public class TestManagedEntity {
     public void testMergeEntity2() throws Exception {
         
         Person person = new Person(1L, 0L, "P1", "Toto", "Toto");
-        person.setContacts(new PersistentSet<Contact>(true));
         person = (Person)entityManager.mergeExternalData(person);
         
         Person person2 = new Person(1L, 0L, "P1", "Toto", "Toto");
-        person2.setContacts(new PersistentSet<Contact>(true));
         Contact contact = new Contact(1L, 0L, "C1", "toto@toto.com");
         person2.getContacts().add(contact);
         entityManager.mergeExternalData(person2);
@@ -156,11 +156,9 @@ public class TestManagedEntity {
     public void testMergeEntity3() throws Exception {
         
         Person person = new Person(1L, 0L, "P1", "Toto", "Toto");
-        person.setContacts(new PersistentSet<Contact>(true));
         person = (Person)entityManager.mergeExternalData(person);
         
         Person person2 = new Person(1L, 0L, "P1", "Toto", "Toto");
-        person2.setContacts(new PersistentSet<Contact>(true));
         Contact contact = new Contact(1L, 0L, "C1", "toto@toto.com");
         person2.getContacts().add(contact);
         entityManager.mergeExternalData(person2);
@@ -291,17 +289,17 @@ public class TestManagedEntity {
     public void testMergeCollectionOfElements() {
         
         Person2 person = new Person2(1L, 0L, "P1", "Jacques", "Nicolas");
-        person.setNames(FXCollections.observableArrayList("Jacques", "Nicolas"));
+        person.getNames().setAll("Jacques", "Nicolas");
         entityManager.mergeExternalData(person);
          
         Person2 person2 = new Person2(1L, 1L, "P1", "Jacques", "Nicolas");
-        person2.setNames(FXCollections.observableArrayList("Jacques", "Nicolas"));
+        person2.getNames().setAll("Jacques", "Nicolas");
         entityManager.mergeExternalData(person2);
          
         Assert.assertEquals("Collection merged", 2, person.getNames().size());
         
         Person2 person3 = new Person2(1L, 1L, "P1", "Jacques", "Nicolas");
-        person3.setNames(FXCollections.observableArrayList("Jacques", "Nicolas", "Fran�ois"));
+        person3.getNames().setAll("Jacques", "Nicolas", "François");
         entityManager.mergeExternalData(person3);
          
         Assert.assertEquals("Collection merged", 3, person.getNames().size());
@@ -311,7 +309,6 @@ public class TestManagedEntity {
     public void testMergeCollectionOfEntities() {
         
         Person person = new Person(1L, 0L, "P1", null, null);
-        person.setContacts(new PersistentSet<Contact>());
         Contact c1 = new Contact(1L, 0L, "C1", "toto@toto.com");
         c1.setPerson(person);
         person.getContacts().add(c1);
@@ -321,7 +318,6 @@ public class TestManagedEntity {
         entityManager.mergeExternalData(person);
         
         Person person2 = new Person(1L, 0L, "P1", null, null);
-        person2.setContacts(new PersistentSet<Contact>());
         Contact c21 = new Contact(1L, 0L, "C1", "toto@toto.com");
         c21.setPerson(person2);
         person2.getContacts().add(c21);
@@ -449,14 +445,13 @@ public class TestManagedEntity {
         
         PersonEmbedColl p1 = new PersonEmbedColl(1L, 0L, "P1", null, null);
         p1.setContactList(new ContactList());
-        p1.getContactList().setContacts(new PersistentSet<Contact>());
         Contact c1 = new Contact(1L, 0L, "C1", null);
         p1.getContactList().getContacts().add(c1);
-         
+        
         PersonEmbedColl p = (PersonEmbedColl)entityManager.mergeExternalData(p1);
 
-        CollectionLoader loader = (CollectionLoader)((PersistentCollection)p.getContactList().getContacts()).getLoader();
-        Assert.assertNotNull("Contacts loader", loader);
+        Loader<PersistentCollection> loader = ((PersistentCollection)p.getContactList().getContacts()).getLoader();
+        Assert.assertTrue("Contacts loader", loader instanceof CollectionLoader);
     }
     
     @Test
@@ -465,7 +460,7 @@ public class TestManagedEntity {
         entityManager.mergeExternalData(p1);
         
         Contact c1 = new Contact(1L, 0L, "C1", "test@test.com");
-        Person p2 = new Person(1L, false);
+        Person p2 = new Person(1L, false, "__detachedState__");
         c1.setPerson(p2);
         
         ObservableList<Contact> coll = FXCollections.observableArrayList(c1);
@@ -481,19 +476,15 @@ public class TestManagedEntity {
         p.setLastName("Test");
         
         PersonMap p2 = new PersonMap(1L, 1L, "P1", "Toto2", "Toto2");
-        Map<String, EmbeddedAddress> testMap = new HashMap<String, EmbeddedAddress>();
-        testMap.put("test", new EmbeddedAddress("test"));
-        testMap.put("toto", new EmbeddedAddress("toto"));
-        p2.setMapEmbed(FXCollections.observableMap(testMap));
+        p2.getMapEmbed().put("test", new EmbeddedAddress("test"));
+        p2.getMapEmbed().put("toto", new EmbeddedAddress("toto"));
         p = (PersonMap)entityManager.mergeExternalData(p2);
         
         Assert.assertNotNull("Map merged", p.getMapEmbed());
         Assert.assertEquals("Map size", 2, p.getMapEmbed().size());
         
         PersonMap p3 = new PersonMap(1L, 2L, "P1", "Toto3", null);
-        testMap = new HashMap<String, EmbeddedAddress>();
-        testMap.put("test", new EmbeddedAddress("test"));
-        p3.setMapEmbed(FXCollections.observableMap(testMap));
+        p3.getMapEmbed().put("test", new EmbeddedAddress("test"));
         p = (PersonMap)entityManager.mergeExternalData(p3);
         
         Assert.assertNotNull("Map merged", p.getMapEmbed());
@@ -502,13 +493,13 @@ public class TestManagedEntity {
     
     @Test
     public void testMergeLazyEntity() {
-        Person person = new Person(1L, false);
+        Person person = new Person(1L, false, "__detachedState__");
         Contact contact = new Contact(1L, 0L, "C1", null);
         contact.setPerson(person);
         
         entityManager.mergeExternalData(contact);
      
-        Assert.assertFalse("Person not initialized", contact.getPerson().isInitialized());
+        Assert.assertFalse("Person not initialized", isInitialized(contact.getPerson()));
         
         Person person2 = new Person(1L, 0L, "P1", "Jean", "Richard");
         Contact contact2 = new Contact(1L, 1L, "C1", null);
@@ -516,15 +507,15 @@ public class TestManagedEntity {
          
         entityManager.mergeExternalData(contact2);
         
-        Assert.assertTrue("Person initialized", contact.getPerson().isInitialized());
+        Assert.assertTrue("Person initialized", isInitialized(contact.getPerson()));
         
-        Person person3 = new Person(1L, false);
+        Person person3 = new Person(1L, false, "__detachedState__");
         Contact contact3 = new Contact(1L, 2L, "C1", null);
         contact3.setPerson(person3);
          
         entityManager.mergeExternalData(contact3);
          
-        Assert.assertTrue("Person still initialized", contact.getPerson().isInitialized());
+        Assert.assertTrue("Person still initialized", isInitialized(contact.getPerson()));
     }
     
     @Test
@@ -538,18 +529,18 @@ public class TestManagedEntity {
         EntityManager tmp = entityManager.newTemporaryEntityManager();
         Contact c = (Contact)tmp.mergeFromEntityManager(entityManager, contact, null, true);
         
-        Assert.assertTrue("Person initialized", c.getPerson().isInitialized());
+        Assert.assertTrue("Person initialized", isInitialized(c.getPerson()));
     }
     
     @Test
     public void testMergeLazyEntity3() {
-         User user = new User("toto", false);
+         User user = new User("toto", false, "__detachedState__");
          Group group = new Group("tutu");
          group.setUser(user);
          
          group = (Group)entityManager.mergeExternalData(group);
          
-         Assert.assertFalse("User not initialized", group.getUser().isInitialized());
+         Assert.assertFalse("User not initialized", isInitialized(group.getUser()));
          
          Assert.assertNull("User not init 2", group.getUser().getName());
          
@@ -560,7 +551,7 @@ public class TestManagedEntity {
          
          entityManager.mergeExternalData(group2);
          
-         Assert.assertTrue("User initialized", group.getUser().isInitialized());
+         Assert.assertTrue("User initialized", isInitialized(group.getUser()));
     }
 
     @Test

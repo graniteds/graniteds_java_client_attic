@@ -20,13 +20,19 @@
 
 package org.granite.client.test.tide.javafx;
 
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.javafx.PersistentList;
+
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyListProperty;
+import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
 
+@Entity
 public class PersonEnum extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
@@ -34,7 +40,7 @@ public class PersonEnum extends AbstractEntity {
     private StringProperty firstName = new SimpleStringProperty(this, "firstName");
     private StringProperty lastName = new SimpleStringProperty(this, "lastName");
     private ObjectProperty<Salutation> salutation = new SimpleObjectProperty<Salutation>(this, "salutation");
-    private ObservableList<Salutation> salutations = null;
+    private ReadOnlyListWrapper<Salutation> salutations = new ReadOnlyListWrapper<Salutation>(this, "salutations", new PersistentList<Salutation>());
     
     
     public PersonEnum() {
@@ -49,45 +55,38 @@ public class PersonEnum extends AbstractEntity {
     
     public StringProperty firstNameProperty() {
         return firstName;
-    }
-    
+    }    
     public String getFirstName() {
         return firstName.get();
-    }
-    
+    }    
     public void setFirstName(String firstName) {
         this.firstName.set(firstName);
     }
     
     public StringProperty lastNameProperty() {
         return lastName;
-    }
-    
+    }    
     public String getLastName() {
         return lastName.get();
-    }
-    
+    }    
     public void setLastName(String lastName) {
         this.lastName.set(lastName);
     }
     
     public ObjectProperty<Salutation> salutationProperty() {
         return salutation;
-    }
-    
+    }    
     public Salutation getSalutation() {
         return salutation.get();
-    }
-    
+    }    
     public void setSalutation(Salutation salutation) {
         this.salutation.set(salutation);
     }
-    
-    public ObservableList<Salutation> getSalutations() {
-        return salutations;
+
+    public ReadOnlyListProperty<Salutation> salutationsProperty() {
+    	return salutations.getReadOnlyProperty();
     }
-    
-    public void setSalutations(ObservableList<Salutation> salutations) {
-        this.salutations = salutations;
+    public ObservableList<Salutation> getSalutations() {
+        return salutations.get();
     }
 }

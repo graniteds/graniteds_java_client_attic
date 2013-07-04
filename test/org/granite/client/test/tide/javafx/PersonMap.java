@@ -20,20 +20,26 @@
 
 package org.granite.client.test.tide.javafx;
 
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.javafx.PersistentMap;
+
+import javafx.beans.property.ReadOnlyMapProperty;
+import javafx.beans.property.ReadOnlyMapWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableMap;
 
 
+@Entity
 public class PersonMap extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
     
     private StringProperty firstName = new SimpleStringProperty(this, "firstName");
     private StringProperty lastName = new SimpleStringProperty(this, "lastName");
-    private ObservableMap<Integer, String> mapSimple = null;
-    private ObservableMap<String, EmbeddedAddress> mapEmbed = null;
-    private ObservableMap<String, SimpleEntity> mapEntity = null;
+    private ReadOnlyMapWrapper<Integer, String> mapSimple = new ReadOnlyMapWrapper<Integer, String>(this, "mapSimple", new PersistentMap<Integer, String>());
+    private ReadOnlyMapWrapper<String, EmbeddedAddress> mapEmbed = new ReadOnlyMapWrapper<String, EmbeddedAddress>(this, "mapEmbed", new PersistentMap<String, EmbeddedAddress>());
+    private ReadOnlyMapWrapper<String, SimpleEntity> mapEntity = new ReadOnlyMapWrapper<String, SimpleEntity>(this, "mapEntity", new PersistentMap<String, SimpleEntity>());
     
     
     public PersonMap() {
@@ -48,49 +54,42 @@ public class PersonMap extends AbstractEntity {
     
     public StringProperty firstNameProperty() {
         return firstName;
-    }
-    
+    }    
     public String getFirstName() {
         return firstName.get();
-    }
-    
+    }    
     public void setFirstName(String firstName) {
         this.firstName.set(firstName);
     }
     
     public StringProperty lastNameProperty() {
         return lastName;
-    }
-    
+    }    
     public String getLastName() {
         return lastName.get();
-    }
-    
+    }    
     public void setLastName(String lastName) {
         this.lastName.set(lastName);
     }
     
+    public ReadOnlyMapProperty<String, EmbeddedAddress> mapEmbedProperty() {
+    	return mapEmbed.getReadOnlyProperty();
+    }
     public ObservableMap<String, EmbeddedAddress> getMapEmbed() {
-        return mapEmbed;
+        return mapEmbed.get();
     }
     
-    public void setMapEmbed(ObservableMap<String, EmbeddedAddress> map) {
-        this.mapEmbed = map;
+    public ReadOnlyMapProperty<Integer, String> mapSimpleProperty() {
+    	return mapSimple.getReadOnlyProperty();
     }
-    
     public ObservableMap<Integer, String> getMapSimple() {
-        return mapSimple;
+        return mapSimple.get();
     }
     
-    public void setMapSimple(ObservableMap<Integer, String> map) {
-        this.mapSimple = map;
-    }
-    
+    public ReadOnlyMapProperty<String, SimpleEntity> mapEntityProperty() {
+       	return mapEntity.getReadOnlyProperty();
+    }    
     public ObservableMap<String, SimpleEntity> getMapEntity() {
-        return mapEntity;
-    }
-    
-    public void setMapEntity(ObservableMap<String, SimpleEntity> map) {
-        this.mapEntity = map;
+        return mapEntity.get();
     }
 }

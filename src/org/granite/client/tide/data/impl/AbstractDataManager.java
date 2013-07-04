@@ -30,10 +30,12 @@ import javax.validation.Path;
 import javax.validation.Path.Node;
 import javax.validation.TraversableResolver;
 
-import org.granite.client.tide.data.Dirty;
-import org.granite.client.tide.data.Id;
-import org.granite.client.tide.data.Lazy;
-import org.granite.client.tide.data.Version;
+import org.granite.client.persistence.Id;
+import org.granite.client.persistence.Lazy;
+import org.granite.client.persistence.Persistence;
+import org.granite.client.persistence.Version;
+import org.granite.client.tide.data.EntityManager;
+import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.EntityDescriptor;
 import org.granite.messaging.amf.RemoteClass;
@@ -48,6 +50,9 @@ public abstract class AbstractDataManager implements DataManager {
     
     
     public EntityDescriptor getEntityDescriptor(Object entity) {
+    	if (entity == null)
+    		throw new IllegalArgumentException("Entity must not be null");
+    	
         EntityDescriptor desc = entityDescriptors.get(entity.getClass());
         if (desc != null)
         	return desc;
@@ -58,10 +63,7 @@ public abstract class AbstractDataManager implements DataManager {
         else
             className = entity.getClass().getName();
         
-        String idPropertyName = null, versionPropertyName = null, dirtyPropertyName = null;
-        @SuppressWarnings("unused")
-		boolean hasDirty = false;
-        Field dsField = null, initField = null;
+        String idPropertyName = null, versionPropertyName = null;
         
         Map<String, Boolean> lazy = new HashMap<String, Boolean>();
         for (Method m : entity.getClass().getMethods()) {
@@ -72,10 +74,6 @@ public abstract class AbstractDataManager implements DataManager {
                     versionPropertyName = Introspector.decapitalize(m.getName().substring(3));
                 else if (m.isAnnotationPresent(Lazy.class))
                     lazy.put(Introspector.decapitalize(m.getName().substring(3)), true);
-            }
-            else if (m.getName().startsWith("is") && m.getParameterTypes().length == 0 && m.getReturnType() == boolean.class) {
-            	if (m.isAnnotationPresent(Dirty.class))
-            		dirtyPropertyName = Introspector.decapitalize(m.getName().substring(2));
             }
         }
         
@@ -88,24 +86,33 @@ public abstract class AbstractDataManager implements DataManager {
                 else if (f.isAnnotationPresent(Version.class) && versionPropertyName == null) {
                     versionPropertyName = f.getName();
                 }
-                else if (f.isAnnotationPresent(Dirty.class) && dirtyPropertyName == null) {
-                    dirtyPropertyName = f.getName();
-                }
-                else if (f.getName().equals("__detachedState") && dsField == null)
-                    dsField = f;
-                else if (f.getName().equals("__initialized") && initField == null)
-                    initField = f;
                 else if (f.isAnnotationPresent(Lazy.class))
                     lazy.put(Introspector.decapitalize(f.getName().substring(3)), true);
             }
             clazz = clazz.getSuperclass();
         }
         
-        desc = new EntityDescriptor(className, idPropertyName, versionPropertyName, dirtyPropertyName, dsField, initField, lazy);
+        desc = new EntityDescriptor(className, idPropertyName, versionPropertyName, lazy);
         entityDescriptors.put(entity.getClass(), desc);
 
         return desc;
     }
+
+    
+    public boolean isDirtyEntity(Object entity) {
+    	EntityManager entityManager = PersistenceManager.getEntityManager(entity);
+    	if (entityManager == null)
+    		throw new IllegalStateException("Non managed entity: " + entity);
+		return entityManager.isDirtyEntity(entity);
+    }
+    
+    public boolean isDeepDirtyEntity(Object entity) {
+    	EntityManager entityManager = PersistenceManager.getEntityManager(entity);
+    	if (entityManager == null)
+    		throw new IllegalStateException("Non managed entity: " + entity);
+		return entityManager.isDeepDirtyEntity(entity);
+    }
+    
     
     
     private TraversableResolver traversableResolver = new TraversableResolverImpl();

@@ -80,12 +80,12 @@ public interface EntityManager {
     
     public static interface Propagation {
         
-        public void propagate(Identifiable entity, Function func);
+        public void propagate(Object entity, Function func);
     }
     
     public static interface Function {
         
-        public void execute(EntityManager entityManager, Identifiable entity);
+        public void execute(EntityManager entityManager, Object entity);
     }
     
     /**
@@ -116,25 +116,6 @@ public interface EntityManager {
      */
     public EntityManager newTemporaryEntityManager();
     
-    
-    /**
-     *  Intercept a property getter
-     * 
-     *  @param entity intercepted entity
-     *  @param propName intercepted property name
-     *  @param value current value
-     */
-    public Object getEntityProperty(Identifiable entity, String propName, Object value);
-    
-    /**
-     *  Intercept a property setter
-     * 
-     *  @param entity intercepted entity
-     *  @param propName intercepted property name
-     *  @param oldValue old value
-     *  @param newValue new value
-     */
-    public void setEntityProperty(Identifiable entity, String propName, Object oldValue, Object newValue);
     
     /**
      *  Register a reference to the provided object with either a parent or res
@@ -175,6 +156,14 @@ public interface EntityManager {
     public boolean isDirty();
     
     /**
+     *  Entity is dirty when any direct property has been modified
+     *  @param entity
+     *
+     *  @return is dirty
+     */
+    public boolean isDirtyEntity(Object entity);
+    
+    /**
      *  Entity is deep dirty when any element in its object graph has been modified
      *  @param entity root of the entity graph
      *
@@ -188,7 +177,7 @@ public interface EntityManager {
      *  @param entity an entity
      *  @return true if saved
      */
-    public boolean isSaved(Object entity);
+    public boolean isPersisted(Object entity);
     
     /**
      *  @private 
@@ -275,7 +264,7 @@ public interface EntityManager {
      *  @param entity entity to restore
      *  @param cache reset cache
      */ 
-    public void resetEntity(Identifiable entity);
+    public void resetEntity(Object entity);
     
     /**
      *  Discard changes of all cached entities from last version received from the server

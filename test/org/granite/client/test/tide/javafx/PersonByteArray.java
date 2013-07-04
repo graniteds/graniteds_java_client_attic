@@ -20,12 +20,15 @@
 
 package org.granite.client.test.tide.javafx;
 
+import org.granite.client.persistence.Entity;
+
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 
+@Entity
 public class PersonByteArray extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
@@ -45,8 +48,8 @@ public class PersonByteArray extends AbstractEntity {
         this.lastName.set(lastName);
     }
     
-    public PersonByteArray(Long id, boolean initialized) {
-        super(id, initialized);
+    public PersonByteArray(Long id, boolean initialized, String detachedState) {
+        super(id, initialized, detachedState);
     }
     
     public StringProperty firstNameProperty() {
