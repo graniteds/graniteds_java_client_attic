@@ -20,10 +20,10 @@
 
 package org.granite.client.persistence.javafx;
 
-import org.granite.client.persistence.LazyableCollection;
-
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
+
+import org.granite.client.persistence.collection.PersistentCollection;
 
 /**
  * @author William DRAI
@@ -39,7 +39,7 @@ public class MapChangeListenerWrapper<K, V> implements MapChangeListener<K, V> {
     
     @Override
     public void onChanged(MapChangeListener.Change<? extends K, ? extends V> change) {
-        if (!((LazyableCollection)wrappedMap).isInitialized())
+        if (!((PersistentCollection)wrappedMap).wasInitialized())
             return;
         MapChangeListener.Change<K, V> wrappedChange = new MapChangeWrapper<K, V>(wrappedMap, change);
         wrappedListener.onChanged(wrappedChange);

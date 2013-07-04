@@ -203,7 +203,7 @@ public class Persistence {
 	}
 	
 	public boolean hasUidProperty(Class<?> entityClass) {
-		return getIdProperty(entityClass, false) != null;
+		return getUidProperty(entityClass, false) != null;
 	}
 	
 	public String getUid(Object entity) {

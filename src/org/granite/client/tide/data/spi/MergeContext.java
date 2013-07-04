@@ -30,7 +30,6 @@ import java.util.Set;
 
 import org.granite.client.tide.data.Conflicts;
 import org.granite.client.tide.data.EntityManager;
-import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.server.ServerSession;
 
 /**
@@ -96,7 +95,7 @@ public class MergeContext {
         this.mergeUpdate = false;
     }
 
-    public void addConflict(Identifiable localEntity, Identifiable receivedEntity, List<String> properties) {
+    public void addConflict(Object localEntity, Object receivedEntity, List<String> properties) {
         if (this.mergeConflicts == null)
             this.mergeConflicts = new Conflicts(this.entityManager);
 

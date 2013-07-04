@@ -23,6 +23,7 @@ package org.granite.client.test.tide.javafx;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
+
 public class EmbeddedAddress {
     
     private StringProperty address = new SimpleStringProperty(this, "address");
@@ -36,12 +37,10 @@ public class EmbeddedAddress {
     
     public StringProperty addressProperty() {
         return address;
-    }
-    
+    }    
     public String getAddress() {
         return address.get();
-    }
-    
+    }    
     public void setAddress(String address) {
         this.address.set(address);
     }

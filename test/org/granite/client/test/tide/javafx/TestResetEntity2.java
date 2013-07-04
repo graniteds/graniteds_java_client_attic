@@ -36,7 +36,6 @@ public class TestResetEntity2 {
 
     private ContextManager contextManager;
     private Context ctx;
-    @SuppressWarnings("unused")
 	private DataManager dataManager;
     private EntityManager entityManager;
     
@@ -58,14 +57,14 @@ public class TestResetEntity2 {
         
         person.getAddress().setAddress("tutu");
         
-        Assert.assertTrue("Context dirty", entityManager.isDirty());
-        Assert.assertTrue("Person dirty", person.isDirty());
+        Assert.assertTrue("Context dirty", dataManager.isDirty());
+        Assert.assertTrue("Person dirty", dataManager.isDirtyEntity(person));
         
         entityManager.resetEntity(person);
         
         Assert.assertEquals("Address reset", "toto", person.getAddress().getAddress());
-        Assert.assertFalse("Context dirty", entityManager.isDirty());
-        Assert.assertFalse("Person not dirty", person.isDirty());
+        Assert.assertFalse("Context dirty", dataManager.isDirty());
+        Assert.assertFalse("Person not dirty", dataManager.isDirtyEntity(person));
     }
     
     @Test
@@ -78,29 +77,29 @@ public class TestResetEntity2 {
         
         person.getAddress().getLocation().setZipcode("75019");
         
-        Assert.assertTrue("Context dirty", entityManager.isDirty());
-        Assert.assertTrue("Person dirty", person.isDirty());
+        Assert.assertTrue("Context dirty", dataManager.isDirty());
+        Assert.assertTrue("Person dirty", dataManager.isDirtyEntity(person));
         
         entityManager.resetEntity(person);
         
         Assert.assertEquals("Location reset", "75020", person.getAddress().getLocation().getZipcode());
-        Assert.assertFalse("Context dirty", entityManager.isDirty());
-        Assert.assertFalse("Person not dirty", person.isDirty());
+        Assert.assertFalse("Context dirty", dataManager.isDirty());
+        Assert.assertFalse("Person not dirty", dataManager.isDirtyEntity(person));
         
         person.setLastName("Truc");
         person.getAddress().setAddress("Bla");
         person.getAddress().getLocation().setCity("LONDON");
         
-        Assert.assertTrue("Context dirty", entityManager.isDirty());
-        Assert.assertTrue("Person dirty", person.isDirty());
+        Assert.assertTrue("Context dirty", dataManager.isDirty());
+        Assert.assertTrue("Person dirty", dataManager.isDirtyEntity(person));
         
         entityManager.resetEntity(person);
         
         Assert.assertEquals("Location reset", "75020", person.getAddress().getLocation().getZipcode());
         Assert.assertEquals("Address reset", "toto", person.getAddress().getAddress());
         Assert.assertEquals("Person reset", "Toto", person.getLastName());
-        Assert.assertFalse("Context dirty", entityManager.isDirty());
-        Assert.assertFalse("Person not dirty", person.isDirty());
+        Assert.assertFalse("Context dirty", dataManager.isDirty());
+        Assert.assertFalse("Person not dirty", dataManager.isDirtyEntity(person));
     }
     
 }

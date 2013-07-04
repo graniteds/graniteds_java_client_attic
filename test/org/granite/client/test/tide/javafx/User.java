@@ -20,83 +20,62 @@
 
 package org.granite.client.test.tide.javafx;
 
-import java.util.UUID;
+import java.io.Serializable;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-import org.granite.client.tide.data.Id;
-import org.granite.client.tide.data.Identifiable;
-import org.granite.client.tide.data.Lazyable;
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.Id;
 
 
-public class User implements Identifiable, Lazyable {
+@Entity
+public class User implements Serializable {
 
-    private boolean __initialized = true;
+	private static final long serialVersionUID = 1L;
+	
     @SuppressWarnings("unused")
-    private String __detachedState = null;
+	private boolean __initialized__ = true;
+    @SuppressWarnings("unused")
+    private String __detachedState__ = null;
 
-    private final StringProperty username;
-    private final StringProperty name;
+    @Id
+    private final ReadOnlyStringWrapper username = new ReadOnlyStringWrapper(this, "username");
+    private final StringProperty name = new SimpleStringProperty(this, "name");
+
+
+    public User() {        
+    }
+    
+    public User(String username, boolean initialized, String detachedState) {
+        if (!initialized) {
+            __initialized__ = false;
+            __detachedState__ = detachedState;
+        }
+        else
+        	this.username.set(username);
+    }
+    
+    public User(String username) {
+        this.username.set(username);
+    }
     
     public StringProperty usernameProperty() {
         return username;
     }
     
-    @Id
     public String getUsername() {
         return username.get();
     }
     
     public StringProperty nameProperty() {
         return name;
-    }
-    
+    }    
     public String getName() {
         return name.get();
-    }
-    
+    }    
     public void setName(String name) {
         this.name.set(name);
-    }
-    
-    @Override
-    public String getUid() {
-        if (username.get() == null)
-            return UUID.randomUUID().toString();
-        return "User::" + username.get();
-    }
-
-    @Override
-    public void setUid(String uid) {
-    }
-
-    public User() {        
-        this.username = new SimpleStringProperty();
-        this.name = new SimpleStringProperty();
-    }
-    
-    public User(String username, boolean initialized) {
-        if (initialized) {
-            this.username = new SimpleStringProperty(this, "username");
-            this.name = new SimpleStringProperty(this, "name");
-        }
-        else {
-            this.username = new ReadOnlyStringWrapper(this, "username", username);
-            this.name = new SimpleStringProperty(this, "name");
-            __initialized = false;
-            __detachedState = "__SomeDetachedState__";
-        }
-    }
-    
-    public User(String username) {
-        this.username = new ReadOnlyStringWrapper(this, "username", username);
-        this.name = new SimpleStringProperty(this, "name");
-    }
-
-    @Override
-    public boolean isInitialized() {
-        return __initialized;
     }
 }

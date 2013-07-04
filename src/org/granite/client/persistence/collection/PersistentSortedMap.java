@@ -51,32 +51,35 @@ public class PersistentSortedMap<K, V> extends AbstractPersistentMapCollection<K
 	}
 
 	public Comparator<? super K> comparator() {
-		checkInitialized();
 		return getCollection().comparator();
 	}
 
 	public SortedMap<K, V> subMap(K fromKey, K toKey) {
-		checkInitialized();
-		return new SortedMapProxy<K, V>(this, getCollection().subMap(fromKey, toKey));
+		if (!checkInitializedRead())
+			return null;
+		return new SortedMapProxy<K, V>(getCollection().subMap(fromKey, toKey));
 	}
 
 	public SortedMap<K, V> headMap(K toKey) {
-		checkInitialized();
-		return new SortedMapProxy<K, V>(this, getCollection().headMap(toKey));
+		if (!checkInitializedRead())
+			return null;
+		return new SortedMapProxy<K, V>(getCollection().headMap(toKey));
 	}
 
 	public SortedMap<K, V> tailMap(K fromKey) {
-		checkInitialized();
-		return new SortedMapProxy<K, V>(this, getCollection().tailMap(fromKey));
+		if (!checkInitializedRead())
+			return null;
+		return new SortedMapProxy<K, V>(getCollection().tailMap(fromKey));
 	}
 
 	public K firstKey() {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return null;
 		return getCollection().firstKey();
 	}
 
 	public K lastKey() {
-		checkInitialized();
+		checkInitializedRead();
 		return getCollection().lastKey();
 	}
 
@@ -106,4 +109,11 @@ public class PersistentSortedMap<K, V> extends AbstractPersistentMapCollection<K
 		else
 			init(null, false);
 	}
+	
+    public PersistentSortedMap<K, V> clone(boolean uninitialize) {
+    	PersistentSortedMap<K, V> map = new PersistentSortedMap<K, V>();
+    	if (wasInitialized() && !uninitialize)
+    		map.init(getCollection(), isDirty());
+        return map;
+    }
 }

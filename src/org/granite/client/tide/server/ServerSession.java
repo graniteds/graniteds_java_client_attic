@@ -857,8 +857,10 @@ public class ServerSession implements ContextAware {
 		
 		public synchronized void logout(Observer logoutObserver) {
 			addObserver(logoutObserver);
-	        logoutInProgress = true;
-		    waitForLogout = 1;
+			if (!logoutInProgress) {
+		        logoutInProgress = true;
+			    waitForLogout = 1;
+			}
 		}
 		
 		public synchronized void checkWait() {

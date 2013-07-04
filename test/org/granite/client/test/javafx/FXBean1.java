@@ -1,5 +1,6 @@
 package org.granite.client.test.javafx;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,7 +8,9 @@ import org.granite.client.javafx.JavaFXObject;
 
 
 @JavaFXObject
-public class FXBean1 {
+public class FXBean1 implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 	
 	private String name;
 	private List<String> list = new ArrayList<String>();

@@ -1,11 +1,14 @@
 package org.granite.client.test.javafx;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 
 
-public class Bean1 {
+public class Bean1 implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
 	
 	private String name;
 	private List<String> list = new ArrayList<String>();

@@ -18,13 +18,17 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide.data;
+package org.granite.client.persistence;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author William DRAI
  */
-public interface Lazyable extends Identifiable {
-
-    public boolean isInitialized();
-    
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.FIELD})
+public @interface Lazy {
 }

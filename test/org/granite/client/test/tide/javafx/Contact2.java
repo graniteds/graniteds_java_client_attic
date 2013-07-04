@@ -20,10 +20,13 @@
 
 package org.granite.client.test.tide.javafx;
 
+import org.granite.client.persistence.Entity;
+
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 
+@Entity
 public class Contact2 extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
@@ -42,12 +45,10 @@ public class Contact2 extends AbstractEntity {
         
     public StringProperty emailProperty() {
         return email;
-    }
-    
+    }    
     public String getEmail() {
         return email.get();
-    }
-    
+    }    
     public void setEmail(String email) {
         this.email.set(email);
     }

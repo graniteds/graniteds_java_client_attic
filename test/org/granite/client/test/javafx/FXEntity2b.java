@@ -1,17 +1,23 @@
 package org.granite.client.test.javafx;
 
+import java.io.Serializable;
+
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 import org.granite.client.javafx.JavaFXObject;
+import org.granite.client.persistence.Entity;
 import org.granite.messaging.amf.RemoteClass;
 
 
 @JavaFXObject
+@Entity
 @RemoteClass("org.granite.client.test.javafx.Entity2b")
-public class FXEntity2b {
+public class FXEntity2b implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 	
     private boolean __initialized = true;
     @SuppressWarnings("unused")

@@ -22,7 +22,6 @@ package org.granite.client.test.tide.javafx;
 
 import java.util.Arrays;
 
-import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.test.tide.MockInstanceStoreFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
@@ -60,14 +59,12 @@ public class TestConflictEntity {
     @Test
     public void testEntityCollectionRefs() {
         Person p = new Person(1L, 0L, "P01", null, null);
-        p.setContacts(new PersistentSet<Contact>());
         Contact c1 = new Contact(1L, 0L, "C01", null);
         c1.setPerson(p);
         p.getContacts().add(c1);
         p = (Person)entityManager.mergeExternalData(p);
 
         Person np = new Person(1L, 0L, "P01", null, null);
-        np.setContacts(new PersistentSet<Contact>(false));
         Contact nc = new Contact(1L, 0L, "C01", null);
         nc.setPerson(np);
 
@@ -80,13 +77,11 @@ public class TestConflictEntity {
     @Test
     public void testEntityCollectionMultiRefs() {
         PersonUniDir p1 = new PersonUniDir(1L, 0L, "P01", null, null);
-        p1.setContacts(new PersistentSet<Contact2>());
         Contact2 c1 = new Contact2(1L, 0L, "C01", null);
         p1.getContacts().add(c1);
         p1 = (PersonUniDir)entityManager.mergeExternalData(p1);
         
         PersonUniDir p2 = new PersonUniDir(2L, 0L, "P02", null, null);
-        p2.setContacts(new PersistentSet<Contact2>());
         Contact2 c1b = new Contact2(1L, 0L, "C01", null);
         p2.getContacts().add(c1b);
         Contact2 c2b = new Contact2(2L, 0L, "C02", null);
@@ -106,7 +101,6 @@ public class TestConflictEntity {
      @Test
      public void testEntityCollectionRemoveConflictServer() {
          Person p = new Person(1L, 0L, "P01", null, null);
-         p.setContacts(new PersistentSet<Contact>());
          Contact c1 = new Contact(1L, 0L, "C01", null);
          c1.setPerson(p);
          p.getContacts().add(c1);
@@ -116,7 +110,6 @@ public class TestConflictEntity {
          c1.setEmail("toto@toto.org");
 
          Person np = new Person(1L, 0L, "P01", null, null);
-         np.setContacts(new PersistentSet<Contact>());
          Contact nc = new Contact(1L, 0L, "C01", null);
          nc.setPerson(np);
          
@@ -143,7 +136,6 @@ public class TestConflictEntity {
      @Test
      public void testEntityCollectionRemoveConflictClient() {
          Person p = new Person(1L, 0L, "P01", null, null);
-         p.setContacts(new PersistentSet<Contact>());
          Contact c1 = new Contact(1L, 0L, "C01", null);
          c1.setPerson(p);
          p.getContacts().add(c1);
@@ -153,7 +145,6 @@ public class TestConflictEntity {
          c1.setEmail("toto@toto.org");
 
          Person np = new Person(1L, 0L, "P01", null, null);
-         np.setContacts(new PersistentSet<Contact>());
          Contact nc = new Contact(1L, 0L, "C01", null);
          nc.setPerson(np);
          

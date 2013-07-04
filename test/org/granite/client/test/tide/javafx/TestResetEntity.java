@@ -22,14 +22,8 @@ package org.granite.client.test.tide.javafx;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
-import javafx.collections.FXCollections;
-
-import org.granite.client.persistence.javafx.PersistentList;
-import org.granite.client.persistence.javafx.PersistentMap;
-import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.test.tide.MockInstanceStoreFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
@@ -48,7 +42,6 @@ public class TestResetEntity {
 
     private ContextManager contextManager;
     private Context ctx;
-    @SuppressWarnings("unused")
 	private DataManager dataManager;
     private EntityManager entityManager;
     private ServerSession serverSession;
@@ -67,13 +60,11 @@ public class TestResetEntity {
     @Test
     public void testResetEntityGDS920() {
         Person person = new Person(1L, 0L, "P1", null, null);
-        person.setContacts(new PersistentSet<Contact>());
         Contact contact = new Contact(1L, 0L, "C1", null);
         contact.setPerson(person);
         person.getContacts().add(contact);
 
         Person person2 = new Person(2L, 0L, "P2", null, null);
-        person2.setContacts(new PersistentSet<Contact>());
         Contact contact2 = new Contact(2L, 0L, "C2", null);
         contact2.setPerson(person2);
         person2.getContacts().add(contact2);
@@ -85,24 +76,23 @@ public class TestResetEntity {
         person.setLastName("test");
         person2.getContacts().remove(0);
         
-        Assert.assertTrue("Person dirty", person.isDirty());
-        Assert.assertTrue("Person2 dirty", person2.isDirty());
+        Assert.assertTrue("Person dirty", dataManager.isDirtyEntity(person));
+        Assert.assertTrue("Person2 dirty", dataManager.isDirtyEntity(person2));
          
         entityManager.resetAllEntities();
          
-        Assert.assertFalse("Person not dirty", person.isDirty());
-        Assert.assertFalse("Person2 not dirty", person2.isDirty());
-        Assert.assertFalse("Context not dirty", entityManager.isDirty());
+        Assert.assertFalse("Person not dirty", dataManager.isDirtyEntity(person));
+        Assert.assertFalse("Person2 not dirty", dataManager.isDirtyEntity(person2));
+        Assert.assertFalse("Context not dirty", dataManager.isDirty());
     }
     
     @Test
     public void testResetEntityBigNumber() {
         PersonBigNum person = new PersonBigNum(1L, 0L, "P1", null, null);
         person.setBigInt(BigInteger.valueOf(100L));
-        person.setBigInts(new PersistentList<BigInteger>());
         person.getBigInts().add(BigInteger.valueOf(200L));
         person = (PersonBigNum)entityManager.mergeExternalData(person);
-         
+        
         person.setBigInt(null);
         entityManager.resetEntity(person);
          
@@ -124,7 +114,6 @@ public class TestResetEntity {
     public void testResetEntityEnum() {
         PersonEnum person = new PersonEnum(1L, 0L, "P1", null, null);
         person.setSalutation(Salutation.Mr);
-        person.setSalutations(new PersistentList<Salutation>());
         person.getSalutations().addAll(Salutation.Dr);
         person = (PersonEnum)entityManager.mergeExternalData(person);
         
@@ -166,7 +155,6 @@ public class TestResetEntity {
         Assert.assertSame("Entity reset", person, contact.getPerson());
          
         Person p = new Person(2L, 0L, "P2", null, null);
-        p.setContacts(new PersistentSet<Contact>());
         Contact c = new Contact(2L, 0L, "C2", null);
         c.setPerson(p);
         p.getContacts().add(c);
@@ -184,7 +172,6 @@ public class TestResetEntity {
     @Test
     public void testResetEntityGDS667() {
         Person p = new Person(1L, 0L, "P1", null, null);
-        p.setContacts(new PersistentSet<Contact>());
         Contact c = new Contact(1L, 0L, "C1", null);
         c.setPerson(p);
         p.getContacts().add(c);
@@ -204,7 +191,7 @@ public class TestResetEntity {
         Contact contact = new Contact(1L, 0L, "C1", null);
         contact.setPerson(person);
         contact = (Contact)entityManager.mergeExternalData(contact);
-         
+        
         contact.setPerson(null);
         entityManager.resetEntity(contact);
         
@@ -213,23 +200,21 @@ public class TestResetEntity {
     
     @Test
     public void testResetEntityMap() {
-        PersonMap person = new PersonMap(1L, 0L, "P1", null, "Toto");
-        person.setMapSimple(new PersistentMap<Integer, String>());
+    	PersonMap person = new PersonMap(1L, 0L, "P1", null, "Toto");
         person = (PersonMap)entityManager.mergeExternalData(person);
-         
+        
         person.getMapSimple().put(2, "toto");
-         
-        Assert.assertTrue("Person dirty", entityManager.isDirty());
-         
+        
+        Assert.assertTrue("Person dirty", dataManager.isDirty());
+        
         entityManager.resetEntity(person);
-         
+        
         Assert.assertEquals("Person map reset", 0, person.getMapSimple().size());
     }
     
     @Test
     public void testResetEntityMap2() {
         PersonMap person = new PersonMap(1L, 0L, "P1", null, "Toto");
-        person.setMapSimple(new PersistentMap<Integer, String>());
         person.getMapSimple().put(2, "toto");
         person = (PersonMap)entityManager.mergeExternalData(person);
          
@@ -246,7 +231,6 @@ public class TestResetEntity {
     @Test
     public void testResetEntityMap3() {
         PersonMap person = new PersonMap(1L, 0L, "P1", null, "Toto");
-        person.setMapEntity(FXCollections.observableMap(new HashMap<String, SimpleEntity>()));
         SimpleEntity value = new SimpleEntity(null, null, "E1", "toto");
         person.getMapEntity().put("2", value);
         person = (PersonMap)entityManager.mergeExternalData(person);
@@ -265,7 +249,6 @@ public class TestResetEntity {
     @Test
     public void testResetEntityMap4() {
         PersonMap person = new PersonMap(1L, 0L, "P1", null, "Toto");
-        person.setMapEntity(new PersistentMap<String, SimpleEntity>());
         SimpleEntity value = new SimpleEntity(null, null, "E1", "toto");
         person.getMapEntity().put("2", value);
         person = (PersonMap)entityManager.mergeExternalData(person);
@@ -286,7 +269,6 @@ public class TestResetEntity {
     @Test
     public void testResetEntityMap5() {
         PersonMap person = new PersonMap(1L, 0L, "P1", null, "Toto");
-        person.setMapEntity(new PersistentMap<String, SimpleEntity>());
         SimpleEntity value = new SimpleEntity(null, null, "E1", "toto");
         person.getMapEntity().put("2", value);
         person = (PersonMap)entityManager.mergeExternalData(person);

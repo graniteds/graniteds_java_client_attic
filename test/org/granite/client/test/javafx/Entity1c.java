@@ -1,5 +1,6 @@
 package org.granite.client.test.javafx;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,8 +12,10 @@ import javax.persistence.OneToMany;
 
 
 @Entity
-public class Entity1c {
+public class Entity1c implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	@Basic
 	private String name;
 	

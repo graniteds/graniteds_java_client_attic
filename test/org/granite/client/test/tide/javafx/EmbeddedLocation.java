@@ -23,6 +23,7 @@ package org.granite.client.test.tide.javafx;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
+
 public class EmbeddedLocation {
     
     private StringProperty city = new SimpleStringProperty(this, "city");

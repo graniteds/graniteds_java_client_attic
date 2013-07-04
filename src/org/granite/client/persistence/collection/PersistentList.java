@@ -50,7 +50,7 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 	}
 
 	public boolean addAll(int index, Collection<? extends E> c) {
-		checkInitialized();
+		checkInitializedWrite();
 		if (getCollection().addAll(index, c)) {
 			dirty();
 			return true;
@@ -59,12 +59,13 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 	}
 
 	public E get(int index) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return null;
 		return getCollection().get(index);
 	}
 
 	public E set(int index, E element) {
-		checkInitialized();
+		checkInitializedWrite();
 		E previousElement = getCollection().set(index, element);
 		if (previousElement == null ? element != null : !previousElement.equals(element))
 			dirty();
@@ -72,25 +73,27 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 	}
 
 	public void add(int index, E element) {
-		checkInitialized();
+		checkInitializedWrite();
 		getCollection().add(index, element);
 		dirty();
 	}
 
 	public E remove(int index) {
-		checkInitialized();
+		checkInitializedWrite();
 		E previousElement = getCollection().remove(index);
 		dirty();
 		return previousElement;
 	}
 
 	public int indexOf(Object o) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return -1;
 		return getCollection().indexOf(o);
 	}
 
 	public int lastIndexOf(Object o) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return -1;
 		return getCollection().lastIndexOf(o);
 	}
 
@@ -99,13 +102,13 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 	}
 
 	public ListIterator<E> listIterator(int index) {
-		checkInitialized();
-		return new ListIteratorProxy<E>(this, getCollection().listIterator(index));
+		return new ListIteratorProxy<E>(getCollection().listIterator(index));
 	}
 
 	public List<E> subList(int fromIndex, int toIndex) {
-		checkInitialized();
-		return new ListProxy<E>(this, getCollection().subList(fromIndex, toIndex));
+		if (!checkInitializedRead())
+			return null;
+		return new ListProxy<E>(getCollection().subList(fromIndex, toIndex));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -116,4 +119,11 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 		else
 			init(null, false);
 	}
+	
+    public PersistentList<E> clone(boolean uninitialize) {
+    	PersistentList<E> list = new PersistentList<E>();
+    	if (wasInitialized() && !uninitialize)
+    		list.init(getCollection(), isDirty());
+        return list; 
+    }
 }

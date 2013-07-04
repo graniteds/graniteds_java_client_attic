@@ -20,10 +20,10 @@
 
 package org.granite.client.persistence.javafx;
 
-import org.granite.client.persistence.LazyableCollection;
-
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+
+import org.granite.client.persistence.collection.PersistentCollection;
 
 /**
  * @author William DRAI
@@ -39,7 +39,7 @@ public class ListChangeListenerWrapper<T> implements ListChangeListener<T> {
     
     @Override
     public void onChanged(ListChangeListener.Change<? extends T> change) {
-        if (!((LazyableCollection)wrappedList).isInitialized())
+        if (!((PersistentCollection)wrappedList).wasInitialized())
             return;
         ListChangeListener.Change<T> wrappedChange = new ListChangeWrapper<T>(wrappedList, change);
         wrappedListener.onChanged(wrappedChange);

@@ -30,7 +30,6 @@ import javafx.collections.ObservableMap;
 
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.tide.collections.ManagedPersistentMap;
-import org.granite.client.tide.data.Identifiable;
 
 
 /**
@@ -46,7 +45,7 @@ public class JavaFXManagedPersistentMap<K, V> extends AbstractJavaFXManagedPersi
     
     
     @SuppressWarnings("unchecked")
-	public JavaFXManagedPersistentMap(Identifiable entity, String propertyName, LazyableCollection map) {
+	public JavaFXManagedPersistentMap(Object entity, String propertyName, LazyableCollection map) {
         super(entity, propertyName);
         this.map = (ObservableMap<K, V>)map;
     }

@@ -1,13 +1,17 @@
 package org.granite.client.test.javafx;
 
+import java.io.Serializable;
+
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 
 
 @Entity
-public class Entity2 {
+public class Entity2 implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	@Basic
 	private String name;
 	

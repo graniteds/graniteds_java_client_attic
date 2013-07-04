@@ -20,85 +20,63 @@
 
 package org.granite.client.test.tide.javafx;
 
-import java.util.UUID;
+import java.io.Serializable;
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 
-import org.granite.client.tide.data.Id;
-import org.granite.client.tide.data.Identifiable;
-import org.granite.client.tide.data.Lazyable;
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.Id;
 
 
-public class Group implements Identifiable, Lazyable {
+@Entity
+public class Group implements Serializable {
 
-    private boolean __initialized = true;
+	private static final long serialVersionUID = 1L;
+	
+	
+	@SuppressWarnings("unused")
+	private boolean __initialized__ = true;
     @SuppressWarnings("unused")
-    private String __detachedState = null;
+    private String __detachedState__ = null;
 
-    private final StringProperty name;
-    private final ObjectProperty<User> user;
+    @Id
+    private final ReadOnlyStringWrapper name = new ReadOnlyStringWrapper(this, "name");
+    private final ObjectProperty<User> user = new SimpleObjectProperty<User>(this, "user");
     
-    public StringProperty nameProperty() {
-        return name;
+
+    public Group() {        
     }
     
-    @Id
+    public Group(String name, boolean initialized, String detachedState) {
+        if (!initialized) {
+            __initialized__ = false;
+            __detachedState__ = detachedState;
+        }
+        else
+        	this.name.set(name);
+    }
+    
+    public Group(String name) {
+        this.name.set(name);
+    }
+    
+    public ReadOnlyStringProperty nameProperty() {
+        return name.getReadOnlyProperty();
+    }    
     public String getName() {
         return name.get();
     }
     
     public ObjectProperty<User> userProperty() {
         return user;
-    }
-    
+    }    
     public User getUser() {
         return user.get();
-    }
-    
+    }    
     public void setUser(User user) {
         this.user.set(user);
-    }
-    
-    @Override
-    public String getUid() {
-        if (name.get() == null)
-            return UUID.randomUUID().toString();
-        return "Group::" + name.get();
-    }
-
-    @Override
-    public void setUid(String uid) {
-    }
-
-    public Group() {        
-        this.name = new SimpleStringProperty(this, "name");
-        this.user = new SimpleObjectProperty<User>(this, "user");
-    }
-    
-    public Group(String name, boolean initialized) {
-        if (initialized) {
-            this.name = new SimpleStringProperty(this, "name");
-            this.user = new SimpleObjectProperty<User>(this, "user");
-        }
-        else {
-            this.name = new ReadOnlyStringWrapper(this, "name", name);
-            this.user = new SimpleObjectProperty<User>(this, "user");
-            __initialized = false;
-            __detachedState = "__SomeDetachedState__";
-        }
-    }
-    
-    public Group(String name) {
-        this.name = new ReadOnlyStringWrapper(this, "name", name);
-        this.user = new SimpleObjectProperty<User>(this, "user");
-    }
-
-    @Override
-    public boolean isInitialized() {
-        return __initialized;
     }
 }

@@ -30,24 +30,125 @@ import javax.validation.Path;
 import javax.validation.Path.Node;
 import javax.validation.TraversableResolver;
 
-import org.granite.client.tide.data.Dirty;
-import org.granite.client.tide.data.Id;
-import org.granite.client.tide.data.Lazy;
-import org.granite.client.tide.data.Version;
+import org.granite.client.persistence.Id;
+import org.granite.client.persistence.Lazy;
+import org.granite.client.persistence.Persistence;
+import org.granite.client.persistence.Version;
+import org.granite.client.platform.Platform;
+import org.granite.client.tide.data.EntityManager;
+import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.EntityDescriptor;
+import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
 import org.granite.util.Introspector;
+import org.granite.util.UUIDUtil;
 
 /**
  * @author William DRAI
  */
 public abstract class AbstractDataManager implements DataManager {
+	
+	private static final Logger log = Logger.getLogger(AbstractDataManager.class);
 
     private static Map<Class<?>, EntityDescriptor> entityDescriptors = new HashMap<Class<?>, EntityDescriptor>(50);
     
     
+    protected Persistence persistence = null;
+    
+    public AbstractDataManager() {
+    	initPersistence();
+    }
+    
+    protected void initPersistence() {
+    	persistence = Platform.persistence();
+    }
+    
+    public boolean isEntity(Object entity) {
+    	return entity != null && persistence.isEntity(entity.getClass());
+    }
+    
+    public Object getId(Object entity) {
+    	return persistence.getId(entity);
+    }
+    
+    public String getDetachedState(Object entity) {
+    	return persistence.getDetachedState(entity);
+    }
+    
+    public Object getVersion(Object entity) {
+    	return persistence.getVersion(entity);
+    }
+    
+    public String getUid(Object entity) {
+    	if (entity == null)
+    		return null;
+    	
+    	if (persistence.hasUidProperty(entity.getClass())) {
+	    	String uid = persistence.getUid(entity);
+	    	if (uid == null) {
+	    		uid = UUIDUtil.randomUUID();
+	    		persistence.setUid(entity, uid);
+	    	}
+	    	return uid;
+    	}
+    	Object id = persistence.getId(entity);
+    	if (id != null)
+    		return entity.getClass().getSimpleName() + ":" + id.toString();
+    	return entity.getClass().getSimpleName() + "::" + System.identityHashCode(entity);
+    }
+    
+    public String getCacheKey(Object entity) {
+    	if (entity == null)
+    		return null;
+    	
+    	return entity.getClass().getName() + ":" + getUid(entity);
+    }
+    
+    public boolean isInitialized(Object entity) {
+    	return persistence.isInitialized(entity);
+    }
+    
+    
+    public void copyUid(Object dest, Object obj) {
+        if (isEntity(obj) && persistence.hasUidProperty(obj.getClass()))
+        	persistence.setUid(dest, persistence.getUid(obj));
+    }
+    
+    public boolean defineProxy(Object dest, Object obj) {
+        if (!isEntity(dest))
+            return false;
+        
+        try {
+            if (obj != null) {
+                if (persistence.getDetachedState(obj) == null)
+                    return false;
+                persistence.setId(dest, persistence.getId(obj));
+                persistence.setDetachedState(dest, persistence.getDetachedState(obj));
+            }
+            persistence.setInitialized(dest, false);
+            return true;
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Could not proxy class " + obj.getClass());
+        }
+    }
+    
+    public void copyProxyState(Object dest, Object obj) {
+		try {
+			persistence.setInitialized(dest, persistence.isInitialized(obj));
+			persistence.setDetachedState(dest, persistence.getDetachedState(obj));
+		}
+	    catch (Exception e) {
+	        log.error(e, "Could not copy internal state of object " + ObjectUtil.toString(obj));
+	    }
+    }
+
+    
     public EntityDescriptor getEntityDescriptor(Object entity) {
+    	if (entity == null)
+    		throw new IllegalArgumentException("Entity must not be null");
+    	
         EntityDescriptor desc = entityDescriptors.get(entity.getClass());
         if (desc != null)
         	return desc;
@@ -58,10 +159,7 @@ public abstract class AbstractDataManager implements DataManager {
         else
             className = entity.getClass().getName();
         
-        String idPropertyName = null, versionPropertyName = null, dirtyPropertyName = null;
-        @SuppressWarnings("unused")
-		boolean hasDirty = false;
-        Field dsField = null, initField = null;
+        String idPropertyName = null, versionPropertyName = null;
         
         Map<String, Boolean> lazy = new HashMap<String, Boolean>();
         for (Method m : entity.getClass().getMethods()) {
@@ -72,10 +170,6 @@ public abstract class AbstractDataManager implements DataManager {
                     versionPropertyName = Introspector.decapitalize(m.getName().substring(3));
                 else if (m.isAnnotationPresent(Lazy.class))
                     lazy.put(Introspector.decapitalize(m.getName().substring(3)), true);
-            }
-            else if (m.getName().startsWith("is") && m.getParameterTypes().length == 0 && m.getReturnType() == boolean.class) {
-            	if (m.isAnnotationPresent(Dirty.class))
-            		dirtyPropertyName = Introspector.decapitalize(m.getName().substring(2));
             }
         }
         
@@ -88,24 +182,33 @@ public abstract class AbstractDataManager implements DataManager {
                 else if (f.isAnnotationPresent(Version.class) && versionPropertyName == null) {
                     versionPropertyName = f.getName();
                 }
-                else if (f.isAnnotationPresent(Dirty.class) && dirtyPropertyName == null) {
-                    dirtyPropertyName = f.getName();
-                }
-                else if (f.getName().equals("__detachedState") && dsField == null)
-                    dsField = f;
-                else if (f.getName().equals("__initialized") && initField == null)
-                    initField = f;
                 else if (f.isAnnotationPresent(Lazy.class))
                     lazy.put(Introspector.decapitalize(f.getName().substring(3)), true);
             }
             clazz = clazz.getSuperclass();
         }
         
-        desc = new EntityDescriptor(className, idPropertyName, versionPropertyName, dirtyPropertyName, dsField, initField, lazy);
+        desc = new EntityDescriptor(className, idPropertyName, versionPropertyName, lazy);
         entityDescriptors.put(entity.getClass(), desc);
 
         return desc;
     }
+
+    
+    public boolean isDirtyEntity(Object entity) {
+    	EntityManager entityManager = PersistenceManager.getEntityManager(entity);
+    	if (entityManager == null)
+    		throw new IllegalStateException("Non managed entity: " + entity);
+		return entityManager.isDirtyEntity(entity);
+    }
+    
+    public boolean isDeepDirtyEntity(Object entity) {
+    	EntityManager entityManager = PersistenceManager.getEntityManager(entity);
+    	if (entityManager == null)
+    		throw new IllegalStateException("Non managed entity: " + entity);
+		return entityManager.isDeepDirtyEntity(entity);
+    }
+    
     
     
     private TraversableResolver traversableResolver = new TraversableResolverImpl();

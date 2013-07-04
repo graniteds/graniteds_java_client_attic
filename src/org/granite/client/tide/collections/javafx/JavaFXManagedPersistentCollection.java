@@ -31,7 +31,6 @@ import javafx.collections.ObservableList;
 
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.tide.collections.ManagedPersistentCollection;
-import org.granite.client.tide.data.Identifiable;
 
 
 /**
@@ -47,7 +46,7 @@ public class JavaFXManagedPersistentCollection<T> extends AbstractJavaFXManagedP
     
     
     @SuppressWarnings("unchecked")
-	public JavaFXManagedPersistentCollection(Identifiable entity, String propertyName, LazyableCollection list) {
+	public JavaFXManagedPersistentCollection(Object entity, String propertyName, LazyableCollection list) {
         super(entity, propertyName);
         this.list = (ObservableList<T>)list;
     }

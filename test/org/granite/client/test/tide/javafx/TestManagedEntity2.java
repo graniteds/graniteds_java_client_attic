@@ -37,10 +37,12 @@ import org.junit.Test;
 public class TestManagedEntity2 {
     
     private EntityManager entityManager;
+    private JavaFXDataManager dataManager;
     
     @Before
     public void setup() throws Exception {
-        entityManager = new EntityManagerImpl("", new JavaFXDataManager(), null, null);
+    	dataManager = new JavaFXDataManager();
+        entityManager = new EntityManagerImpl("", dataManager, null, null);
     }
     
     
@@ -71,8 +73,8 @@ public class TestManagedEntity2 {
         
         person.getAddress().setAddress("tutu");
         
-        Assert.assertTrue("Context dirty", entityManager.isDirty());
-        Assert.assertTrue("Person dirty", person.isDirty());
+        Assert.assertTrue("Context dirty", dataManager.isDirty());
+        Assert.assertTrue("Person dirty", dataManager.isDirtyEntity(person));
         
         PersonEmbed person2 = new PersonEmbed(1L, 1L, "P1", null, null);
         person2.setAddress(new EmbeddedAddress("tutu"));
@@ -80,7 +82,7 @@ public class TestManagedEntity2 {
         person = (PersonEmbed)entityManager.mergeExternalData(person2);
         
         Assert.assertEquals("Address reset", "tutu", person.getAddress().getAddress());
-        Assert.assertFalse("Person not dirty", person.isDirty());
+        Assert.assertFalse("Person not dirty", dataManager.isDirtyEntity(person));
         Assert.assertFalse("Context dirty", entityManager.isDirty());
     }
 }

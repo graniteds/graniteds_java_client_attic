@@ -28,7 +28,6 @@ import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.collections.ManagedPersistentAssociation;
 import org.granite.client.tide.data.EntityManager;
-import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.impl.ObjectUtil;
 import org.granite.client.tide.data.spi.Wrapper;
@@ -47,7 +46,7 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
     
     private static Logger log = Logger.getLogger("org.granite.client.tide.javafx.AbstractJavaFXManagedPersistentAssociation");
     
-    private final Identifiable entity;
+    private final Object entity;
     private final String propertyName;
     
     private ServerSession serverSession = null;
@@ -58,7 +57,7 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
     private InitializationCallback initializationCallback = null;
     
     
-    public Identifiable getOwner() {
+    public Object getOwner() {
         return entity;
     } 
     
@@ -66,7 +65,7 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
         return propertyName;
     }
     
-    protected AbstractJavaFXManagedPersistentAssociation(Identifiable entity, String propertyName) {
+    protected AbstractJavaFXManagedPersistentAssociation(Object entity, String propertyName) {
         this.entity = entity;
         this.propertyName = propertyName;
     }
@@ -158,7 +157,7 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
     
     public void withInitialized(InitializationCallback callback) {
         if (isInitialized())
-            initializationCallback.call(this);
+            callback.call(this);
         else {
             initializationCallback = callback;
             requestInitialization();

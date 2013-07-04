@@ -30,16 +30,39 @@ import javax.validation.TraversableResolver;
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.tide.collections.ManagedPersistentCollection;
 import org.granite.client.tide.collections.ManagedPersistentMap;
-import org.granite.client.tide.data.Identifiable;
 
 /**
  * @author William DRAI
  */
 public interface DataManager {
     
-    public void setTrackingHandler(TrackingHandler trackingHandler);
-
+    public boolean isEntity(Object entity);
+    
+    public Object getId(Object entity);
+    
+    public String getDetachedState(Object entity);
+    
+    public boolean defineProxy(Object target, Object source);
+    
+    public void copyProxyState(Object target, Object source);
+    
+    public void copyUid(Object target, Object source);
+    
+    public Object getVersion(Object entity);
+    
+    // public void setVersion(Object entity, Object version);
+    
+    public String getUid(Object entity);
+    
+    public String getCacheKey(Object entity);
+    
+    public boolean isInitialized(Object entity);
+    
     public boolean isDirty();
+    
+    public boolean isDirtyEntity(Object entity);
+    
+    public boolean isDeepDirtyEntity(Object entity);
     
     public EntityDescriptor getEntityDescriptor(Object entity);
     
@@ -53,9 +76,11 @@ public interface DataManager {
     
     public Map<String, Object> getPropertyValues(Object object, List<String> excludedProperties, boolean includeReadOnly, boolean includeTransient);
     
-    public ManagedPersistentCollection<Object> newPersistentCollection(Identifiable parent, String propertyName, LazyableCollection nextList);
+    public ManagedPersistentCollection<Object> newPersistentCollection(Object parent, String propertyName, LazyableCollection nextList);
     
-    public ManagedPersistentMap<Object, Object> newPersistentMap(Identifiable parent, String propertyName, LazyableCollection nextMap);
+    public ManagedPersistentMap<Object, Object> newPersistentMap(Object parent, String propertyName, LazyableCollection nextMap);
+    
+    public void setTrackingHandler(TrackingHandler trackingHandler);
 
     
     public static enum TrackingType {        

@@ -33,9 +33,7 @@ import javax.validation.ConstraintViolation;
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.tide.collections.ManagedPersistentCollection;
 import org.granite.client.tide.collections.ManagedPersistentMap;
-import org.granite.client.tide.data.Identifiable;
 import org.granite.client.tide.data.Transient;
-import org.granite.client.tide.data.spi.EntityDescriptor;
 
 /**
  * @author William DRAI
@@ -96,8 +94,6 @@ public class JavaBeanDataManager extends AbstractDataManager {
 
     @Override
     public Map<String, Object> getPropertyValues(Object object, List<String> excludedProperties, boolean includeReadOnly, boolean includeTransient) {
-        EntityDescriptor desc = getEntityDescriptor(object);
-        
         Map<String, Object> values = new LinkedHashMap<String, Object>();
         for (Method m : object.getClass().getMethods()) {
             if (!m.getName().startsWith("get") && !m.getName().startsWith("is"))
@@ -119,9 +115,6 @@ public class JavaBeanDataManager extends AbstractDataManager {
             	}            	
             }            
             
-            if (desc.getDirtyPropertyName() != null && desc.getDirtyPropertyName().equals(pname))
-                continue;
-            
             try {
                 if (excludedProperties.contains(pname))
                     continue;
@@ -138,12 +131,12 @@ public class JavaBeanDataManager extends AbstractDataManager {
     }
 
     @Override
-    public ManagedPersistentCollection<Object> newPersistentCollection(Identifiable parent, String propertyName, LazyableCollection nextList) {
+    public ManagedPersistentCollection<Object> newPersistentCollection(Object parent, String propertyName, LazyableCollection nextList) {
         return null;
     }
 
     @Override
-    public ManagedPersistentMap<Object, Object> newPersistentMap(Identifiable parent, String propertyName, LazyableCollection nextMap) {
+    public ManagedPersistentMap<Object, Object> newPersistentMap(Object parent, String propertyName, LazyableCollection nextMap) {
         return null;
     }
 

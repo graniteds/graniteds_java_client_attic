@@ -25,6 +25,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
+
 public class EmbeddedAddress2 {
     
     private StringProperty address = new SimpleStringProperty(this, "address");

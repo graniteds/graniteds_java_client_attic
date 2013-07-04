@@ -23,10 +23,7 @@ package org.granite.client.tide.data.impl;
 import java.util.Date;
 
 import org.granite.client.tide.PropertyHolder;
-import org.granite.client.tide.data.Identifiable;
-import org.granite.client.tide.data.Lazyable;
 import org.granite.client.tide.data.spi.DataManager;
-import org.granite.client.tide.data.spi.EntityDescriptor;
 
 /**
  * @author William DRAI
@@ -50,17 +47,21 @@ public class ObjectUtil {
      *  @return true when objects are instances of the same entity
      */ 
     public static boolean objectEquals(DataManager dataManager, Object obj1, Object obj2) {
-        if ((obj1 instanceof PropertyHolder && obj2 instanceof Identifiable) || (obj1 instanceof Identifiable && obj2 instanceof PropertyHolder))
+        if ((obj1 instanceof PropertyHolder && dataManager.isEntity(obj2)) || (dataManager.isEntity(obj1) && obj2 instanceof PropertyHolder))
             return false;
         
-        if (obj1 instanceof Identifiable && obj2 instanceof Identifiable && obj1.getClass() == obj2.getClass()) {
-            if (obj1 instanceof Lazyable && (!((Lazyable)obj1).isInitialized() || !((Lazyable)obj2).isInitialized())) {
+        if (dataManager.isEntity(obj1) && dataManager.isEntity(obj2) && obj1.getClass() == obj2.getClass()) {
+            if (!dataManager.isInitialized(obj1) || !dataManager.isInitialized(obj2)) {
                 // Compare with identifier for uninitialized entities
-                EntityDescriptor edesc = dataManager.getEntityDescriptor(obj1);
-                if (edesc.getIdPropertyName() != null)
-                    return objectEquals(dataManager, dataManager.getProperty(obj1, edesc.getIdPropertyName()), dataManager.getProperty(obj2, edesc.getIdPropertyName()));
+            	try {
+                    return objectEquals(dataManager, dataManager.getId(obj1), dataManager.getId(obj2));
+            	}
+            	catch (Exception e) {
+            		// No @Id;
+            		return obj1.equals(obj2);
+            	}
             }
-            return ((Identifiable)obj1).getUid().equals(((Identifiable)obj2).getUid());
+            return dataManager.getUid(obj1).equals(dataManager.getUid(obj2));
         }
         
         if (obj1 == null)

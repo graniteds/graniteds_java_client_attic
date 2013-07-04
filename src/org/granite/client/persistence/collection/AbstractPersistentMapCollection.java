@@ -21,6 +21,7 @@
 package org.granite.client.persistence.collection;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,27 +34,32 @@ public abstract class AbstractPersistentMapCollection<K, V, C extends Map<K, V>>
 	}
 
 	public int size() {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return 0;
 		return getCollection().size();
 	}
 
 	public boolean isEmpty() {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return true;
 		return getCollection().isEmpty();
 	}
 
 	public boolean containsKey(Object key) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return false;
 		return getCollection().containsKey(key);
 	}
 
 	public boolean containsValue(Object value) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return false;
 		return getCollection().containsValue(value);
 	}
 
 	public V get(Object key) {
-		checkInitialized();
+		if (!checkInitializedRead())
+			return null;
 		return getCollection().get(key);
 	}
 
@@ -63,7 +69,7 @@ public abstract class AbstractPersistentMapCollection<K, V, C extends Map<K, V>>
 	
 	protected V put(K key, V value, boolean checkInitialized) {
 		if (checkInitialized)
-			checkInitialized();
+			checkInitializedWrite();
 		
 		boolean containsKey = getCollection().containsKey(key);
 		V previousValue = getCollection().put(key, value);
@@ -73,7 +79,7 @@ public abstract class AbstractPersistentMapCollection<K, V, C extends Map<K, V>>
 	}
 
 	public V remove(Object key) {
-		checkInitialized();
+		checkInitializedWrite();
 		
 		boolean containsKey = getCollection().containsKey(key);
 		V removedValue = getCollection().remove(key);
@@ -83,14 +89,14 @@ public abstract class AbstractPersistentMapCollection<K, V, C extends Map<K, V>>
 	}
 
 	public void putAll(Map<? extends K, ? extends V> m) {
-		checkInitialized();
+		checkInitializedWrite();
 		
 		for (Map.Entry<? extends K, ? extends V> entry : m.entrySet())
 			put(entry.getKey(), entry.getValue(), false);
 	}
 
 	public void clear() {
-		checkInitialized();
+		checkInitializedWrite();
 		if (!getCollection().isEmpty()) {
 			getCollection().clear();
 			dirty();
@@ -98,17 +104,20 @@ public abstract class AbstractPersistentMapCollection<K, V, C extends Map<K, V>>
 	}
 
 	public Set<K> keySet() {
-		checkInitialized();
-		return new SetProxy<K>(this, getCollection().keySet());
+		if (!checkInitializedRead())
+			return Collections.emptySet();
+		return new SetProxy<K>(getCollection().keySet());
 	}
 
 	public Collection<V> values() {
-		checkInitialized();
-		return new CollectionProxy<V>(this, getCollection().values());
+		if (!checkInitializedRead())
+			return Collections.emptySet();
+		return new CollectionProxy<V>(getCollection().values());
 	}
-
+	
 	public Set<Map.Entry<K, V>> entrySet() {
-		checkInitialized();
-		return new SetProxy<Map.Entry<K, V>>(this, getCollection().entrySet());
+		if (!checkInitializedRead())
+			return Collections.emptySet();
+		return new SetProxy<Map.Entry<K, V>>(getCollection().entrySet());
 	}
 }
