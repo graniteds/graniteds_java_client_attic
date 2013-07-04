@@ -32,6 +32,7 @@ public interface Transport {
 	Configuration getConfiguration();
 	
 	boolean start();
+	boolean isStarted();
 	void stop();
 	
 	void setStatusHandler(TransportStatusHandler statusHandler);

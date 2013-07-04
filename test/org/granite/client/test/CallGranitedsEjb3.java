@@ -34,15 +34,10 @@ import org.granite.client.messaging.channel.UsernamePasswordCredentials;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
-import org.granite.client.messaging.jmf.ClientSharedContextFactory;
 import org.granite.client.messaging.messages.ResponseMessage;
-import org.granite.client.messaging.transport.HTTPTransport;
-import org.granite.client.messaging.transport.TransportException;
-import org.granite.client.messaging.transport.TransportStatusHandler.LogEngineStatusHandler;
-import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.persistence.Persistence;
-import org.granite.client.persistence.Persistence.Property;
-import org.granite.util.ContentType;
+import org.granite.client.platform.Platform;
+import org.granite.messaging.jmf.reflect.Property;
 
 /**
  * @author Franck WOLFF
@@ -50,106 +45,99 @@ import org.granite.util.ContentType;
 public class CallGranitedsEjb3 {
 
 	public static void main(String[] args) throws Exception {		
+/*
+		Platform platform = Platform.getInstance();
+		ChannelFactory channelFactory = new JMFChannelFactory(platform);
 		
-		URI uri = new URI("http://localhost:8080/graniteds-ejb3/graniteamf/amf");
+		ChannelFactory channelFactory = new JMFChannelFactory();
+		channelFactory.start();
+*/
+		// Create and initialize a channel factory.
+		ChannelFactory factory = ChannelFactory.newInstance();
+		factory.start();
 		
-		System.out.println("Connecting to: " + uri);
-
-		// Create and configure a transport.
-		HTTPTransport transport = new ApacheAsyncTransport();
-		transport.setStatusHandler(new LogEngineStatusHandler() {
-			
-			@Override
-			public void handleIO(boolean active) {
-				//super.handleIO(active);
-			}
-
-			@Override
-			public void handleException(TransportException e) {
-				//super.handleException(e);
-				//sem.release();
-			}
-		});
-		transport.start();
-		
-		// Initialize the client shared context by scanning classpath for classes
-		// annotated with @RemoteAlias (see test/META-INF/messaging-scan.properties).
-		ClientSharedContextFactory.initialize();
-		
-		// Create a channel with the specified uri.
-		ChannelFactory factory = new ChannelFactory(ContentType.JMF_AMF);
-		RemotingChannel channel = factory.newRemotingChannel(transport, "my-graniteamf", uri, 2);
-
-		// Login (credentials will be sent with the first call).
-		channel.setCredentials(new UsernamePasswordCredentials("admin", "admin"));
-
-		// Create a remote object with the channel and a destination.
-		RemoteService ro = new RemoteService(channel, "person");
-
-		final Semaphore sem = new Semaphore(0);
-		
-		ResponseListener listener = new ResultFaultIssuesResponseListener() {
-			
-			@Override
-			public void onResult(ResultEvent event) {
-				StringBuilder sb = new StringBuilder("onResult {");
-				for (ResponseMessage response : event.getResponse()) {
-					sb.append("\n    response=").append(response.toString().replace("\n", "\n    "));
-
-					List<?> data = (List<?>)response.getData();
-					
-					for (Object entity : data) {
-						sb.append("\n\n    " + entity.getClass().getName() + " {");
-						try {
-							sb.append("\n        boolean initialized: " + Persistence.isInitialized(entity));
-							Property property = Persistence.getIdProperty(entity);
-							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
-							property = Persistence.getVersionProperty(entity);
-							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
-							property = Persistence.getUidProperty(entity);
-							sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getValue());
-						}
-						catch (IllegalAccessException e) {
-							e.printStackTrace();
-						}
-						sb.append("\n    }");
-					}
-
-				}
-				sb.append("\n}");
-				System.out.println(sb);
-				
-				sem.release();
-			}
-
-			@Override
-			public void onFault(FaultEvent event) {
-				StringBuilder sb = new StringBuilder("onFault {");
-				for (ResponseMessage response : event.getResponse())
-					sb.append("\n    response=").append(response.toString().replace("\n", "\n    "));
-				sb.append("\n}");
-				System.out.println(sb);
-
-				sem.release();
-			}
-			
-			@Override
-			public void onIssue(IssueEvent event) {
-				System.out.println(event);
-				sem.release();
-			}
-		};
-		
-		ro.newInvocation("findAllPersons").addListener(listener).appendInvocation("findAllCountries").invoke();
-		ro.newInvocation("findAllPersons").addListener(listener).setTimeToLive(5, TimeUnit.MINUTES).invoke();
-		ro.newInvocation("findAllPersons").addListener(listener).invoke();
-		ro.newInvocation("findAllPersons").addListener(listener).invoke();
-		ro.newInvocation("findAllPersons").setTimeToLive(10, TimeUnit.MILLISECONDS).addListener(listener).invoke();
-
-		sem.acquire(5);
+		try {
+			// Create a remoting channel bound to the server uri and with maximum two concurrent requests. 
+			RemotingChannel channel = factory.newRemotingChannel(
+				"my-graniteamf",
+				new URI("http://localhost:8080/graniteds-ejb3/graniteamf/amf"),
+				2
+			);
 	
-		// Stop transport (must be done!)
-		transport.stop();
+			// Login (credentials will be sent with the first call).
+			channel.setCredentials(new UsernamePasswordCredentials("admin", "admin"));
+	
+			// Create a remote object with the channel and a destination.
+			RemoteService ro = new RemoteService(channel, "person");
+	
+			final Semaphore sem = new Semaphore(0);
+			
+			ResponseListener listener = new ResultFaultIssuesResponseListener() {
+				
+				@Override
+				public void onResult(ResultEvent event) {
+					Persistence persistence = Platform.persistence();
+					
+					StringBuilder sb = new StringBuilder("onResult {");
+					for (ResponseMessage response : event.getResponse()) {
+						sb.append("\n    response=").append(response.toString().replace("\n", "\n    "));
+	
+						List<?> data = (List<?>)response.getData();
+						
+						for (Object entity : data) {
+							sb.append("\n\n    " + entity.getClass().getName() + " {");
+							try {
+								sb.append("\n        boolean initialized: " + persistence.isInitialized(entity));
+								Property property = persistence.getIdProperty(entity.getClass());
+								sb.append("\n        * id: " + property.getType().getName() + " " + property.getName() + ": " + property.getObject(entity));
+								property = persistence.getVersionProperty(entity.getClass());
+								sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getObject(entity));
+								property = persistence.getUidProperty(entity.getClass());
+								sb.append("\n        " + property.getType().getName() + " " + property.getName() + ": " + property.getObject(entity));
+							}
+							catch (Exception e) {
+								e.printStackTrace();
+							}
+							sb.append("\n    }");
+						}
+	
+					}
+					sb.append("\n}");
+					System.out.println(sb);
+					
+					sem.release();
+				}
+	
+				@Override
+				public void onFault(FaultEvent event) {
+					StringBuilder sb = new StringBuilder("onFault {");
+					for (ResponseMessage response : event.getResponse())
+						sb.append("\n    response=").append(response.toString().replace("\n", "\n    "));
+					sb.append("\n}");
+					System.out.println(sb);
+	
+					sem.release();
+				}
+				
+				@Override
+				public void onIssue(IssueEvent event) {
+					System.out.println(event);
+					sem.release();
+				}
+			};
+			
+			ro.newInvocation("findAllPersons").addListener(listener).appendInvocation("findAllCountries").invoke();
+			ro.newInvocation("findAllPersons").addListener(listener).setTimeToLive(5, TimeUnit.MINUTES).invoke();
+			ro.newInvocation("findAllPersons").addListener(listener).invoke();
+			ro.newInvocation("findAllPersons").addListener(listener).invoke();
+			ro.newInvocation("findAllPersons").setTimeToLive(10, TimeUnit.MILLISECONDS).addListener(listener).invoke();
+	
+			sem.acquire(5);
+		}
+		finally {
+			// Stop channel factory (must be done!)
+			factory.stop();
+		}
 		
 		System.out.println("Done.");
 	}

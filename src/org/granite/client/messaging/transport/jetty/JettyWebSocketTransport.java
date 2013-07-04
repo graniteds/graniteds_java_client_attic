@@ -67,7 +67,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 	
 	@Override
 	public synchronized boolean start() {
-		if (webSocketClientFactory != null && webSocketClientFactory.isStarted())
+		if (isStarted())
 			return true;
 		
 		stop();
@@ -98,7 +98,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 		}
 	}
 	
-	public boolean isStarted() {
+	public synchronized boolean isStarted() {
 		return webSocketClientFactory != null && webSocketClientFactory.isStarted();
 	}
 	

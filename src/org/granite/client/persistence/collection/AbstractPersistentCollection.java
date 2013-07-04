@@ -95,6 +95,12 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		updateFromSnapshot(in, snapshot);
 	}
 	
+	@Override
+	public String toString() {
+		return getClass().getName() + " {initialized=" + wasInitialized() + ", dirty=" + isDirty() + "}" +
+			(collection != null ? ": " + collection.toString() : "");
+	}
+
 	static class IteratorProxy<E> implements Iterator<E> {
 		
 		private final AbstractPersistentCollection<?> persistentCollection;

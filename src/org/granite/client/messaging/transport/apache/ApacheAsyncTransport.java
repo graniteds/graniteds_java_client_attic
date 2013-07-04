@@ -72,7 +72,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 
 	@Override
 	public synchronized boolean start() {
-		if (httpClient != null && httpClient.getStatus() == IOReactorStatus.ACTIVE)
+		if (isStarted())
 			return true;
 		
 		stop();
@@ -106,6 +106,11 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 			log.error(e, "Apache HttpAsyncClient failed to start.");
 			return false;
 		}
+	}
+
+	@Override
+	public synchronized boolean isStarted() {
+		return httpClient != null && httpClient.getStatus() == IOReactorStatus.ACTIVE;
 	}
 
 	@Override

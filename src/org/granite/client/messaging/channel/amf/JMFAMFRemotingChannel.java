@@ -9,6 +9,7 @@ import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.channel.AsyncToken;
 import org.granite.client.messaging.codec.JMFAMF0MessagingCodec;
 import org.granite.client.messaging.codec.MessagingCodec;
+import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
@@ -23,21 +24,29 @@ import flex.messaging.messages.Message;
 
 public class JMFAMFRemotingChannel extends AMFRemotingChannel {
 
-	public JMFAMFRemotingChannel(Transport transport, String id, URI uri) {
+	private final ClientSharedContext sharedContext;
+	
+	public JMFAMFRemotingChannel(Transport transport, String id, URI uri, ClientSharedContext sharedContext) {
 		super(transport, id, uri);
+		
+		this.sharedContext = sharedContext;
 	}
 
-	public JMFAMFRemotingChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
+	public JMFAMFRemotingChannel(Transport transport, String id, URI uri, ClientSharedContext sharedContext, int maxConcurrentRequests) {
 		super(transport, id, uri, maxConcurrentRequests);
+		
+		this.sharedContext = sharedContext;
 	}
 
-	public JMFAMFRemotingChannel(Transport transport, Configuration configuration, String id, URI uri, int maxConcurrentRequests) {
+	public JMFAMFRemotingChannel(Transport transport, Configuration configuration, String id, URI uri, ClientSharedContext sharedContext, int maxConcurrentRequests) {
 		super(transport, configuration, id, uri, maxConcurrentRequests);
+		
+		this.sharedContext = sharedContext;
 	}
 
 	@Override
 	protected MessagingCodec<AMF0Message> newMessagingCodec(Configuration configuration) {
-		return new JMFAMF0MessagingCodec(configuration);
+		return new JMFAMF0MessagingCodec(configuration, sharedContext);
 	}
 	
 	@Override

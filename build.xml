@@ -39,14 +39,19 @@
 		<jar destfile="build/granite-java-client.jar">
 			<fileset dir="bin">
 				<include name="**"/>
-				<exclude name="**/examples/**"/>
+				<exclude name="org/granite/client/test/**"/>
 				<exclude name="**/javafx/**"/>
+				<exclude name="META-INF/messaging-scan.properties"/>
+				<exclude name="META-INF/services"/>
+				<exclude name="META-INF/services/**"/>
 			</fileset>
 		</jar>
 		<jar destfile="build/granite-javafx-client.jar">
 			<fileset dir="bin">
 				<include name="**/javafx/**"/>
-				<exclude name="**/examples/**"/>
+				<include name="META-INF/services/**"/>
+				<exclude name="org/granite/client/test/**"/>
+				<exclude name="META-INF/messaging-scan.properties"/>
 			</fileset>
 		</jar>
 	</target>
