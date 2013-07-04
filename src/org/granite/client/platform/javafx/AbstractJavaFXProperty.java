@@ -20,6 +20,7 @@
 
 package org.granite.client.platform.javafx;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -104,6 +105,11 @@ public abstract class AbstractJavaFXProperty implements Property {
 	@Override
 	public String getName() {
 		return property.getName();
+	}
+
+	@Override
+	public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+		return property.isAnnotationPresent(annotationClass);
 	}
 
 	@Override
