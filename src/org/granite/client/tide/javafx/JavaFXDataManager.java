@@ -55,6 +55,7 @@ import javax.validation.TraversableResolver;
 
 import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.persistence.Persistence;
+import org.granite.client.platform.javafx.JavaFXReflection;
 import org.granite.client.tide.collections.ManagedPersistentCollection;
 import org.granite.client.tide.collections.ManagedPersistentMap;
 import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentCollection;
@@ -75,6 +76,11 @@ public class JavaFXDataManager extends AbstractDataManager {
 	
 	private static final Logger log = Logger.getLogger(JavaFXDataManager.class);
     
+	
+	protected void initPersistence() {
+		persistence = new Persistence(new JavaFXReflection(null));
+	}
+	
     private TrackingHandler trackingHandler;
     
     public void setTrackingHandler(TrackingHandler trackingHandler) {
@@ -461,7 +467,7 @@ public class JavaFXDataManager extends AbstractDataManager {
                 trackingListeners.put(previous, TrackingType.MAP);
             }
         }
-        else if (parent != null || Persistence.isEntity(previous)) {
+        else if (parent != null || isEntity(previous)) {
             for (ObservableValue<?> property : instrospectProperties(previous)) {
             	if (property instanceof WritableValue<?>)
             		property.addListener(entityPropertyChangeListener);
@@ -487,7 +493,7 @@ public class JavaFXDataManager extends AbstractDataManager {
             else
                 ((ObservableMap<?, ?>)previous).removeListener(mapChangeListener);
         }
-        else if (parent != null || Persistence.isEntity(previous)) {
+        else if (parent != null || isEntity(previous)) {
             for (ObservableValue<?> property : instrospectProperties(previous)) {
             	if (property instanceof WritableValue<?>)
             		property.removeListener(entityPropertyChangeListener);
@@ -584,7 +590,7 @@ public class JavaFXDataManager extends AbstractDataManager {
     		Object value = getProperty(bean, propertyPath.getName());
     		if (value instanceof LazyableCollection)
     			return ((LazyableCollection)value).isInitialized();
-    		return Persistence.isInitialized(value);
+    		return isInitialized(value);
     	}
     	
     	public boolean isCascadable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {

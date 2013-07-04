@@ -24,8 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
-import org.granite.client.persistence.Persistence;
-import org.granite.client.tide.data.UIDUtil;
+import org.granite.client.tide.data.spi.DataManager;
 
 /**
  *  Implementation of HashSet that holds weak references to UID entities 
@@ -34,15 +33,17 @@ import org.granite.client.tide.data.UIDUtil;
  */
 public class UIDWeakSet {
     
-    private WeakHashMap<Object, Object>[] table;
+	private final DataManager dataManager;
+    private final WeakHashMap<Object, Object>[] table;
     
     
-    public UIDWeakSet() {
-        this(64);
+    public UIDWeakSet(DataManager dataManager) {
+        this(dataManager, 64);
     }
     
     @SuppressWarnings("unchecked")
-    public UIDWeakSet(int capacity) {
+    public UIDWeakSet(DataManager dataManager, int capacity) {
+    	this.dataManager = dataManager;
         table = new WeakHashMap[capacity];  
     }
     
@@ -52,7 +53,7 @@ public class UIDWeakSet {
     }
     
     public Object put(Object uidObject) {
-        int h = hash(UIDUtil.getCacheKey(uidObject));
+        int h = hash(dataManager.getCacheKey(uidObject));
         
         WeakHashMap<Object, Object> dic = table[h];
         if (dic == null) {
@@ -65,7 +66,7 @@ public class UIDWeakSet {
             if (o == uidObject)
                 return o;
             
-            if (Persistence.getUid(o) == Persistence.getUid(uidObject) && o.getClass().getName().equals(uidObject.getClass().getName())) {
+            if (dataManager.getUid(o) == dataManager.getUid(uidObject) && o.getClass().getName().equals(uidObject.getClass().getName())) {
                 old = o;
                 dic.remove(o);
                 break;
@@ -85,7 +86,7 @@ public class UIDWeakSet {
         WeakHashMap<Object, Object> dic = table[h];
         if (dic != null) {
             for (Object o : dic.keySet()) {
-                if (UIDUtil.getCacheKey(o).equals(cacheKey)) {
+                if (dataManager.getCacheKey(o).equals(cacheKey)) {
                     uidObject = o;
                     break;
                 }
@@ -136,7 +137,7 @@ public class UIDWeakSet {
         WeakHashMap<Object, Object> dic = table[h];
         if (dic != null) {
             for (Object o : dic.keySet()) {
-                if (UIDUtil.getCacheKey(o).equals(cacheKey)) {
+                if (dataManager.getCacheKey(o).equals(cacheKey)) {
                     uidObject = o;
                     dic.remove(o);
                     break;

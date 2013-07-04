@@ -36,6 +36,10 @@ public class PersistentMap<K, V> extends AbstractPersistentMapCollection<K, V, M
 	public PersistentMap() {
 	}
 
+	public PersistentMap(boolean initialized) {
+		this(initialized ? new HashMap<K, V>() : null, false);
+	}
+
 	public PersistentMap(Map<K, V> collection) {		
 		this(collection, true);
 	}

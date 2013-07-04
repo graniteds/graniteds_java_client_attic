@@ -34,20 +34,116 @@ import org.granite.client.persistence.Id;
 import org.granite.client.persistence.Lazy;
 import org.granite.client.persistence.Persistence;
 import org.granite.client.persistence.Version;
+import org.granite.client.platform.Platform;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.EntityDescriptor;
+import org.granite.logging.Logger;
 import org.granite.messaging.amf.RemoteClass;
 import org.granite.util.Introspector;
+import org.granite.util.UUIDUtil;
 
 /**
  * @author William DRAI
  */
 public abstract class AbstractDataManager implements DataManager {
+	
+	private static final Logger log = Logger.getLogger(AbstractDataManager.class);
 
     private static Map<Class<?>, EntityDescriptor> entityDescriptors = new HashMap<Class<?>, EntityDescriptor>(50);
     
+    
+    protected Persistence persistence = null;
+    
+    public AbstractDataManager() {
+    	initPersistence();
+    }
+    
+    protected void initPersistence() {
+    	persistence = Platform.persistence();
+    }
+    
+    public boolean isEntity(Object entity) {
+    	return entity != null && persistence.isEntity(entity.getClass());
+    }
+    
+    public Object getId(Object entity) {
+    	return persistence.getId(entity);
+    }
+    
+    public String getDetachedState(Object entity) {
+    	return persistence.getDetachedState(entity);
+    }
+    
+    public Object getVersion(Object entity) {
+    	return persistence.getVersion(entity);
+    }
+    
+    public String getUid(Object entity) {
+    	if (entity == null)
+    		return null;
+    	
+    	if (persistence.hasUidProperty(entity.getClass())) {
+	    	String uid = persistence.getUid(entity);
+	    	if (uid == null) {
+	    		uid = UUIDUtil.randomUUID();
+	    		persistence.setUid(entity, uid);
+	    	}
+	    	return uid;
+    	}
+    	Object id = persistence.getId(entity);
+    	if (id != null)
+    		return entity.getClass().getSimpleName() + ":" + id.toString();
+    	return entity.getClass().getSimpleName() + "::" + System.identityHashCode(entity);
+    }
+    
+    public String getCacheKey(Object entity) {
+    	if (entity == null)
+    		return null;
+    	
+    	return entity.getClass().getName() + ":" + getUid(entity);
+    }
+    
+    public boolean isInitialized(Object entity) {
+    	return persistence.isInitialized(entity);
+    }
+    
+    
+    public void copyUid(Object dest, Object obj) {
+        if (isEntity(obj) && persistence.hasUidProperty(obj.getClass()))
+        	persistence.setUid(dest, persistence.getUid(obj));
+    }
+    
+    public boolean defineProxy(Object dest, Object obj) {
+        if (!isEntity(dest))
+            return false;
+        
+        try {
+            if (obj != null) {
+                if (persistence.getDetachedState(obj) == null)
+                    return false;
+                persistence.setId(dest, persistence.getId(obj));
+                persistence.setDetachedState(dest, persistence.getDetachedState(obj));
+            }
+            persistence.setInitialized(dest, false);
+            return true;
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Could not proxy class " + obj.getClass());
+        }
+    }
+    
+    public void copyProxyState(Object dest, Object obj) {
+		try {
+			persistence.setInitialized(dest, persistence.isInitialized(obj));
+			persistence.setDetachedState(dest, persistence.getDetachedState(obj));
+		}
+	    catch (Exception e) {
+	        log.error(e, "Could not copy internal state of object " + ObjectUtil.toString(obj));
+	    }
+    }
+
     
     public EntityDescriptor getEntityDescriptor(Object entity) {
     	if (entity == null)

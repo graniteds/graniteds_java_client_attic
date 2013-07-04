@@ -30,8 +30,12 @@ public class PersistentBag<E> extends PersistentList<E> {
 	public PersistentBag() {
 	}
 
+	public PersistentBag(boolean initialized) {
+		super(initialized);
+	}
+
 	public PersistentBag(List<E> collection) {
-		this(collection, true);
+		super(collection);
 	}
 
 	public PersistentBag(List<E> collection, boolean clone) {

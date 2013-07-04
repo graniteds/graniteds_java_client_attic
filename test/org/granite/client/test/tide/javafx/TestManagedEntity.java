@@ -20,8 +20,6 @@
 
 package org.granite.client.test.tide.javafx;
 
-import static org.granite.client.persistence.Persistence.isInitialized;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,6 +41,7 @@ import org.granite.client.test.tide.javafx.PersonEmbedColl.ContactList;
 import org.granite.client.tide.collections.CollectionLoader;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.impl.EntityManagerImpl;
+import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.javafx.JavaFXDataManager;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,11 +51,12 @@ import org.junit.Test;
 @SuppressWarnings("unchecked")
 public class TestManagedEntity {
     
+	private DataManager dataManager = new JavaFXDataManager();
     private EntityManager entityManager;
     
     @Before
     public void setup() throws Exception {
-        entityManager = new EntityManagerImpl("", new JavaFXDataManager(), null, null);
+        entityManager = new EntityManagerImpl("", dataManager, null, null);
     }
     
     @Test
@@ -499,7 +499,7 @@ public class TestManagedEntity {
         
         entityManager.mergeExternalData(contact);
      
-        Assert.assertFalse("Person not initialized", isInitialized(contact.getPerson()));
+        Assert.assertFalse("Person not initialized", dataManager.isInitialized(contact.getPerson()));
         
         Person person2 = new Person(1L, 0L, "P1", "Jean", "Richard");
         Contact contact2 = new Contact(1L, 1L, "C1", null);
@@ -507,7 +507,7 @@ public class TestManagedEntity {
          
         entityManager.mergeExternalData(contact2);
         
-        Assert.assertTrue("Person initialized", isInitialized(contact.getPerson()));
+        Assert.assertTrue("Person initialized", dataManager.isInitialized(contact.getPerson()));
         
         Person person3 = new Person(1L, false, "__detachedState__");
         Contact contact3 = new Contact(1L, 2L, "C1", null);
@@ -515,7 +515,7 @@ public class TestManagedEntity {
          
         entityManager.mergeExternalData(contact3);
          
-        Assert.assertTrue("Person still initialized", isInitialized(contact.getPerson()));
+        Assert.assertTrue("Person still initialized", dataManager.isInitialized(contact.getPerson()));
     }
     
     @Test
@@ -529,7 +529,7 @@ public class TestManagedEntity {
         EntityManager tmp = entityManager.newTemporaryEntityManager();
         Contact c = (Contact)tmp.mergeFromEntityManager(entityManager, contact, null, true);
         
-        Assert.assertTrue("Person initialized", isInitialized(c.getPerson()));
+        Assert.assertTrue("Person initialized", dataManager.isInitialized(c.getPerson()));
     }
     
     @Test
@@ -540,7 +540,7 @@ public class TestManagedEntity {
          
          group = (Group)entityManager.mergeExternalData(group);
          
-         Assert.assertFalse("User not initialized", isInitialized(group.getUser()));
+         Assert.assertFalse("User not initialized", dataManager.isInitialized(group.getUser()));
          
          Assert.assertNull("User not init 2", group.getUser().getName());
          
@@ -551,7 +551,7 @@ public class TestManagedEntity {
          
          entityManager.mergeExternalData(group2);
          
-         Assert.assertTrue("User initialized", isInitialized(group.getUser()));
+         Assert.assertTrue("User initialized", dataManager.isInitialized(group.getUser()));
     }
 
     @Test

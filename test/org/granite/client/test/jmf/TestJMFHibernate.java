@@ -2,6 +2,7 @@ package org.granite.client.test.jmf;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -14,10 +15,18 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 
+import org.granite.client.messaging.jmf.ClientSharedContext;
+import org.granite.client.messaging.jmf.DefaultClientSharedContext;
+import org.granite.client.messaging.jmf.ext.ClientEntityCodec;
+import org.granite.client.persistence.Persistence;
+import org.granite.client.platform.Platform;
+import org.granite.client.platform.javafx.JavaFXPlatform;
 import org.granite.client.test.jmf.Util.ByteArrayJMFDeserializer;
 import org.granite.client.test.jmf.Util.ByteArrayJMFDumper;
 import org.granite.client.test.jmf.Util.ByteArrayJMFSerializer;
+import org.granite.hibernate.jmf.EntityCodec;
 import org.granite.hibernate.jmf.PersistentBagCodec;
 import org.granite.hibernate.jmf.PersistentListCodec;
 import org.granite.hibernate.jmf.PersistentMapCodec;
@@ -45,12 +54,13 @@ public class TestJMFHibernate {
 	
 	private SharedContext dumpSharedContext;
 	private SharedContext serverSharedContext;
-	private SharedContext clientSharedContext;
+	private ClientSharedContext clientSharedContext;
 	
 	@Before
 	public void before() {
 		
-		List<ExtendedObjectCodec> extendedObjectCodecs = Arrays.asList((ExtendedObjectCodec)
+		List<ExtendedObjectCodec> serverExtendedObjectCodecs = Arrays.asList((ExtendedObjectCodec)
+			new EntityCodec(),
 			new PersistentListCodec(),
 			new PersistentSetCodec(),
 			new PersistentBagCodec(),
@@ -58,10 +68,15 @@ public class TestJMFHibernate {
 			new PersistentSortedSetCodec(),
 			new PersistentSortedMapCodec()
 		);
+		List<ExtendedObjectCodec> clientExtendedObjectCodecs = Arrays.asList((ExtendedObjectCodec)
+			new ClientEntityCodec()
+		);
 		
 		dumpSharedContext = new DefaultSharedContext(new DefaultCodecRegistry());
-		serverSharedContext = new DefaultSharedContext(new DefaultCodecRegistry(extendedObjectCodecs));
-		clientSharedContext = new DefaultSharedContext(new DefaultCodecRegistry());
+		
+		serverSharedContext = new DefaultSharedContext(new DefaultCodecRegistry(serverExtendedObjectCodecs));
+		
+		clientSharedContext = new DefaultClientSharedContext(new DefaultCodecRegistry(clientExtendedObjectCodecs));
 	}
 	
 	@After
@@ -771,6 +786,85 @@ public class TestJMFHibernate {
 		Assert.assertFalse(((PersistentSortedMap)collection).isDirty());
 		Assert.assertFalse(((PersistentSortedMap)collection).isEmpty());
 		Assert.assertTrue(((PersistentSortedMap)collection).size() == 3);
+	}
+
+	@Test
+	public void testEntity() throws ClassNotFoundException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		clientSharedContext.registerAlias(ClientEntity.class);
+		clientSharedContext.registerAlias(ClientCollectionEntity.class);
+
+		final Integer id = Integer.valueOf(3);
+		final String uid = UUID.randomUUID().toString();
+		final Integer version = Integer.valueOf(2);
+		final String name = "John Doe";
+		
+		ServerEntity serverEntity = new ServerEntity(id, version);
+		serverEntity.setUid(uid);
+		serverEntity.setName(name);
+		serverEntity.getList().add(new ServerCollectionEntity(10, 11));
+		
+		Persistence persistence = Platform.persistence();
+		
+		Object clientEntity = serializeAndDeserializeServerToClient(serverEntity, true);
+		Assert.assertTrue(clientEntity instanceof ClientEntity);
+		Assert.assertTrue(persistence.isInitialized(clientEntity));
+		Assert.assertNull(persistence.getDetachedState(clientEntity));
+		Assert.assertEquals(id, ((ClientEntity)clientEntity).getId());
+		Assert.assertEquals(uid, persistence.getUid(clientEntity));
+		Assert.assertEquals(version, persistence.getVersion(clientEntity));
+		Assert.assertEquals(name, ((ClientEntity)clientEntity).getName());
+		Assert.assertTrue(persistence.isInitialized(((ClientEntity)clientEntity).getList()));
+		Assert.assertTrue(((ClientEntity)clientEntity).getList().size() == 1);
+		Assert.assertTrue(((ClientEntity)clientEntity).getList().get(0) instanceof ClientCollectionEntity);
+		
+		Object serverEntityCopy = serializeAndDeserializeClientToServer(clientEntity, true);
+		Assert.assertTrue(serverEntityCopy instanceof ServerEntity);
+		Assert.assertEquals(id, ((ServerEntity)serverEntityCopy).getId());
+		Assert.assertEquals(uid, ((ServerEntity)serverEntityCopy).getUid());
+		Assert.assertEquals(version, ((ServerEntity)serverEntityCopy).getVersion());
+		Assert.assertEquals(name, ((ServerEntity)serverEntityCopy).getName());
+		Assert.assertTrue(((ServerEntity)serverEntityCopy).getList().size() == 1);
+		Assert.assertTrue(((ServerEntity)serverEntityCopy).getList().get(0) instanceof ServerCollectionEntity);
+	}
+
+	@Test
+	public void testFXEntity() throws ClassNotFoundException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		clientSharedContext.registerAlias(ClientFXEntity.class);
+		clientSharedContext.registerAlias(ClientFXCollectionEntity.class);
+
+		final Integer id = Integer.valueOf(3);
+		final String uid = UUID.randomUUID().toString();
+		final Integer version = Integer.valueOf(2);
+		final String name = "John Doe";
+		
+		ServerEntity serverEntity = new ServerEntity(id, version);
+		serverEntity.setUid(uid);
+		serverEntity.setName(name);
+		serverEntity.getList().add(new ServerCollectionEntity(10, 11));
+		
+		Platform javafxPlatform = new JavaFXPlatform();
+		Persistence persistence = javafxPlatform.getPersistence();
+		
+		Object clientEntity = serializeAndDeserializeServerToClient(serverEntity, true);
+		Assert.assertTrue(clientEntity instanceof ClientFXEntity);
+		Assert.assertTrue(persistence.isInitialized(clientEntity));
+		Assert.assertNull(persistence.getDetachedState(clientEntity));
+		Assert.assertEquals(id, ((ClientFXEntity)clientEntity).getId());
+		Assert.assertEquals(uid, persistence.getUid(clientEntity));
+		Assert.assertEquals(version, persistence.getVersion(clientEntity));
+		Assert.assertEquals(name, ((ClientFXEntity)clientEntity).getName());
+		Assert.assertTrue(persistence.isInitialized(((ClientFXEntity)clientEntity).getList()));
+		Assert.assertTrue(((ClientFXEntity)clientEntity).getList().size() == 1);
+		Assert.assertTrue(((ClientFXEntity)clientEntity).getList().get(0) instanceof ClientFXCollectionEntity);
+		
+		Object serverEntityCopy = serializeAndDeserializeClientToServer(clientEntity, true);
+		Assert.assertTrue(serverEntityCopy instanceof ServerEntity);
+		Assert.assertEquals(id, ((ServerEntity)serverEntityCopy).getId());
+		Assert.assertEquals(uid, ((ServerEntity)serverEntityCopy).getUid());
+		Assert.assertEquals(version, ((ServerEntity)serverEntityCopy).getVersion());
+		Assert.assertEquals(name, ((ServerEntity)serverEntityCopy).getName());
+		Assert.assertTrue(((ServerEntity)serverEntityCopy).getList().size() == 1);
+		Assert.assertTrue(((ServerEntity)serverEntityCopy).getList().get(0) instanceof ServerCollectionEntity);
 	}
 	
 	private Object serializeAndDeserializeServerToServer(Object obj, boolean dump) throws ClassNotFoundException, IOException {

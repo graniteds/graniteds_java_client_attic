@@ -20,9 +20,6 @@
 
 package org.granite.client.tide.data.impl;
 
-import static org.granite.client.persistence.Persistence.isEntity;
-import static org.granite.client.persistence.Persistence.isInitialized;
-
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,7 +33,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.granite.client.persistence.LazyableCollection;
-import org.granite.client.persistence.Persistence;
 import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.SyncMode;
@@ -52,7 +48,6 @@ import org.granite.client.tide.data.EntityProxy;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.RemoteInitializer;
 import org.granite.client.tide.data.RemoteValidator;
-import org.granite.client.tide.data.UIDUtil;
 import org.granite.client.tide.data.impl.UIDWeakSet.Matcher;
 import org.granite.client.tide.data.impl.UIDWeakSet.Operation;
 import org.granite.client.tide.data.spi.DataManager;
@@ -84,7 +79,7 @@ public class EntityManagerImpl implements EntityManager {
     private DataManager dataManager = null;
     private TrackingContext trackingContext = null;
     private DirtyCheckContext dirtyCheckContext = null;
-    private UIDWeakSet entitiesByUid = new UIDWeakSet();
+    private UIDWeakSet entitiesByUid = null;
     private WeakIdentityHashMap<Object, List<Object>> entityReferences = new WeakIdentityHashMap<Object, List<Object>>();
     
     private DataMerger[] customMergers = null;
@@ -95,6 +90,7 @@ public class EntityManagerImpl implements EntityManager {
         this.active = true;
         this.dataManager = dataManager != null ? dataManager : new JavaBeanDataManager();
         this.dataManager.setTrackingHandler(new DefaultTrackingHandler());
+        this.entitiesByUid = new UIDWeakSet(this.dataManager);
         this.trackingContext = trackingContext != null ? trackingContext : new TrackingContext();
         this.dirtyCheckContext = new DirtyCheckContextImpl(this.dataManager, this.trackingContext);
         this.expressionEvaluator = expressionEvaluator;
@@ -335,7 +331,7 @@ public class EntityManagerImpl implements EntityManager {
         
         PersistenceManager.setEntityManager(entity, null);
         if (removeFromCache)
-            entitiesByUid.remove(UIDUtil.getCacheKey(entity));
+            entitiesByUid.remove(dataManager.getCacheKey(entity));
     }
     
     
@@ -347,6 +343,14 @@ public class EntityManagerImpl implements EntityManager {
         if (desc.getVersionPropertyName() != null && dataManager.getProperty(entity, desc.getVersionPropertyName()) != null)
             return true;
         return false;
+    }
+    
+    private boolean isInitialized(Object entity) {
+    	return dataManager.isInitialized(entity);
+    }
+    
+    private boolean isEntity(Object entity) {
+    	return dataManager.isEntity(entity);
     }
     
     
@@ -418,7 +422,7 @@ public class EntityManagerImpl implements EntityManager {
     public Object getCachedObject(Object object, boolean nullIfAbsent) {
         Object entity = null;
         if (isEntity(object)) {
-            entity = entitiesByUid.get(UIDUtil.getCacheKey(object));
+            entity = entitiesByUid.get(dataManager.getCacheKey(object));
         }
         else if (object instanceof EntityRef) {
             entity = entitiesByUid.get(((EntityRef)object).getClassName() + ":" + ((EntityRef)object).getUid());
@@ -574,7 +578,7 @@ public class EntityManagerImpl implements EntityManager {
         }
         boolean found = false;
         if (isEntity(parent)) {
-            String ref = UIDUtil.getCacheKey(parent);
+            String ref = dataManager.getCacheKey(parent);
             if (refs == null)
                 refs = initRefs(obj);
             else {
@@ -623,7 +627,7 @@ public class EntityManagerImpl implements EntityManager {
         int idx = -1;
         if (isEntity(parent)) {
             for (int i = 0; i < refs.size(); i++) {
-                if (refs.get(i) instanceof Object[] && ((Object[])refs.get(i))[0].equals(UIDUtil.getCacheKey(parent))) {
+                if (refs.get(i) instanceof Object[] && ((Object[])refs.get(i))[0].equals(dataManager.getCacheKey(parent))) {
                     idx = i;
                     break;                    
                 }
@@ -851,7 +855,7 @@ public class EntityManagerImpl implements EntityManager {
                 p = entitiesByUid.find(new Matcher() {
                     public boolean match(Object o) {
                         return o.getClass().getName().equals(obj.getClass().getName()) && 
-                        	ObjectUtil.objectEquals(dataManager, Persistence.getId(obj), Persistence.getId(o));
+                        	ObjectUtil.objectEquals(dataManager, dataManager.getId(obj), dataManager.getId(o));
                     }
                 });
 
@@ -861,11 +865,11 @@ public class EntityManagerImpl implements EntityManager {
                 }
             }
         }
-        else if (isEntity(obj)) {
+        else if (dataManager.isEntity(obj)) {
         	if (obj instanceof EntityProxy)
-                p = entitiesByUid.get(((EntityProxy)obj).getClassName() + ":" + UIDUtil.getUid(((EntityProxy)obj).getWrappedObject()));
+                p = entitiesByUid.get(((EntityProxy)obj).getClassName() + ":" + dataManager.getUid(((EntityProxy)obj).getWrappedObject()));
         	else
-        		p = entitiesByUid.get(UIDUtil.getCacheKey(obj));
+        		p = entitiesByUid.get(dataManager.getCacheKey(obj));
             if (p != null) {
                 // Trying to merge an entity that is already cached with itself: stop now, this is not necessary to go deeper in the object graph
                 // it should be already instrumented and tracked
@@ -886,8 +890,7 @@ public class EntityManagerImpl implements EntityManager {
             // An instance can exist in only one entity manager at a time 
             try {
                 dest = TypeUtil.newInstance(obj.getClass(), Object.class);
-                if (isEntity(obj) && Persistence.hasUid(obj))
-                    Persistence.setUid(dest, Persistence.getUid(obj));
+                dataManager.copyUid(dest, obj);
             }
             catch (Exception e) {
                 throw new RuntimeException("Could not create class " + obj.getClass(), e);
@@ -924,7 +927,7 @@ public class EntityManagerImpl implements EntityManager {
             if (mergeContext.isUninitializing() && isEntity(parent) && propertyName != null) {
                 if (desc.getVersionPropertyName() != null && dataManager.getProperty(obj, desc.getVersionPropertyName()) != null 
                         && dataManager.getEntityDescriptor(parent).isLazy(propertyName)) {
-                    if (defineProxy(desc, dest, obj))   // Only if entity can be proxied (has a detachedState)
+                    if (dataManager.defineProxy(dest, obj))   // Only if entity can be proxied (has a detachedState)
                         return dest;
                 }
             }
@@ -1011,26 +1014,6 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     
-    private boolean defineProxy(EntityDescriptor desc, Object dest, Object obj) {
-        if (Persistence.getDetachedStateField(dest.getClass()) == null)
-            return false;
-
-        try {
-            if (obj != null) {
-                if (Persistence.getDetachedState(obj) == null)
-                    return false;
-                Persistence.setId(dest, Persistence.getId(obj));
-                Persistence.setDetachedState(dest, Persistence.getDetachedState(obj));
-            }
-            Persistence.setInitialized(dest, false);
-            return true;
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Could not proxy class " + obj.getClass());
-        }
-    }
-    
-
     /**
      *  @private 
      *  Merge a collection coming from the server in the context
@@ -1867,15 +1850,8 @@ public class EntityManagerImpl implements EntityManager {
      */ 
     public void defaultMerge(MergeContext mergeContext, Object obj, Object dest, Expression expr, Object parent, String propertyName) {
         // Merge internal state
-    	if (isEntity(obj)) {
-    		try {
-	    		Persistence.setInitialized(dest, Persistence.isInitialized(obj));
-	    		Persistence.setDetachedState(dest, Persistence.getDetachedState(obj));
-    		}
-            catch (Exception e) {
-                log.error(e, "Could not merge internal state of object " + ObjectUtil.toString(obj));
-            }
-    	}
+    	if (isEntity(obj))
+    		dataManager.copyProxyState(dest, obj);
         
         Map<String, Object> pval = dataManager.getPropertyValues(obj, false, false);
         List<String> rw = new ArrayList<String>();

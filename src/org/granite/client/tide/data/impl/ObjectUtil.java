@@ -20,11 +20,6 @@
 
 package org.granite.client.tide.data.impl;
 
-import static org.granite.client.persistence.Persistence.getId;
-import static org.granite.client.persistence.Persistence.getUid;
-import static org.granite.client.persistence.Persistence.isEntity;
-import static org.granite.client.persistence.Persistence.isInitialized;
-
 import java.util.Date;
 
 import org.granite.client.tide.PropertyHolder;
@@ -52,21 +47,21 @@ public class ObjectUtil {
      *  @return true when objects are instances of the same entity
      */ 
     public static boolean objectEquals(DataManager dataManager, Object obj1, Object obj2) {
-        if ((obj1 instanceof PropertyHolder && isEntity(obj2)) || (isEntity(obj1) && obj2 instanceof PropertyHolder))
+        if ((obj1 instanceof PropertyHolder && dataManager.isEntity(obj2)) || (dataManager.isEntity(obj1) && obj2 instanceof PropertyHolder))
             return false;
         
-        if (isEntity(obj1) && isEntity(obj2) && obj1.getClass() == obj2.getClass()) {
-            if (!isInitialized(obj1) || !isInitialized(obj2)) {
+        if (dataManager.isEntity(obj1) && dataManager.isEntity(obj2) && obj1.getClass() == obj2.getClass()) {
+            if (!dataManager.isInitialized(obj1) || !dataManager.isInitialized(obj2)) {
                 // Compare with identifier for uninitialized entities
             	try {
-                    return objectEquals(dataManager, getId(obj1), getId(obj2));
+                    return objectEquals(dataManager, dataManager.getId(obj1), dataManager.getId(obj2));
             	}
             	catch (Exception e) {
             		// No @Id;
             		return obj1.equals(obj2);
             	}
             }
-            return getUid(obj1).equals(getUid(obj2));
+            return dataManager.getUid(obj1).equals(dataManager.getUid(obj2));
         }
         
         if (obj1 == null)

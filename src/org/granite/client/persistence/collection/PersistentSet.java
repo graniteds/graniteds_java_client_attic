@@ -36,6 +36,10 @@ public class PersistentSet<E> extends AbstractPersistentSimpleCollection<E, Set<
 	public PersistentSet() {
 	}
 
+	public PersistentSet(boolean initialized) {
+		this(initialized ? new HashSet<E>() : null, false);
+	}
+
 	public PersistentSet(Set<E> collection) {		
 		this(collection, true);
 	}

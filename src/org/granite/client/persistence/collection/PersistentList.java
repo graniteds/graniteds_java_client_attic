@@ -36,6 +36,10 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 	public PersistentList() {
 	}
 
+	public PersistentList(boolean initialized) {
+		this(initialized ? new ArrayList<E>() : null, false);
+	}
+
 	public PersistentList(List<E> collection) {
 		this(collection, true);
 	}

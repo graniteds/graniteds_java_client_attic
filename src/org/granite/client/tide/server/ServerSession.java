@@ -59,15 +59,12 @@ import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IncomingMessageEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
-import org.granite.client.messaging.jmf.ClientSharedContextFactory;
 import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler;
-import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
-import org.granite.client.messaging.transport.jetty.JettyWebSocketTransport;
 import org.granite.client.tide.BeanManager;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
@@ -121,7 +118,7 @@ public class ServerSession implements ContextAware {
 	@SuppressWarnings("unused")
 	private boolean confChanged = false;
 	private ContentType contentType = ContentType.AMF;
-	private boolean useWebSocket = true;
+	private boolean useWebSocket = true; // TODO remove...
     private Transport remotingTransport = null;
     private Transport messagingTransport = null;
     private String protocol = "http";
@@ -146,6 +143,7 @@ public class ServerSession implements ContextAware {
 		
 	private String destination = "server";
 	private Configuration configuration = null;
+	private ChannelFactory channelFactory;
     private RemotingChannel remotingChannel;
 	private MessagingChannel messagingChannel;
 	protected Map<String, RemoteService> remoteServices = new HashMap<String, RemoteService>();
@@ -279,59 +277,51 @@ public class ServerSession implements ContextAware {
 	
 	@PostConstruct
 	public void start() throws Exception {
-		if (remotingTransport == null)
-			remotingTransport = new ApacheAsyncTransport();
+		channelFactory = ChannelFactory.newInstance();
 		
-		if (messagingTransport == null)
-			messagingTransport = useWebSocket ? new JettyWebSocketTransport() : remotingTransport;
+		if (remotingTransport != null)
+			channelFactory.setRemotingTransport(remotingTransport);
+
+		if (messagingTransport != null)
+			channelFactory.setMessagingTransport(messagingTransport);
 		
-		remotingTransport.setStatusHandler(statusHandler);
-		remotingTransport.start();
-		if (messagingTransport != remotingTransport) {
-			messagingTransport.setStatusHandler(statusHandler);
-			messagingTransport.start();
-		}
+		channelFactory.start();
+		
+		channelFactory.getRemotingTransport().setStatusHandler(statusHandler);
+		channelFactory.getMessagingTransport().setStatusHandler(statusHandler);
 		
 		configuration.addConfigurator(remoteClassConfigurator);
 		configuration.load();
 		
-		if (contentType == ContentType.JMF_AMF)
-			ClientSharedContextFactory.initialize();
-		
-		ChannelFactory factory = new ChannelFactory(contentType);
-		
 		graniteURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.graniteUrlMapping);
-		remotingChannel = factory.newRemotingChannel(remotingTransport, configuration, "graniteamf", graniteURI, 1);
+		remotingChannel = channelFactory.newRemotingChannel(configuration, "graniteamf", graniteURI, 1);
 		
 		if (useWebSocket)
 			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
 		else
 			gravityURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
-		messagingChannel = factory.newMessagingChannel(messagingTransport, configuration, "gravityamf", gravityURI);
+		messagingChannel = channelFactory.newMessagingChannel(configuration, "gravityamf", gravityURI);
 		
 		sessionExpirationTimer = Executors.newSingleThreadScheduledExecutor();
 	}
 	
 	@PreDestroy
 	public void stop()throws Exception {
-		if (sessionExpirationFuture != null) {
-			sessionExpirationFuture.cancel(false);
-			sessionExpirationFuture = null;
+		try {
+			if (sessionExpirationFuture != null) {
+				sessionExpirationFuture.cancel(false);
+				sessionExpirationFuture = null;
+			}
+			sessionExpirationTimer.shutdownNow();
+			sessionExpirationTimer = null;
 		}
-		sessionExpirationTimer.shutdownNow();
-		sessionExpirationTimer = null;
-		
-		if (remotingTransport != null) {
-			remotingTransport.stop();	
-			remotingTransport = null;
+		finally {
+			channelFactory.stop();
+			channelFactory = null;
+
+			remotingChannel = null;
+			messagingChannel = null;
 		}
-		remotingChannel = null;
-		
-		if (messagingTransport != null && messagingTransport != remotingTransport) {
-			messagingTransport.stop();		
-			messagingTransport = null;
-		}
-		messagingChannel = null;
 	}
 	
 	

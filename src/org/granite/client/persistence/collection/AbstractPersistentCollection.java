@@ -67,7 +67,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 	public void setLoader(Loader<PersistentCollection> loader) {
 		this.loader = loader;
 	}
-
+	
 	protected boolean checkInitializedRead() {
 		if (wasInitialized())
 			return true;
@@ -133,6 +133,12 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		updateFromSnapshot(in, snapshot);
 	}
 	
+	@Override
+	public String toString() {
+		return getClass().getName() + " {initialized=" + wasInitialized() + ", dirty=" + isDirty() + "}" +
+			(collection != null ? ": " + collection.toString() : "");
+	}
+
 	class IteratorProxy<E> implements Iterator<E> {
 		
 		private final Iterator<E> iterator;
@@ -150,13 +156,13 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 				return null;
 			return iterator.next();
 		}
-
+		
 		public void remove() {
 			checkInitializedWrite();
 			iterator.remove();
 			dirty();
 		}
-
+		
 		@Override
 		public int hashCode() {
 			return iterator.hashCode();

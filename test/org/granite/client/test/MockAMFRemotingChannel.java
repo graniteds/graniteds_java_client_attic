@@ -41,6 +41,11 @@ public class MockAMFRemotingChannel extends AMFRemotingChannel {
 		}
 
 		@Override
+		public boolean isStarted() {
+			return false;
+		}
+
+		@Override
 		public void stop() {
 		}
 

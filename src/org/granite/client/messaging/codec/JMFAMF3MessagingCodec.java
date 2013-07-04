@@ -27,7 +27,7 @@ import java.io.OutputStream;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.channel.Channel;
-import org.granite.client.messaging.jmf.ClientSharedContextFactory;
+import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.messaging.jmf.JMFDeserializer;
 import org.granite.messaging.jmf.JMFSerializer;
 import org.granite.util.ContentType;
@@ -39,7 +39,10 @@ import flex.messaging.messages.Message;
  */
 public class JMFAMF3MessagingCodec implements MessagingCodec<Message[]> {
 	
-	public JMFAMF3MessagingCodec(Configuration config) {
+	private final ClientSharedContext sharedContext;
+	
+	public JMFAMF3MessagingCodec(Configuration config, ClientSharedContext sharedContext) {
+		this.sharedContext = sharedContext;
 	}
 
 	@Override
@@ -49,13 +52,13 @@ public class JMFAMF3MessagingCodec implements MessagingCodec<Message[]> {
 
 	@Override
 	public void encode(Message[] messages, OutputStream output) throws IOException {
-		JMFSerializer serializer = new JMFSerializer(output, ClientSharedContextFactory.getInstance());
+		JMFSerializer serializer = new JMFSerializer(output, sharedContext);
 		serializer.writeObject(messages);
 	}
 
 	@Override
 	public Message[] decode(InputStream input) throws IOException {
-		JMFDeserializer deserializer = new JMFDeserializer(input, ClientSharedContextFactory.getInstance());
+		JMFDeserializer deserializer = new JMFDeserializer(input, sharedContext);
 		
 		Message[] messages = null;
 		try {
@@ -64,7 +67,7 @@ public class JMFAMF3MessagingCodec implements MessagingCodec<Message[]> {
 				for (Message message : messages) {
 					if (message != null && Boolean.TRUE.equals(message.getHeader(Channel.BYTEARRAY_BODY_HEADER))) {
 						byte[] body = (byte[])message.getBody();
-						deserializer = new JMFDeserializer(new ByteArrayInputStream(body), ClientSharedContextFactory.getInstance());
+						deserializer = new JMFDeserializer(new ByteArrayInputStream(body), sharedContext);
 						message.setBody(deserializer.readObject());
 					}
 				}

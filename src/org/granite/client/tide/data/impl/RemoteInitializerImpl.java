@@ -80,11 +80,14 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 		
 		log.debug("initialize {0}", ObjectUtil.toString(object));
 		
-		if (!(object instanceof ManagedPersistentAssociation && Persistence.isEntity(((ManagedPersistentAssociation)object).getOwner())))
-			return false;
+//		if (!(object instanceof ManagedPersistentAssociation && dataManager.isEntity(((ManagedPersistentAssociation)object).getOwner())))
+//			return false;
 		
 		Object entity = ((ManagedPersistentAssociation)object).getOwner();
 		EntityManager entityManager = PersistenceManager.getEntityManager(entity);
+		if (entityManager == null)
+			return false;
+		
 		Expression path = null;
 		
 		if (context.getContextId() != null && context.isContextIdFromServer())

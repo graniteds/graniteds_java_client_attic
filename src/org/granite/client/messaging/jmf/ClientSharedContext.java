@@ -28,4 +28,5 @@ import org.granite.messaging.jmf.SharedContext;
 public interface ClientSharedContext extends SharedContext {
 
 	void registerAlias(String clientClassName, String serverClassName);
+	void registerAlias(Class<?> remoteAliasAnnotatedClass);
 }

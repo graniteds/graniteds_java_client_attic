@@ -20,8 +20,6 @@
 
 package org.granite.client.tide.data.impl;
 
-import static org.granite.client.persistence.Persistence.isEntity;
-
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,9 +34,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.granite.client.persistence.LazyableCollection;
-import org.granite.client.persistence.Persistence;
 import org.granite.client.tide.PropertyHolder;
-import org.granite.client.tide.data.UIDUtil;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.DataManager.ChangeKind;
 import org.granite.client.tide.data.spi.DirtyCheckContext;
@@ -72,6 +68,10 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     @Override
     public void setTrackingContext(TrackingContext trackingContext) {
         this.trackingContext = trackingContext;
+    }
+    
+    private boolean isEntity(Object obj) {
+    	return dataManager.isEntity(obj);
     }
     
     public boolean isDirty() {
@@ -317,7 +317,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         Object n = val1 instanceof Wrapper ? ((Wrapper)val1).getWrappedObject() : val1;
         Object o = val2 instanceof Wrapper ? ((Wrapper)val2).getWrappedObject() : val2;
         if (isEntity(n) && isEntity(o))
-            return UIDUtil.getUid(n) != null && UIDUtil.getUid(n).equals(UIDUtil.getUid(o));
+            return dataManager.getUid(n) != null && dataManager.getUid(n).equals(dataManager.getUid(o));
         return n == o;
     }
 
@@ -461,7 +461,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         Object n = val1 instanceof Wrapper ? ((Wrapper)val1).getWrappedObject() : val1;
         Object o = val2 instanceof Wrapper ? ((Wrapper)val2).getWrappedObject() : val2;
         if (isEntity(n) && isEntity(o))
-            return UIDUtil.getUid(n).equals(UIDUtil.getUid(o));
+            return dataManager.getUid(n).equals(dataManager.getUid(o));
         
         return n == o;
     }
@@ -966,7 +966,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     @SuppressWarnings("unchecked")
 	public void resetEntity(MergeContext mergeContext, Object entity, Object parent, Set<Object> cache) {
         // Should not try to reset uninitialized entities
-        if (!Persistence.isInitialized(entity))
+        if (!dataManager.isInitialized(entity))
             return;
         
         if (cache.contains(entity))

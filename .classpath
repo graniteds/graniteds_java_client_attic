@@ -25,10 +25,10 @@
 	<classpathentry kind="lib" path="libs/javax.inject.jar"/>
 	<classpathentry kind="lib" path="examples-libs/ejb3-persistence.jar"/>
 	<classpathentry kind="lib" path="examples-libs/hibernate3.jar"/>
-	<classpathentry kind="lib" path="examples-libs/granite-hibernate.jar"/>
 	<classpathentry kind="lib" path="libs/slf4j-api.jar"/>
 	<classpathentry kind="lib" path="libs/slf4j-jdk14.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="/graniteds/build/granite-client.jar" sourcepath="/graniteds"/>
+	<classpathentry kind="lib" path="/graniteds/build/granite-client.jar" sourcepath="/graniteds/core"/>
+	<classpathentry kind="lib" path="/graniteds/build/granite-hibernate.jar" sourcepath="/graniteds/hibernate"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

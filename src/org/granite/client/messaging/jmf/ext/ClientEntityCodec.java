@@ -27,10 +27,10 @@ import java.util.List;
 
 import org.granite.client.persistence.Entity;
 import org.granite.client.persistence.Persistence;
+import org.granite.client.platform.Platform;
 import org.granite.messaging.jmf.ExtendedObjectInput;
 import org.granite.messaging.jmf.ExtendedObjectOutput;
 import org.granite.messaging.jmf.codec.ExtendedObjectCodec;
-import org.granite.messaging.jmf.reflect.FieldProperty;
 import org.granite.messaging.jmf.reflect.Property;
 
 /**
@@ -47,20 +47,23 @@ public class ClientEntityCodec implements ExtendedObjectCodec {
 	}
 
 	public void encode(ExtendedObjectOutput out, Object v) throws IOException, IllegalAccessException, InvocationTargetException {
-		boolean initialized = Persistence.isInitialized(v);
+		
+		Persistence persistence = Platform.persistence();
+		
+		boolean initialized = persistence.isInitialized(v);
 		
 		out.writeBoolean(initialized);
-		out.writeUTF(Persistence.getDetachedState(v));
+		out.writeUTF(persistence.getDetachedState(v));
 		
 		if (!initialized)
-			out.writeObject(Persistence.getId(v));
+			out.writeObject(persistence.getId(v));
 		else {
-			List<Property> fields = new ArrayList<Property>(out.getReflection().findSerializableFields(v.getClass()));
-			fields.remove(new FieldProperty(Persistence.getInitializedField(v.getClass())));
-			fields.remove(new FieldProperty(Persistence.getDetachedStateField(v.getClass())));
+			List<Property> properties = new ArrayList<Property>(out.getReflection().findSerializableProperties(v.getClass()));
+			properties.remove(persistence.getInitializedProperty(v.getClass()));
+			properties.remove(persistence.getDetachedStateProperty(v.getClass()));
 
-			for (Property field : fields)
-				out.getAndWriteField(v, field);
+			for (Property property : properties)
+				out.getAndWriteProperty(v, property);
 		}
 	}
 
@@ -82,23 +85,25 @@ public class ClientEntityCodec implements ExtendedObjectCodec {
 		return in.getReflection().newInstance(cls);
 	}
 
-	public void decode(ExtendedObjectInput in, Object v) throws IOException, ClassNotFoundException, IllegalAccessException {
+	public void decode(ExtendedObjectInput in, Object v) throws IOException, ClassNotFoundException, IllegalAccessException, InvocationTargetException {
+		
+		Persistence persistence = Platform.persistence();
 		
 		boolean initialized = in.readBoolean();
 		String detachedState = in.readUTF();
 		
-		Persistence.setInitialized(v, initialized);
-		Persistence.setDetachedState(v, detachedState);
+		persistence.setInitialized(v, initialized);
+		persistence.setDetachedState(v, detachedState);
 		
 		if (!initialized)
-			Persistence.setId(v, in.readObject());
+			persistence.setId(v, in.readObject());
 		else {
-			List<Property> fields = new ArrayList<Property>(in.getReflection().findSerializableFields(v.getClass()));
-			fields.remove(new FieldProperty(Persistence.getInitializedField(v.getClass())));
-			fields.remove(new FieldProperty(Persistence.getDetachedStateField(v.getClass())));
+			List<Property> properties = new ArrayList<Property>(in.getReflection().findSerializableProperties(v.getClass()));
+			properties.remove(persistence.getInitializedProperty(v.getClass()));
+			properties.remove(persistence.getDetachedStateProperty(v.getClass()));
 
-			for (Property field : fields)
-				in.readAndSetField(v, field);
+			for (Property property : properties)
+				in.readAndSetProperty(v, property);
 		}
 	}
 }

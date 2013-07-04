@@ -37,6 +37,10 @@ public class PersistentSortedSet<E> extends AbstractPersistentSimpleCollection<E
 	public PersistentSortedSet() {
 	}
 
+	public PersistentSortedSet(boolean initialized) {
+		this(initialized ? new TreeSet<E>() : null, false);
+	}
+
 	public PersistentSortedSet(SortedSet<E> collection) {		
 		this(collection, true);
 	}

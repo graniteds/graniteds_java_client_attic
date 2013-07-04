@@ -27,7 +27,6 @@ import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.channel.ChannelFactory;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
-import org.granite.client.messaging.jmf.ClientSharedContextFactory;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
@@ -35,7 +34,6 @@ import org.granite.client.messaging.transport.TransportStatusHandler.LogEngineSt
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.test.model.Person;
 import org.granite.client.test.model.Person.Salutation;
-import org.granite.util.ContentType;
 
 /**
  * @author Franck WOLFF
@@ -64,14 +62,9 @@ public class CallGranitedsEjb3Sync {
 			}
 		});
 		transport.start();
-		
-		// Initialize the client shared context by scanning classpath for classes
-		// annotated with @RemoteAlias (see test/META-INF/messaging-scan.properties).
-		ClientSharedContextFactory.initialize();
-		
-		// Create a channel with the specified uri.
-		ChannelFactory factory = new ChannelFactory(ContentType.JMF_AMF);
-		RemotingChannel channel = factory.newRemotingChannel(transport, "my-graniteamf", uri, 2);
+
+		ChannelFactory factory = ChannelFactory.newInstance();
+		RemotingChannel channel = factory.newRemotingChannel("my-graniteamf", uri, 2);
 
 		// Login (credentials will be sent with the first call).
 		channel.setCredentials(new UsernamePasswordCredentials("admin", "admin"));

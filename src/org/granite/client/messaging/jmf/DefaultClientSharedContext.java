@@ -24,8 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.granite.client.messaging.RemoteAlias;
+import org.granite.client.platform.javafx.JavaFXReflection;
 import org.granite.messaging.jmf.CodecRegistry;
 import org.granite.messaging.jmf.DefaultSharedContext;
+import org.granite.messaging.jmf.reflect.Reflection;
 
 /**
  * @author Franck WOLFF
@@ -52,9 +55,25 @@ public class DefaultClientSharedContext extends DefaultSharedContext implements 
 		this.classNameAliases = new HashMap<String, String>();
 	}
 	
+	@Override
+	protected Reflection newReflection(ClassLoader classLoader) {
+		return new JavaFXReflection(classLoader);
+	}
+
 	public void registerAlias(String clientClassName, String serverClassName) {
+		if (clientClassName.length() == 0 || serverClassName.length() == 0)
+			throw new IllegalArgumentException("Empty class name: " + clientClassName + " / " + serverClassName);
+		
 		classNameAliases.put(clientClassName, serverClassName);
 		classNameAliases.put(serverClassName, clientClassName);
+	}
+
+	@Override
+	public void registerAlias(Class<?> remoteAliasAnnotatedClass) {
+		RemoteAlias remoteAlias = remoteAliasAnnotatedClass.getAnnotation(RemoteAlias.class);
+		if (remoteAlias == null)
+			throw new IllegalArgumentException(remoteAliasAnnotatedClass.getName() + " isn't annotated with " + RemoteAlias.class.getName());
+		registerAlias(remoteAliasAnnotatedClass.getName(), remoteAlias.value());
 	}
 
 	@Override

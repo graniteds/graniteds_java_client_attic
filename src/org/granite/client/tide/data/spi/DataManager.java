@@ -36,8 +36,28 @@ import org.granite.client.tide.collections.ManagedPersistentMap;
  */
 public interface DataManager {
     
-    public void setTrackingHandler(TrackingHandler trackingHandler);
-
+    public boolean isEntity(Object entity);
+    
+    public Object getId(Object entity);
+    
+    public String getDetachedState(Object entity);
+    
+    public boolean defineProxy(Object target, Object source);
+    
+    public void copyProxyState(Object target, Object source);
+    
+    public void copyUid(Object target, Object source);
+    
+    public Object getVersion(Object entity);
+    
+    // public void setVersion(Object entity, Object version);
+    
+    public String getUid(Object entity);
+    
+    public String getCacheKey(Object entity);
+    
+    public boolean isInitialized(Object entity);
+    
     public boolean isDirty();
     
     public boolean isDirtyEntity(Object entity);
@@ -59,6 +79,8 @@ public interface DataManager {
     public ManagedPersistentCollection<Object> newPersistentCollection(Object parent, String propertyName, LazyableCollection nextList);
     
     public ManagedPersistentMap<Object, Object> newPersistentMap(Object parent, String propertyName, LazyableCollection nextMap);
+    
+    public void setTrackingHandler(TrackingHandler trackingHandler);
 
     
     public static enum TrackingType {        

@@ -37,6 +37,10 @@ public class PersistentSortedMap<K, V> extends AbstractPersistentMapCollection<K
 	public PersistentSortedMap() {
 	}
 
+	public PersistentSortedMap(boolean initialized) {
+		this(initialized ? new TreeMap<K, V>() : null, false);
+	}
+
 	public PersistentSortedMap(SortedMap<K, V> collection) {		
 		this(collection, true);
 	}
