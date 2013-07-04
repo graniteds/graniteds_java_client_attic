@@ -67,7 +67,7 @@ public class ClientSharedContextFactory {
 	}
 	
 	public static synchronized void initialize(List<ExtendedObjectCodec> extendedCodecs, Map<String, String> clientToServerAliases) {
-		context = new DefaultClientSharedContext(new DefaultCodecRegistry(extendedCodecs), null, JMFAMFUtil.AMF_DEFAULT_STORED_STRINGS);
+		context = new DefaultClientSharedContext(new DefaultCodecRegistry(extendedCodecs), JMFAMFUtil.AMF_DEFAULT_STORED_STRINGS, null);
 		
 		if (clientToServerAliases != null) {
 			for (Map.Entry<String, String> clientToServerAlias : clientToServerAliases.entrySet())
@@ -77,7 +77,7 @@ public class ClientSharedContextFactory {
 	
 	public static synchronized ClientSharedContext getInstance() {
 		if (context == null)
-			context = new DefaultClientSharedContext(new DefaultCodecRegistry(), null, JMFAMFUtil.AMF_DEFAULT_STORED_STRINGS);
+			context = new DefaultClientSharedContext(new DefaultCodecRegistry(), JMFAMFUtil.AMF_DEFAULT_STORED_STRINGS, null);
 		return context;
 	}
 	

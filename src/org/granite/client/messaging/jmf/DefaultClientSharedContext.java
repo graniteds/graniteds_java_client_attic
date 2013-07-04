@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.granite.client.messaging.RemoteAlias;
-import org.granite.client.platform.javafx.JavaFXReflection;
+import org.granite.client.platform.Platform;
 import org.granite.messaging.jmf.CodecRegistry;
 import org.granite.messaging.jmf.DefaultSharedContext;
 import org.granite.messaging.jmf.reflect.Reflection;
@@ -45,19 +45,14 @@ public class DefaultClientSharedContext extends DefaultSharedContext implements 
 		this(codecRegistry, null, null);
 	}
 
-	public DefaultClientSharedContext(CodecRegistry codecRegistry, ClassLoader classLoader) {
-		this(codecRegistry, classLoader, null);
+	public DefaultClientSharedContext(CodecRegistry codecRegistry, List<String> defaultStoredStrings) {
+		this(codecRegistry, defaultStoredStrings, null);
 	}
 
-	public DefaultClientSharedContext(CodecRegistry codecRegistry, ClassLoader classLoader, List<String> defaultStoredStrings) {
-		super(codecRegistry, classLoader, defaultStoredStrings);
+	public DefaultClientSharedContext(CodecRegistry codecRegistry, List<String> defaultStoredStrings, Reflection reflection) {
+		super(codecRegistry, defaultStoredStrings, (reflection != null ? reflection : Platform.reflection()));
 		
 		this.classNameAliases = new HashMap<String, String>();
-	}
-	
-	@Override
-	protected Reflection newReflection(ClassLoader classLoader) {
-		return new JavaFXReflection(classLoader);
 	}
 
 	public void registerAlias(String clientClassName, String serverClassName) {
