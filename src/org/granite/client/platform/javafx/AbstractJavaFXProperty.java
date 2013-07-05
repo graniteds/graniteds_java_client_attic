@@ -61,7 +61,7 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 /**
  * @author Franck WOLFF
  */
-public abstract class AbstractJavaFXProperty implements Property {
+public abstract class AbstractJavaFXProperty implements JavaFXProperty {
 	
 	private static final Field observableListWrapperField;
 	static {

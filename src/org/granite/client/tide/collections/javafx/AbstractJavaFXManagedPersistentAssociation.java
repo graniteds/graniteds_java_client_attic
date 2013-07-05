@@ -54,6 +54,7 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
     private boolean localInitializing = false;
     private boolean initializing = false;
     private List<InitializationListener> listeners = new ArrayList<InitializationListener>();
+    @SuppressWarnings("unused")
     private InitializationCallback initializationCallback = null;
     
     

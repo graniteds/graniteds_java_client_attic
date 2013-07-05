@@ -32,7 +32,6 @@ import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
-import org.granite.client.persistence.Persistence;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.collections.ManagedPersistentAssociation;
 import org.granite.client.tide.data.EntityManager;

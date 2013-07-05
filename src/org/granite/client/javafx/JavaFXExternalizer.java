@@ -47,8 +47,8 @@ import org.granite.messaging.amf.io.util.FieldProperty;
 import org.granite.messaging.amf.io.util.MethodProperty;
 import org.granite.messaging.amf.io.util.Property;
 import org.granite.messaging.amf.io.util.externalizer.DefaultExternalizer;
-import org.granite.messaging.amf.io.util.externalizer.annotation.ExternalizedProperty;
-import org.granite.messaging.amf.io.util.externalizer.annotation.IgnoredProperty;
+import org.granite.messaging.annotations.Exclude;
+import org.granite.messaging.annotations.Include;
 import org.granite.messaging.service.annotations.IgnoredMethod;
 
 /**
@@ -106,7 +106,7 @@ public class JavaFXExternalizer extends DefaultExternalizer {
                         !Modifier.isTransient(field.getModifiers()) &&
                         !Modifier.isStatic(field.getModifiers()) &&
                         !isPropertyIgnored(field) &&
-                        !field.isAnnotationPresent(IgnoredProperty.class)) {
+                        !field.isAnnotationPresent(Exclude.class)) {
                     	
                     	boolean found = false;
                     	if (returnSettersWhenAvailable && propertyDescriptors != null) {
@@ -129,7 +129,7 @@ public class JavaFXExternalizer extends DefaultExternalizer {
                     for (PropertyDescriptor property : propertyDescriptors) {
                         Method getter = property.getReadMethod();
                         if (getter != null &&
-                            getter.isAnnotationPresent(ExternalizedProperty.class) &&
+                            getter.isAnnotationPresent(Include.class) &&
                             getter.getDeclaringClass().equals(c) &&
                             !allFieldNames.contains(property.getName())) {
 

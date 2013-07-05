@@ -40,10 +40,12 @@ public class CollectionLoader implements Loader<PersistentCollection> {
     private final ServerSession serverSession;
     
     private final Object entity;
-    private final String propertyName;
+    @SuppressWarnings("unused")
+	private final String propertyName;
     
     private boolean localInitializing = false;
     private boolean initializing = false;
+    @SuppressWarnings("unused")
     private InitializationCallback initializationCallback = null;
     
     
