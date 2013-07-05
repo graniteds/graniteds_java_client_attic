@@ -31,12 +31,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.granite.client.configuration.Configuration;
-import org.granite.client.configuration.DefaultConfiguration;
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.channel.AsyncToken;
 import org.granite.client.messaging.channel.Channel;
+import org.granite.client.messaging.channel.ChannelFactory;
 import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.codec.AMF3MessagingCodec;
@@ -47,7 +46,6 @@ import org.granite.client.messaging.messages.requests.DisconnectMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
-import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportMessage;
 import org.granite.logging.Logger;
 import org.granite.util.UUIDUtil;
@@ -75,18 +73,14 @@ public class AMFMessagingChannel extends AbstractAMFChannel implements Messaging
 	protected volatile long reconnectMaxAttempts = 60L;
 	protected volatile long reconnectAttempts = 0L;
 	
-	public AMFMessagingChannel(Transport transport, String id, URI uri) {
-		this(transport, DefaultConfiguration.getInstance(), id, uri);
+	public AMFMessagingChannel(ChannelFactory factory, String id, URI uri) {
+		this(factory, id, uri, new AMF3MessagingCodec(factory.getConfiguration()));
 	}
 	
-	public AMFMessagingChannel(Transport transport, Configuration configuration, String id, URI uri) {
-		super(transport, id, uri, 1);
+	protected AMFMessagingChannel(ChannelFactory factory, String id, URI uri, MessagingCodec<Message[]> codec) {
+		super(factory.getMessagingTransport(), id, uri, 1);
 		
-		this.codec = newMessagingCodec(configuration);
-	}
-
-	protected MessagingCodec<Message[]> newMessagingCodec(Configuration configuration) {
-		return new AMF3MessagingCodec(configuration);
+		this.codec = codec;
 	}
 	
 	public void setSessionId(String sessionId) {

@@ -183,17 +183,17 @@ public class JMFChannelFactory extends AbstractChannelFactory {
 
 	@Override
 	public JMFAMFRemotingChannel newRemotingChannel(String id, URI uri) {
-		return new JMFAMFRemotingChannel(remotingTransport, id, uri, sharedContext);
+		return newRemotingChannel(id, uri, RemotingChannel.DEFAULT_MAX_CONCURRENT_REQUESTS);
 	}
 
 	@Override
 	public JMFAMFRemotingChannel newRemotingChannel(String id, URI uri, int maxConcurrentRequests) {
-		return new JMFAMFRemotingChannel(remotingTransport, id, uri, sharedContext, maxConcurrentRequests);
+		return new JMFAMFRemotingChannel(this, id, uri, maxConcurrentRequests);
 	}
 
 	@Override
 	public JMFAMFMessagingChannel newMessagingChannel(String id, URI uri) {
-		return new JMFAMFMessagingChannel(messagingTransport, id, uri, sharedContext);
+		return new JMFAMFMessagingChannel(this, id, uri);
 	}
 	
 	static class MessagingScannedItemHandler implements ScannedItemHandler {

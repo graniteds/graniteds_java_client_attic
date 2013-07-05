@@ -1,3 +1,23 @@
+/*
+  GRANITE DATA SERVICES
+  Copyright (C) 2012 GRANITE DATA SERVICES S.A.S.
+
+  This file is part of Granite Data Services.
+
+  Granite Data Services is free software; you can redistribute it and/or modify
+  it under the terms of the GNU Library General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or (at your
+  option) any later version.
+
+  Granite Data Services is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE. See the GNU Library General Public License
+  for more details.
+
+  You should have received a copy of the GNU Library General Public License
+  along with this library; if not, see <http://www.gnu.org/licenses/>.
+*/
+
 package org.granite.client.messaging.channel.amf;
 
 import java.io.IOException;
@@ -5,15 +25,14 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
-import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.channel.AsyncToken;
+import org.granite.client.messaging.channel.JMFChannelFactory;
+import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.codec.JMFAMF0MessagingCodec;
 import org.granite.client.messaging.codec.MessagingCodec;
-import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
-import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportMessage;
 import org.granite.messaging.amf.AMF0Body;
 import org.granite.messaging.amf.AMF0Message;
@@ -22,33 +41,20 @@ import org.granite.messaging.amf.AMF3Object;
 import flex.messaging.messages.AcknowledgeMessage;
 import flex.messaging.messages.Message;
 
-public class JMFAMFRemotingChannel extends AMFRemotingChannel {
-
-	private final ClientSharedContext sharedContext;
+/**
+ * @author Franck WOLFF
+ */
+public class JMFAMFRemotingChannel extends AbstractAMFChannel implements RemotingChannel {
 	
-	public JMFAMFRemotingChannel(Transport transport, String id, URI uri, ClientSharedContext sharedContext) {
-		super(transport, id, uri);
+	protected final MessagingCodec<AMF0Message> codec;
+	protected volatile int index = 1;
+
+	public JMFAMFRemotingChannel(JMFChannelFactory factory, String id, URI uri, int maxConcurrentRequests) {
+		super(factory.getRemotingTransport(), id, uri, maxConcurrentRequests);
 		
-		this.sharedContext = sharedContext;
+		this.codec = new JMFAMF0MessagingCodec(factory.getSharedContext());
 	}
 
-	public JMFAMFRemotingChannel(Transport transport, String id, URI uri, ClientSharedContext sharedContext, int maxConcurrentRequests) {
-		super(transport, id, uri, maxConcurrentRequests);
-		
-		this.sharedContext = sharedContext;
-	}
-
-	public JMFAMFRemotingChannel(Transport transport, Configuration configuration, String id, URI uri, ClientSharedContext sharedContext, int maxConcurrentRequests) {
-		super(transport, configuration, id, uri, maxConcurrentRequests);
-		
-		this.sharedContext = sharedContext;
-	}
-
-	@Override
-	protected MessagingCodec<AMF0Message> newMessagingCodec(Configuration configuration) {
-		return new JMFAMF0MessagingCodec(configuration, sharedContext);
-	}
-	
 	@Override
 	protected TransportMessage createTransportMessage(AsyncToken token) throws UnsupportedEncodingException {
 		AMF0Message amf0Message = new AMF0Message();

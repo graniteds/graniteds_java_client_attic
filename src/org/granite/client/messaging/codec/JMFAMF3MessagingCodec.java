@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.channel.Channel;
 import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.messaging.jmf.JMFDeserializer;
@@ -41,7 +40,7 @@ public class JMFAMF3MessagingCodec implements MessagingCodec<Message[]> {
 	
 	private final ClientSharedContext sharedContext;
 	
-	public JMFAMF3MessagingCodec(Configuration config, ClientSharedContext sharedContext) {
+	public JMFAMF3MessagingCodec(ClientSharedContext sharedContext) {
 		this.sharedContext = sharedContext;
 	}
 

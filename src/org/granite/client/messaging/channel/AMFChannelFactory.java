@@ -56,12 +56,12 @@ public class AMFChannelFactory extends AbstractChannelFactory {
 
 	@Override
 	public AMFRemotingChannel newRemotingChannel(String id, URI uri, int maxConcurrentRequests) {
-		return new AMFRemotingChannel(remotingTransport, configuration, id, uri, maxConcurrentRequests);
+		return new AMFRemotingChannel(this, id, uri, maxConcurrentRequests);
 	}
 
 	@Override
 	public AMFMessagingChannel newMessagingChannel(String id, URI uri) {
-		return new AMFMessagingChannel(messagingTransport, configuration, id, uri);
+		return new AMFMessagingChannel(this, id, uri);
 	}
 	
 	static class MessagingScannedItemHandler implements ScannedItemHandler {

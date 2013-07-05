@@ -20,7 +20,6 @@
 
 package org.granite.client.test.websocket;
 
-import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -42,7 +41,7 @@ public class TestReceiveMessage {
 	@Test
 	public void testReceiveMessage() throws Exception {
 		HTTPTransport transport = new ApacheAsyncTransport();		
-		AMFMessagingChannel channel = new AMFMessagingChannel(transport, "<id>", new URI("http://localhost:8080/shop-admin/gravityamf/amf"));
+		AMFMessagingChannel channel = null; //new AMFMessagingChannel(transport, "<id>", new URI("http://localhost:8080/shop-admin/gravityamf/amf"));
 		
 		transport.start();
 		try {

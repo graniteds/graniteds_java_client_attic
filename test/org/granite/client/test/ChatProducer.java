@@ -66,7 +66,7 @@ public class ChatProducer {
 		transport.start();
 		
 		// Create a channel with the specified uri.
-		AMFMessagingChannel channel = new AMFMessagingChannel(transport, "graniteamf", uri);
+		AMFMessagingChannel channel = null; //new AMFMessagingChannel(transport, "graniteamf", uri);
 
 		// Login (credentials will be sent with the first call).
 		//channel.setCredentials(new UsernamePasswordCredentials("admin", "admin"));
