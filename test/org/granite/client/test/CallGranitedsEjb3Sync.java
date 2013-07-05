@@ -21,17 +21,12 @@
 package org.granite.client.test;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.granite.client.messaging.RemoteService;
-import org.granite.client.messaging.channel.ChannelFactory;
+import org.granite.client.messaging.channel.JMFChannelFactory;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
 import org.granite.client.messaging.messages.ResponseMessage;
-import org.granite.client.messaging.transport.HTTPTransport;
-import org.granite.client.messaging.transport.TransportException;
-import org.granite.client.messaging.transport.TransportStatusHandler.LogEngineStatusHandler;
-import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.test.model.Person;
 import org.granite.client.test.model.Person.Salutation;
 
@@ -40,40 +35,25 @@ import org.granite.client.test.model.Person.Salutation;
  */
 public class CallGranitedsEjb3Sync {
 
-	public static void main(String[] args) throws URISyntaxException {		
+	public static void main(String[] args) throws Exception {		
 		
-		URI uri = new URI("http://localhost:8080/graniteds-ejb3/graniteamf/amf");
-		
-		System.out.println("Connecting to: " + uri);
+		// Create and initialize a JMF channel factory.
+		JMFChannelFactory channelFactory = new JMFChannelFactory();
+		channelFactory.start();
 
-		// Create and configure a transport.
-		HTTPTransport transport = new ApacheAsyncTransport();
-		transport.setStatusHandler(new LogEngineStatusHandler() {
-			
-			@Override
-			public void handleIO(boolean active) {
-				//super.handleIO(active);
-			}
-
-			@Override
-			public void handleException(TransportException e) {
-				//super.handleException(e);
-				//sem.release();
-			}
-		});
-		transport.start();
-
-		ChannelFactory factory = ChannelFactory.newInstance();
-		RemotingChannel channel = factory.newRemotingChannel("my-graniteamf", uri, 2);
-
-		// Login (credentials will be sent with the first call).
-		channel.setCredentials(new UsernamePasswordCredentials("admin", "admin"));
-
-		// Create a remote object with the channel and a destination.
-		RemoteService ro = new RemoteService(channel, "person");
-		
 		try {
-			
+			RemotingChannel channel = channelFactory.newRemotingChannel(
+				"my-graniteamf",
+				new URI("http://localhost:8080/graniteds-ejb3/graniteamf/amf"),
+				2
+			);
+	
+			// Login (credentials will be sent with the first call).
+			channel.setCredentials(new UsernamePasswordCredentials("admin", "admin"));
+	
+			// Create a remote object with the channel and a destination.
+			RemoteService ro = new RemoteService(channel, "person");
+		
 			System.out.println();
 			System.out.println("Fetching all persons and countries at once...");
 			
@@ -101,14 +81,11 @@ public class CallGranitedsEjb3Sync {
 			message = ro.newInvocation("findAllPersons").invoke().get();
 			System.out.println(message);
 		}
-		catch (Exception e) {
-			System.out.println("TryCatch Failed: " + e);
-		}
 		finally {
-			// Stop transport (must be done!)
-			transport.stop();
-			
-			System.out.println("Done.");
+			// Stop channel factory (must be done!)
+			channelFactory.stop();
 		}
+		
+		System.out.println("Done.");
 	}
 }

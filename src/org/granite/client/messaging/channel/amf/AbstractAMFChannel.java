@@ -54,10 +54,6 @@ import flex.messaging.messages.RemotingMessage;
  */
 public abstract class AbstractAMFChannel extends AbstractHTTPChannel {
 
-	public AbstractAMFChannel(Transport transport, String id, URI uri) {
-		super(transport, id, uri);
-	}
-	
 	public AbstractAMFChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
 		super(transport, id, uri, maxConcurrentRequests);
 	}

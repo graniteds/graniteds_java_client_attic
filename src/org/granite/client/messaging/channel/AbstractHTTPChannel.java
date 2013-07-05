@@ -74,10 +74,6 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 	protected volatile int maxConcurrentRequests;
 	protected volatile long defaultTimeToLive = TimeUnit.MINUTES.toMillis(1L); // 1 mn.
 	
-	public AbstractHTTPChannel(Transport transport, String id, URI uri) {
-		this(transport, id, uri, 5);
-	}
-	
 	public AbstractHTTPChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
 		super(transport, id, uri);
 		

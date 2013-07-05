@@ -55,6 +55,20 @@ public class DefaultClientSharedContext extends DefaultSharedContext implements 
 		this.classNameAliases = new HashMap<String, String>();
 	}
 
+	@Override
+	public void registerAlias(Class<?> remoteAliasAnnotatedClass) {
+		RemoteAlias remoteAlias = remoteAliasAnnotatedClass.getAnnotation(RemoteAlias.class);
+		if (remoteAlias == null)
+			throw new IllegalArgumentException(remoteAliasAnnotatedClass.getName() + " isn't annotated with " + RemoteAlias.class.getName());
+		registerAlias(remoteAliasAnnotatedClass.getName(), remoteAlias.value());
+	}
+
+	@Override
+	public void registerAliases(Class<?>... remoteAliasAnnotatedClasses) {
+		for (Class<?> remoteAliasAnnotatedClass : remoteAliasAnnotatedClasses)
+			registerAlias(remoteAliasAnnotatedClass);
+	}
+
 	public void registerAlias(String clientClassName, String serverClassName) {
 		if (clientClassName.length() == 0 || serverClassName.length() == 0)
 			throw new IllegalArgumentException("Empty class name: " + clientClassName + " / " + serverClassName);
@@ -64,11 +78,9 @@ public class DefaultClientSharedContext extends DefaultSharedContext implements 
 	}
 
 	@Override
-	public void registerAlias(Class<?> remoteAliasAnnotatedClass) {
-		RemoteAlias remoteAlias = remoteAliasAnnotatedClass.getAnnotation(RemoteAlias.class);
-		if (remoteAlias == null)
-			throw new IllegalArgumentException(remoteAliasAnnotatedClass.getName() + " isn't annotated with " + RemoteAlias.class.getName());
-		registerAlias(remoteAliasAnnotatedClass.getName(), remoteAlias.value());
+	public void registerAliases(Map<String, String> clientToServerAliases) {
+		for (Map.Entry<String, String> clientToServerAlias : clientToServerAliases.entrySet())
+			registerAlias(clientToServerAlias.getKey(), clientToServerAlias.getValue());
 	}
 
 	@Override

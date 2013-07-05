@@ -1,24 +1,26 @@
 package org.granite.client.messaging.channel;
 
-import java.net.URI;
-
+import org.granite.client.configuration.Configuration;
+import org.granite.client.configuration.DefaultConfiguration;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.util.ContentType;
 
-public abstract class AbstractChannelFactory {
+public abstract class AbstractChannelFactory implements ChannelFactory {
 	
 	protected final ContentType contentType;
 	
-	protected volatile Transport remotingTransport = null;
-	protected volatile Transport messagingTransport = null;
+	protected Configuration configuration = null;
+	
+	protected Transport remotingTransport = null;
+	protected Transport messagingTransport = null;
 
 	protected AbstractChannelFactory(ContentType contentType) {
-		this(contentType, null, null);
+		this(contentType, null, null, null);
 	}
 
-	protected AbstractChannelFactory(ContentType contentType, Transport remotingTransport, Transport messagingTransport) {
+	protected AbstractChannelFactory(ContentType contentType, Configuration configuration, Transport remotingTransport, Transport messagingTransport) {
 		this.contentType = contentType;
 		this.remotingTransport = remotingTransport;
 		this.messagingTransport = messagingTransport;
@@ -43,8 +45,22 @@ public abstract class AbstractChannelFactory {
 	public void setMessagingTransport(Transport messagingTransport) {
 		this.messagingTransport = messagingTransport;
 	}
+
+	public Configuration getConfiguration() {
+		return configuration;
+	}
+
+	public void setConfiguration(Configuration configuration) {
+		this.configuration = configuration;
+	}
 	
 	public void start() {
+		
+		if (configuration == null) {
+			configuration = new DefaultConfiguration();
+			configuration.load();
+		}
+		
 		if (remotingTransport == null)
 			remotingTransport = new ApacheAsyncTransport();
 		
@@ -58,19 +74,22 @@ public abstract class AbstractChannelFactory {
 	}
 	
 	public void stop() {
-		if (remotingTransport != null && remotingTransport.isStarted()) {
-			remotingTransport.stop();
-			remotingTransport = null;
-		}
+		stop(true);
+	}
+
+	public void stop(boolean stopTransports) {
+		configuration = null;
 		
-		if (messagingTransport != null && messagingTransport.isStarted()) {
-			messagingTransport.stop();
-			messagingTransport = null;
+		if (stopTransports) {
+			if (remotingTransport != null && remotingTransport.isStarted()) {
+				remotingTransport.stop();
+				remotingTransport = null;
+			}
+			
+			if (messagingTransport != null && messagingTransport.isStarted()) {
+				messagingTransport.stop();
+				messagingTransport = null;
+			}
 		}
 	}
-	
-	public abstract RemotingChannel newRemotingChannel(String id, URI uri);
-	public abstract RemotingChannel newRemotingChannel(String id, URI uri, int maxConcurrentRequests);
-	
-	public abstract MessagingChannel newMessagingChannel(String id, URI uri);
 }

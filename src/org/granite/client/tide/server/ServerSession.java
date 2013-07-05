@@ -49,7 +49,9 @@ import org.granite.client.messaging.RemoteClassScanner;
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.TopicAgent;
+import org.granite.client.messaging.channel.AMFChannelFactory;
 import org.granite.client.messaging.channel.ChannelFactory;
+import org.granite.client.messaging.channel.JMFChannelFactory;
 import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.SessionAwareChannel;
@@ -277,30 +279,33 @@ public class ServerSession implements ContextAware {
 	
 	@PostConstruct
 	public void start() throws Exception {
-		channelFactory = ChannelFactory.newInstance();
+		if (contentType == ContentType.JMF_AMF)
+			channelFactory = new JMFChannelFactory();
+		else
+			channelFactory = new AMFChannelFactory();
 		
 		if (remotingTransport != null)
 			channelFactory.setRemotingTransport(remotingTransport);
-
 		if (messagingTransport != null)
 			channelFactory.setMessagingTransport(messagingTransport);
+		
+		configuration.addConfigurator(remoteClassConfigurator);
+		configuration.load();
+		channelFactory.setConfiguration(configuration);
 		
 		channelFactory.start();
 		
 		channelFactory.getRemotingTransport().setStatusHandler(statusHandler);
 		channelFactory.getMessagingTransport().setStatusHandler(statusHandler);
 		
-		configuration.addConfigurator(remoteClassConfigurator);
-		configuration.load();
-		
 		graniteURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.graniteUrlMapping);
-		remotingChannel = channelFactory.newRemotingChannel(configuration, "graniteamf", graniteURI, 1);
+		remotingChannel = channelFactory.newRemotingChannel("graniteamf", graniteURI, 1);
 		
 		if (useWebSocket)
 			gravityURI = new URI(protocol.replace("http", "ws") + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
 		else
 			gravityURI = new URI(protocol + "://" + this.serverName + (this.serverPort > 0 ? ":" + this.serverPort : "") + this.contextRoot + this.gravityUrlMapping);
-		messagingChannel = channelFactory.newMessagingChannel(configuration, "gravityamf", gravityURI);
+		messagingChannel = channelFactory.newMessagingChannel("gravityamf", gravityURI);
 		
 		sessionExpirationTimer = Executors.newSingleThreadScheduledExecutor();
 	}

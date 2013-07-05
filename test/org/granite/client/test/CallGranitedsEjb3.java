@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
-import org.granite.client.messaging.channel.ChannelFactory;
+import org.granite.client.messaging.channel.JMFChannelFactory;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
 import org.granite.client.messaging.events.FaultEvent;
@@ -45,20 +45,14 @@ import org.granite.messaging.jmf.reflect.Property;
 public class CallGranitedsEjb3 {
 
 	public static void main(String[] args) throws Exception {		
-/*
-		Platform platform = Platform.getInstance();
-		ChannelFactory channelFactory = new JMFChannelFactory(platform);
-		
-		ChannelFactory channelFactory = new JMFChannelFactory();
+
+		// Create and initialize a JMF channel factory.
+		JMFChannelFactory channelFactory = new JMFChannelFactory();
 		channelFactory.start();
-*/
-		// Create and initialize a channel factory.
-		ChannelFactory factory = ChannelFactory.newInstance();
-		factory.start();
 		
 		try {
 			// Create a remoting channel bound to the server uri and with maximum two concurrent requests. 
-			RemotingChannel channel = factory.newRemotingChannel(
+			RemotingChannel channel = channelFactory.newRemotingChannel(
 				"my-graniteamf",
 				new URI("http://localhost:8080/graniteds-ejb3/graniteamf/amf"),
 				2
@@ -136,7 +130,7 @@ public class CallGranitedsEjb3 {
 		}
 		finally {
 			// Stop channel factory (must be done!)
-			factory.stop();
+			channelFactory.stop();
 		}
 		
 		System.out.println("Done.");

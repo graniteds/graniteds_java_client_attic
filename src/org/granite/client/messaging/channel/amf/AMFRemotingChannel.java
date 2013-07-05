@@ -52,7 +52,7 @@ public class AMFRemotingChannel extends AbstractAMFChannel implements RemotingCh
 	protected volatile int index = 1;
 	
 	public AMFRemotingChannel(Transport transport, String id, URI uri) {
-		this(transport, id, uri, 5);
+		this(transport, id, uri, DEFAULT_MAX_CONCURRENT_REQUESTS);
 	}
 	
 	public AMFRemotingChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
