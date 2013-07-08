@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.granite.client.javafx.JavaFXEntityCodec;
 import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.client.messaging.jmf.DefaultClientSharedContext;
 import org.granite.hibernate.jmf.EntityCodec;
@@ -38,7 +37,7 @@ public class TestExternalizerJMF {
 		serverSharedContext = new DefaultSharedContext(serverCodecRegistry);
 		
 		List<ExtendedObjectCodec> clientCodecs = new ArrayList<ExtendedObjectCodec>();
-		clientCodecs.add(new JavaFXEntityCodec());
+		//clientCodecs.add(new JavaFXEntityCodec());
 		CodecRegistry clientCodecRegistry = new DefaultCodecRegistry(clientCodecs);
 		clientSharedContext = new DefaultClientSharedContext(clientCodecRegistry);
 		

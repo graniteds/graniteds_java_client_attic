@@ -29,6 +29,7 @@ import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.messaging.channel.amf.AMFMessagingChannel;
 import org.granite.client.messaging.channel.amf.AMFRemotingChannel;
 import org.granite.client.messaging.transport.Transport;
+import org.granite.client.platform.Platform;
 import org.granite.logging.Logger;
 import org.granite.scan.ScannedItem;
 import org.granite.scan.ScannedItemHandler;
@@ -41,12 +42,24 @@ public class AMFChannelFactory extends AbstractChannelFactory {
     
 	private static final Logger log = Logger.getLogger(AMFChannelFactory.class);
 	
+	private final Configuration defaultConfiguration;
+	
 	public AMFChannelFactory() {
-		super(ContentType.AMF);
+		this(null, null, null);
+	}
+	
+	public AMFChannelFactory(Configuration defaultConfiguration) {
+		this(null, null, defaultConfiguration);
 	}
 
-	public AMFChannelFactory(Configuration configuration, Transport remotingTransport, Transport messagingTransport) {
-		super(ContentType.AMF, configuration, remotingTransport, messagingTransport);
+	public AMFChannelFactory(Transport remotingTransport, Transport messagingTransport) {
+		this(remotingTransport, messagingTransport, null);
+	}
+
+	public AMFChannelFactory(Transport remotingTransport, Transport messagingTransport, Configuration defaultConfiguration) {
+		super(ContentType.AMF, remotingTransport, messagingTransport);
+		
+		this.defaultConfiguration = (defaultConfiguration != null ? defaultConfiguration : Platform.getInstance().newConfiguration());
 	}
 
 	@Override
@@ -56,12 +69,16 @@ public class AMFChannelFactory extends AbstractChannelFactory {
 
 	@Override
 	public AMFRemotingChannel newRemotingChannel(String id, URI uri, int maxConcurrentRequests) {
-		return new AMFRemotingChannel(this, id, uri, maxConcurrentRequests);
+		return new AMFRemotingChannel(getRemotingTransport(), defaultConfiguration, id, uri, maxConcurrentRequests);
 	}
 
 	@Override
 	public AMFMessagingChannel newMessagingChannel(String id, URI uri) {
-		return new AMFMessagingChannel(this, id, uri);
+		return new AMFMessagingChannel(getMessagingTransport(), defaultConfiguration, id, uri);
+	}
+	
+	public Configuration getDefaultConfiguration() {
+		return defaultConfiguration;
 	}
 	
 	static class MessagingScannedItemHandler implements ScannedItemHandler {

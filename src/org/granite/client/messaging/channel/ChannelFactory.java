@@ -22,7 +22,6 @@ package org.granite.client.messaging.channel;
 
 import java.net.URI;
 
-import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.util.ContentType;
 
@@ -38,9 +37,6 @@ public interface ChannelFactory {
 
 	Transport getMessagingTransport();
 	void setMessagingTransport(Transport messagingTransport);
-	
-	public Configuration getConfiguration();
-	public void setConfiguration(Configuration configuration);
 
 	void start();
 	

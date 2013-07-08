@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.messaging.channel.amf.JMFAMFMessagingChannel;
 import org.granite.client.messaging.channel.amf.JMFAMFRemotingChannel;
@@ -70,8 +69,8 @@ public class JMFChannelFactory extends AbstractChannelFactory {
 		super(ContentType.JMF_AMF);
 	}
 
-	public JMFChannelFactory(ClientSharedContext sharedContext, Configuration configuration, Transport remotingTransport, Transport messagingTransport) {
-		super(ContentType.JMF_AMF, configuration, remotingTransport, messagingTransport);
+	public JMFChannelFactory(ClientSharedContext sharedContext, Transport remotingTransport, Transport messagingTransport) {
+		super(ContentType.JMF_AMF, remotingTransport, messagingTransport);
 		
 		this.sharedContext = sharedContext;
 	}
@@ -188,12 +187,12 @@ public class JMFChannelFactory extends AbstractChannelFactory {
 
 	@Override
 	public JMFAMFRemotingChannel newRemotingChannel(String id, URI uri, int maxConcurrentRequests) {
-		return new JMFAMFRemotingChannel(this, id, uri, maxConcurrentRequests);
+		return new JMFAMFRemotingChannel(getRemotingTransport(), getSharedContext(), id, uri, maxConcurrentRequests);
 	}
 
 	@Override
 	public JMFAMFMessagingChannel newMessagingChannel(String id, URI uri) {
-		return new JMFAMFMessagingChannel(this, id, uri);
+		return new JMFAMFMessagingChannel(getMessagingTransport(), getSharedContext(),id, uri);
 	}
 	
 	static class MessagingScannedItemHandler implements ScannedItemHandler {

@@ -22,15 +22,16 @@ package org.granite.client.messaging.channel.amf;
 
 import java.net.URI;
 
-import org.granite.client.messaging.channel.JMFChannelFactory;
 import org.granite.client.messaging.codec.JMFAMF3MessagingCodec;
+import org.granite.client.messaging.jmf.ClientSharedContext;
+import org.granite.client.messaging.transport.Transport;
 
 /**
  * @author Franck WOLFF
  */
-public class JMFAMFMessagingChannel extends AMFMessagingChannel {
+public class JMFAMFMessagingChannel extends AbstractAMFMessagingChannel {
 	
-	public JMFAMFMessagingChannel(JMFChannelFactory factory, String id, URI uri) {
-		super(factory, id, uri, new JMFAMF3MessagingCodec(factory.getSharedContext()));
+	public JMFAMFMessagingChannel(Transport transport, ClientSharedContext sharedContext, String id, URI uri) {
+		super(new JMFAMF3MessagingCodec(sharedContext), transport, id, uri);
 	}
 }

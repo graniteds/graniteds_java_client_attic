@@ -25,7 +25,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
-import org.granite.client.messaging.channel.AMFChannelFactory;
+import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.channel.AsyncToken;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.codec.AMF0MessagingCodec;
@@ -33,6 +33,7 @@ import org.granite.client.messaging.codec.MessagingCodec;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
+import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportMessage;
 import org.granite.messaging.amf.AMF0Body;
 import org.granite.messaging.amf.AMF0Message;
@@ -49,10 +50,10 @@ public class AMFRemotingChannel extends AbstractAMFChannel implements RemotingCh
 	protected final MessagingCodec<AMF0Message> codec;
 	protected volatile int index = 1;
 	
-	public AMFRemotingChannel(AMFChannelFactory factory, String id, URI uri, int maxConcurrentRequests) {
-		super(factory.getRemotingTransport(), id, uri, maxConcurrentRequests);
+	public AMFRemotingChannel(Transport transport, Configuration configuration, String id, URI uri, int maxConcurrentRequests) {
+		super(transport, id, uri, maxConcurrentRequests);
 		
-		this.codec = new AMF0MessagingCodec(factory.getConfiguration());
+		this.codec = new AMF0MessagingCodec(configuration);
 	}
 
 	@Override

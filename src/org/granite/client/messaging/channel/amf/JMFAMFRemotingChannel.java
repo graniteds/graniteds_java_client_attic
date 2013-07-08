@@ -26,13 +26,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
 import org.granite.client.messaging.channel.AsyncToken;
-import org.granite.client.messaging.channel.JMFChannelFactory;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.codec.JMFAMF0MessagingCodec;
 import org.granite.client.messaging.codec.MessagingCodec;
+import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.responses.AbstractResponseMessage;
 import org.granite.client.messaging.transport.DefaultTransportMessage;
+import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportMessage;
 import org.granite.messaging.amf.AMF0Body;
 import org.granite.messaging.amf.AMF0Message;
@@ -49,10 +50,10 @@ public class JMFAMFRemotingChannel extends AbstractAMFChannel implements Remotin
 	protected final MessagingCodec<AMF0Message> codec;
 	protected volatile int index = 1;
 
-	public JMFAMFRemotingChannel(JMFChannelFactory factory, String id, URI uri, int maxConcurrentRequests) {
-		super(factory.getRemotingTransport(), id, uri, maxConcurrentRequests);
+	public JMFAMFRemotingChannel(Transport transport, ClientSharedContext sharedContext, String id, URI uri, int maxConcurrentRequests) {
+		super(transport, id, uri, maxConcurrentRequests);
 		
-		this.codec = new JMFAMF0MessagingCodec(factory.getSharedContext());
+		this.codec = new JMFAMF0MessagingCodec(sharedContext);
 	}
 
 	@Override

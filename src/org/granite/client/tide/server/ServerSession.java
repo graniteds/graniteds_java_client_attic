@@ -281,17 +281,16 @@ public class ServerSession implements ContextAware {
 	public void start() throws Exception {
 		if (contentType == ContentType.JMF_AMF)
 			channelFactory = new JMFChannelFactory();
-		else
-			channelFactory = new AMFChannelFactory();
+		else {
+			configuration.addConfigurator(remoteClassConfigurator);
+			configuration.load();
+			channelFactory = new AMFChannelFactory(configuration);
+		}
 		
 		if (remotingTransport != null)
 			channelFactory.setRemotingTransport(remotingTransport);
 		if (messagingTransport != null)
 			channelFactory.setMessagingTransport(messagingTransport);
-		
-		configuration.addConfigurator(remoteClassConfigurator);
-		configuration.load();
-		channelFactory.setConfiguration(configuration);
 		
 		channelFactory.start();
 		

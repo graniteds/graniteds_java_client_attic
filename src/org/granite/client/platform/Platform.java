@@ -38,7 +38,6 @@ public class Platform {
 	protected static Platform instance = null;
 
 	protected final Reflection reflection;
-	protected final Configuration configuration;
 	protected final Persistence persistence;
 	
 	public static synchronized Platform getInstance() {
@@ -119,19 +118,18 @@ public class Platform {
 	}
 	
 	public Platform() {
-		this(new Reflection(null), new DefaultConfiguration());
+		this(new Reflection(null));
 	}
 	
 	public Platform(ClassLoader reflectionClassLoader) {
-		this(new Reflection(reflectionClassLoader), new DefaultConfiguration());
+		this(new Reflection(reflectionClassLoader));
 	}
 	
-	public Platform(Reflection reflection, Configuration configuration) {
-		if (reflection == null || configuration == null)
-			throw new NullPointerException("reflection and configuration cannot be null");
+	public Platform(Reflection reflection) {
+		if (reflection == null)
+			throw new NullPointerException("reflection cannot be null");
 		
 		this.reflection = reflection;
-		this.configuration = configuration;
 		this.persistence = new Persistence(reflection);
 	}
 	
@@ -139,8 +137,8 @@ public class Platform {
 		return reflection;
 	}
 
-	public Configuration getConfiguration() {
-		return configuration;
+	public Configuration newConfiguration() {
+		return new DefaultConfiguration();
 	}
 
 	public Persistence getPersistence() {
@@ -149,10 +147,6 @@ public class Platform {
 
 	public static Reflection reflection() {
 		return getInstance().reflection;
-	}
-	
-	public static Configuration configuration() {
-		return getInstance().configuration;
 	}
 	
 	public static Persistence persistence() {
