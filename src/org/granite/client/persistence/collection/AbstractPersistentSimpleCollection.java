@@ -53,6 +53,8 @@ public abstract class AbstractPersistentSimpleCollection<E, C extends Collection
 	}
 
 	public Iterator<E> iterator() {
+		if (!checkInitializedRead())
+			return null;
 		return new IteratorProxy<E>(getCollection().iterator());
 	}
 

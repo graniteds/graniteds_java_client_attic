@@ -540,7 +540,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 	private static class DefaultCollectionLoader implements Loader<PersistentCollection> {
 		
 		public void load(PersistentCollection collection, InitializationCallback callback) {
-			throw new LazyInitializationException(callback.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(callback)));
+			throw new LazyInitializationException(collection.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(collection)));
 		}
 		
 		public void onInitializing() {
@@ -566,14 +566,18 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
     	loader.onInitializing();
     }
     
-    public void initialize() {
+	public void initialize() {
     	loader.onInitialize();
         
         for (InitializationListener listener : listeners)
             listener.initialized(this);
         
+        doInitialize();
+        
         log.debug("initialized");
     }
+    
+    protected abstract void doInitialize();
     
     public void uninitialize() {
         loader.onUninitialize();

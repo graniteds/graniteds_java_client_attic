@@ -34,6 +34,8 @@ import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.ReadOnlyMapWrapper;
 import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 
 import org.apache.http.MethodNotSupportedException;
 import org.granite.client.persistence.collection.PersistentBag;
@@ -43,6 +45,7 @@ import org.granite.client.persistence.collection.PersistentMap;
 import org.granite.client.persistence.collection.PersistentSet;
 import org.granite.client.persistence.collection.PersistentSortedMap;
 import org.granite.client.persistence.collection.PersistentSortedSet;
+
 
 /**
  * @author Franck WOLFF
@@ -64,13 +67,13 @@ public class ObservablePersistentCollections {
 		return newObservablePersistentList(new PersistentList<E>(true));
 	}
 
-	@SuppressWarnings("unchecked")
 	public static <E> ObservablePersistentList<E> newObservablePersistentList(PersistentList<E> persistentList) {
-		return (ObservablePersistentList<E>)Proxy.newProxyInstance(
-			persistentList.getClass().getClassLoader(),
-			new Class<?>[]{ ObservablePersistentList.class },
-			new ObservablePersistentCollectionHandler(FXCollections.observableList(persistentList), persistentList)
-		);
+		return new ObservablePersistentListWrapper<E>(persistentList);
+//		return (ObservablePersistentList<E>)Proxy.newProxyInstance(
+//			persistentList.getClass().getClassLoader(),
+//			new Class<?>[]{ ObservablePersistentList.class },
+//			new ObservablePersistentCollectionHandler(FXCollections.observableList(persistentList), persistentList)
+//		);
 	}
 	
 	public static <E> ReadOnlySetWrapper<E> newReadOnlyPersistentSetWrapper(Object bean, String name) {

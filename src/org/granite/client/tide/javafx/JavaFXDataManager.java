@@ -20,14 +20,10 @@
 
 package org.granite.client.tide.javafx;
 
-import java.beans.Introspector;
 import java.lang.annotation.ElementType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +33,6 @@ import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanPropertyBase;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
-import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
@@ -62,7 +57,6 @@ import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentCollect
 import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentMap;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.PersistenceManager;
-import org.granite.client.tide.data.Transient;
 import org.granite.client.tide.data.impl.AbstractDataManager;
 import org.granite.client.util.WeakIdentityHashMap;
 import org.granite.client.util.javafx.DataNotifier;
@@ -74,6 +68,7 @@ import org.granite.logging.Logger;
  */
 public class JavaFXDataManager extends AbstractDataManager {
 	
+	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(JavaFXDataManager.class);
     
 	
@@ -221,128 +216,6 @@ public class JavaFXDataManager extends AbstractDataManager {
 		protected void fireValueChangedEvent() {
 			super.fireValueChangedEvent();
 		}
-    }
-    
-    
-    @Override
-    public Object getProperty(Object object, String propertyName) {
-        try {
-            Method m = object.getClass().getMethod("get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1));
-            return m.invoke(object);
-        }
-        catch (NoSuchMethodException e) {
-            try {
-                Method m = object.getClass().getMethod("is" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1));
-                return m.invoke(object);
-            }
-            catch (Exception f) {
-                throw new RuntimeException("Could not get property " + propertyName + " on object " + object, f);
-            }
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Could not get property " + propertyName + " on object " + object, e);
-        }
-    }
-    
-    @Override
-    public void setProperty(Object object, String propertyName, Object oldValue, Object newValue) {
-        try {
-            Method[] methods = object.getClass().getMethods();
-            String setter = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-            for (Method m : methods) {
-                if (m.getName().equals(setter) && m.getParameterTypes().length == 1 && m.getParameterTypes()[0].isInstance(newValue)) {
-                    m.invoke(object, newValue);
-                    break;
-                }
-            }
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Could not get property " + propertyName + " on object " + object, e);
-        }
-    }
-
-    @Override
-    public void setInternalProperty(Object object, String propertyName, Object value) {
-        Method[] methods = object.getClass().getMethods();
-        String property = propertyName + "Property";
-        String setter = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-        boolean found = false;
-        for (Method m : methods) {
-        	if (m.getName().equals(property) && m.getParameterTypes().length == 0 && WritableValue.class.isAssignableFrom(m.getReturnType())) {
-                try {
-	                @SuppressWarnings("unchecked")
-	                WritableValue<Object> p = (WritableValue<Object>)m.invoke(object);
-	                p.setValue(value);
-	        		found = true;
-                }
-                catch (Exception e) {
-                    throw new RuntimeException("Could not setValue on property " + propertyName + " on object " + object, e);
-                }
-        	}
-        }
-        if (!found) {
-            for (Method m : methods) {
-            	if (m.getName().equals(setter) && m.getParameterTypes().length == 1 && m.getParameterTypes()[0].isInstance(value)) {
-            		try {
-	            		m.invoke(object, value);
-	            		found = true;
-	            		break;
-            		}
-            		catch (Exception e) {
-                        throw new RuntimeException("Could not call setter on property " + propertyName + " on object " + object, e);
-            		}
-            	}
-            }
-        }
-        if (!found)
-        	log.warn("No property found for object " + object + " name " + propertyName);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public Map<String, Object> getPropertyValues(Object object, boolean includeReadOnly, boolean includeTransient) {
-        return getPropertyValues(object, Collections.EMPTY_LIST, includeReadOnly, includeTransient);
-    }
-
-    @Override
-    public Map<String, Object> getPropertyValues(Object object, List<String> excludedProperties, boolean includeReadOnly, boolean includeTransient) {
-        Map<String, Object> values = new LinkedHashMap<String, Object>();
-        for (Method m : object.getClass().getMethods()) {
-            if (!((m.getName().endsWith("Property") && ObservableValue.class.isAssignableFrom(m.getReturnType()) 
-                    || (m.getName().startsWith("get") && (Collection.class.isAssignableFrom(m.getReturnType()) || Map.class.isAssignableFrom(m.getReturnType()))))))
-                continue;
-            
-            if (!includeTransient && m.isAnnotationPresent(Transient.class))
-                continue;
-            
-            String pname = m.getName().startsWith("get") 
-                ? Introspector.decapitalize(m.getName().substring(3))
-                : m.getName().substring(0, m.getName().length()-8);
-                
-            try {
-                if (excludedProperties.contains(pname))
-                    continue;
-                
-                if (m.getName().endsWith("Property")) {
-                    @SuppressWarnings("unchecked")
-                    ReadOnlyProperty<Object> p = (ReadOnlyProperty<Object>)m.invoke(object);
-                    
-                    if (!includeReadOnly && !(p instanceof WritableValue))
-                        continue;
-                    
-                    values.put(p.getName(), p.getValue());
-                }
-                else {
-                    Object value = m.invoke(object);
-                    
-                    values.put(pname, value);
-                }
-            }
-            catch (Exception e) {
-                throw new RuntimeException("Could not get property " + m + " on object " + object, e);
-            }
-        }
-        return values;
     }
 
     @Override
@@ -587,7 +460,7 @@ public class JavaFXDataManager extends AbstractDataManager {
     	public boolean isReachable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
     		if (bean == null || propertyPath.getName() == null || ElementType.TYPE.equals(elementType))
     			return true;
-    		Object value = getProperty(bean, propertyPath.getName());
+    		Object value = getPropertyValue(bean, propertyPath.getName());
     		if (value instanceof LazyableCollection)
     			return ((LazyableCollection)value).isInitialized();
     		return isInitialized(value);

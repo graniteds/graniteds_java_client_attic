@@ -27,6 +27,8 @@ import org.granite.config.flex.ServicesConfig;
  * @author Franck WOLFF
  */
 public interface Configuration {
+	
+	// String getClientType();
 
 	GraniteConfig getGraniteConfig();
 	ServicesConfig getServicesConfig();

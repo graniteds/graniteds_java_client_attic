@@ -200,13 +200,23 @@ public abstract class AbstractJavaFXProperty implements JavaFXProperty {
 			return ((ObservableDoubleValue)property.getObject(holder)).get();
 		return property.getDouble(holder);
 	}
+	
+	@Override
+	public Object getRawObject(Object holder) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+		Object fieldValue = property.getObject(holder);
+		
+		if (fieldValue instanceof ObservableValue)
+			return ((ObservableValue<?>)fieldValue).getValue();
+		
+		return fieldValue;
+	}
 
 	@Override
 	public Object getObject(Object holder) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		Object fieldValue = property.getObject(holder);
 		
 		if (fieldValue instanceof ObservableValue) {
-			Object wrappedValue = ((ObservableValue<?>)property.getObject(holder)).getValue();
+			Object wrappedValue = ((ObservableValue<?>)fieldValue).getValue();
 			
 			if (wrappedValue instanceof ObservablePersistentCollection)
 				return ((ObservablePersistentCollection<?>)wrappedValue).internalPersistentCollection();

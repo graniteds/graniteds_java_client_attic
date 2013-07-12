@@ -38,7 +38,6 @@ import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.DataManager.ChangeKind;
 import org.granite.client.tide.data.spi.DirtyCheckContext;
-import org.granite.client.tide.data.spi.EntityDescriptor;
 import org.granite.client.tide.data.spi.ExpressionEvaluator.Value;
 import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.client.tide.data.spi.Wrapper;
@@ -137,7 +136,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         if (source != null)
         	return source.containsKey(propertyName) && !isSame(source.get(propertyName), value);
        	
-		return !isSame(dataManager.getProperty(entity, propertyName), value);
+		return !isSame(dataManager.getPropertyValue(entity, propertyName), value);
     }
     
     
@@ -162,19 +161,14 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             
             boolean dirty = false;
             
-            Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
+            Map<String, Object> pval = dataManager.getPropertyValues(entity, true, false);
             
-            EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
             Map<String, Object> save = savedProperties.get(entity);
-            String versionPropertyName = desc != null ? desc.getVersionPropertyName() : null;
 			
 			if (embedded == null)
 				embedded = entity;
             
             for (String p : pval.keySet()) {
-                if (p.equals(versionPropertyName))
-                    continue;
-                
                 Object val = (entity == embedded && p.equals(propName)) ? value : pval.get(p);
                 Object saveval = save != null ? save.get(p) : null;
                 
@@ -203,7 +197,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                     }
                 }
                 else if (val != null
-                    && !(isEntity(val) || val instanceof Enum || val instanceof Value || val instanceof byte[]) 
+                    && !(isEntity(val) || ObjectUtil.isSimple(val) || val instanceof Enum || val instanceof Value || val instanceof byte[]) 
                     && isEntityChanged(val)) {
                     dirty = true;
                     break;
@@ -231,19 +225,14 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 		try {
 			trackingContext.setEnabled(false);
 			
-            Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
+            Map<String, Object> pval = dataManager.getPropertyValues(entity, true, false);
             
             if (embedded == null)
             	embedded = entity;
             
-            EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
             Map<String, Object> save = savedProperties.get(entity);
-            String versionPropertyName = desc != null ? desc.getVersionPropertyName() : null;
             
             for (String p : pval.keySet()) {
-                if (p.equals(versionPropertyName))
-                    continue;
-                
                 Object val = pval.get(p);
                 Object saveval = save != null ? save.get(p) : null;
                 
@@ -264,7 +253,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 						return true;
                 }
                 else if (val instanceof List<?> || val instanceof Map<?, ?>) {
-                	 if (val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())
+                	 if (!dataManager.isInitialized(val))
                 		 return false;
                 	 
                 	 @SuppressWarnings("unchecked")
@@ -288,7 +277,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 					}
                 }
                 else if (val != null
-                    && !(isEntity(val) || val instanceof Enum || val instanceof Value || val instanceof byte[]) 
+                    && !(isEntity(val) || ObjectUtil.isSimple(val) || val instanceof Enum || val instanceof Value || val instanceof byte[]) 
                     && isEntityDeepChanged(val, embedded, cache)) {
                     return true;
                 }
@@ -483,26 +472,26 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         if (diff) {
             boolean oldDirtyEntity = isEntityChanged(entity, object, propName, oldValue);
             
-            EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
+            String versionPropertyName = dataManager.getVersionPropertyName(entity);
             Map<String, Object> save = savedProperties.get(object);
             boolean unsaved = save == null;
             
-            if (unsaved || (desc.getVersionPropertyName() != null && 
-                save.get(desc.getVersionPropertyName()) != dataManager.getProperty(entity, desc.getVersionPropertyName()) 
-                    && !(save.get(desc.getVersionPropertyName()) == null && dataManager.getProperty(entity, desc.getVersionPropertyName()) == null))) {
+            if (unsaved || (versionPropertyName != null && 
+                (save.get(versionPropertyName) != dataManager.getVersion(entity) 
+                    && !(save.get(versionPropertyName) == null && dataManager.getVersion(entity) == null)))) {
                 
                 save = new HashMap<String, Object>();
-                if (desc.getVersionPropertyName() != null)
-                    save.put(desc.getVersionPropertyName(), dataManager.getProperty(entity, desc.getVersionPropertyName()));
+                if (versionPropertyName != null)
+                    save.put(versionPropertyName, dataManager.getVersion(entity));
                 savedProperties.put(object, save);
                 save.put(propName, oldValue);
                 if (unsaved)
                     dirtyCount++;
             }
             
-            if (save != null && (desc.getVersionPropertyName() == null 
-                || save.get(desc.getVersionPropertyName()) == dataManager.getProperty(entity, desc.getVersionPropertyName())
-                || (save.get(desc.getVersionPropertyName()) == null && dataManager.getProperty(entity, desc.getVersionPropertyName()) == null))) {
+            if (save != null && (versionPropertyName == null 
+                || save.get(versionPropertyName) == dataManager.getVersion(entity)
+                || (save.get(versionPropertyName) == null && dataManager.getVersion(entity) == null))) {
                 
                 if (!save.containsKey(propName))
                     save.put(propName, oldValue);
@@ -511,7 +500,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                     save.remove(propName);
                     int count = 0;
                     for (String p : save.keySet()) {
-                        if (!p.equals(desc.getVersionPropertyName()))
+                        if (!p.equals(versionPropertyName))
                             count++;
                     }
                     if (count == 0) {
@@ -540,19 +529,19 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 	public void entityCollectionChangeHandler(Object owner, String propName, Collection<?> coll, ChangeKind kind, Integer location, Object[] items) {
         boolean oldDirty = isDirty();
         
-        EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
+        String versionPropertyName = dataManager.getVersionPropertyName(owner);
         boolean oldDirtyEntity = isEntityChanged(owner);
         
         Map<String, Object> esave = savedProperties.get(owner);
         boolean unsaved = esave == null;
         
-        if (unsaved || (desc.getVersionPropertyName() != null && 
-            (esave.get(desc.getVersionPropertyName()) != dataManager.getProperty(owner, desc.getVersionPropertyName()) 
-                && !(esave.get(desc.getVersionPropertyName()) == null && dataManager.getProperty(owner, desc.getVersionPropertyName()) == null)))) {
+        if (unsaved || (versionPropertyName != null && 
+            (esave.get(versionPropertyName) != dataManager.getVersion(owner) 
+                && !(esave.get(versionPropertyName) == null && dataManager.getVersion(owner) == null)))) {
 
             esave = new HashMap<String, Object>();
-            if (desc.getVersionPropertyName() != null)
-                esave.put(desc.getVersionPropertyName(), dataManager.getProperty(owner, desc.getVersionPropertyName()));
+            if (versionPropertyName != null)
+                esave.put(versionPropertyName, dataManager.getVersion(owner));
             savedProperties.put(owner, esave);
             if (unsaved)
                 dirtyCount++;
@@ -602,7 +591,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 esave.remove(propName);
                 int count = 0;
                 for (Object p : esave.keySet()) {
-                    if (!p.equals(desc.getVersionPropertyName()))
+                    if (!p.equals(versionPropertyName))
                         count++;
                 }
                 if (count == 0) {
@@ -630,19 +619,19 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 	public void entityMapChangeHandler(Object owner, String propName, Map<?, ?> map, ChangeKind kind, Object[] items) {
         boolean oldDirty = isDirty();
         
-        EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
+        String versionPropertyName = dataManager.getVersionPropertyName(owner);
         boolean oldDirtyEntity = isEntityChanged(owner);
         
         Map<String, Object> esave = savedProperties.get(owner);
         boolean unsaved = esave == null;
         
-        if (unsaved || (desc.getVersionPropertyName() != null && 
-            (esave.get(desc.getVersionPropertyName()) != dataManager.getProperty(owner, desc.getVersionPropertyName()) 
-                && !(esave.get(desc.getVersionPropertyName()) == null && dataManager.getProperty(owner, desc.getVersionPropertyName()) == null)))) {
+        if (unsaved || (versionPropertyName != null && 
+            (esave.get(versionPropertyName) != dataManager.getVersion(owner) 
+                && !(esave.get(versionPropertyName) == null && dataManager.getVersion(owner) == null)))) {
 
             esave = new HashMap<String, Object>();
-            if (desc.getVersionPropertyName() != null)
-                esave.put(desc.getVersionPropertyName(), dataManager.getProperty(owner, desc.getVersionPropertyName()));
+            if (versionPropertyName != null)
+                esave.put(versionPropertyName, dataManager.getVersion(owner));
             savedProperties.put(owner, esave);
             if (unsaved)
                 dirtyCount++;
@@ -688,7 +677,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 esave.remove(propName);
                 int count = 0;
                 for (Object p : esave.keySet()) {
-                    if (!p.equals(desc.getVersionPropertyName()))
+                    if (!p.equals(versionPropertyName))
                         count++;
                 }
                 if (count == 0) {
@@ -761,11 +750,10 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         
 		List<String> merged = new ArrayList<String>();
 		
-        EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
-        String versionPropertyName = desc != null ? desc.getVersionPropertyName() : null;
+        String versionPropertyName = dataManager.getVersionPropertyName(owner);
 		
 		if (isEntity(source) && versionPropertyName != null)
-			save.put(versionPropertyName, dataManager.getProperty(source, versionPropertyName));
+			save.put(versionPropertyName, dataManager.getVersion(source));
 		
 		Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
 		for (String propName : pval.keySet()) {
@@ -779,7 +767,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 			if (localValue instanceof PropertyHolder)
 				localValue = ((PropertyHolder)localValue).getObject();
 			
-			Object sourceValue = dataManager.getProperty(source, propName);
+			Object sourceValue = dataManager.getPropertyValue(source, propName);
 			
 			if (isSameExt(sourceValue, localValue)) {
 				merged.add(propName);
@@ -810,7 +798,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         
         int count = 0;
         for (String propName : save.keySet()) {
-            if (!propName.equals(desc.getVersionPropertyName()))
+            if (!propName.equals(versionPropertyName))
                 count++;
         }
         if (count == 0) {
@@ -839,7 +827,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 					owner = ownerEntity[0];
 			}
 			
-			EntityDescriptor desc = dataManager.getEntityDescriptor(owner);
+			String versionPropertyName = dataManager.getVersionPropertyName(owner);
 			
 			boolean oldDirtyEntity = isEntityChanged(object);
 			
@@ -852,7 +840,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 				if (!(sn instanceof List<?>))
 					continue;
 				
-				Object value = dataManager.getProperty(object, p);
+				Object value = dataManager.getPropertyValue(object, p);
 				if (value instanceof Collection<?>) {
 					@SuppressWarnings("unchecked")
 					List<Object> snapshot = (List<Object>)sn;
@@ -944,7 +932,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 			
             int count = 0;
             for (Object p : save.keySet()) {
-                if (!p.equals(desc.getVersionPropertyName()))
+                if (!p.equals(versionPropertyName))
                     count++;
             }
             if (count == 0) {
@@ -974,16 +962,13 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
         cache.add(entity);
         
         Map<String, Object> save = savedProperties.get(entity);
-        EntityDescriptor desc = dataManager.getEntityDescriptor(entity);
         
-        Map<String, Object> pval = dataManager.getPropertyValues(entity, false, false);
+        Map<String, Object> pval = dataManager.getPropertyValues(entity, true, false);
         
         for (String p : pval.keySet()) {
-            if (p.equals(desc.getVersionPropertyName()))
-                continue;
+            Object val = pval.get(p);
             
-            Object val = dataManager.getProperty(entity, p);
-            if (val instanceof Collection<?> && !(val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())) {
+            if (val instanceof Collection<?> && dataManager.isInitialized(val)) {
                 Collection<Object> coll = (Collection<Object>)val;
                 List<Object> savedArray = save != null ? (List<Object>)save.get(p) : null;
                 
@@ -1005,7 +990,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                         resetEntity(mergeContext, o, o, cache);
                 }
             }
-            else if (val instanceof Map<?, ?> && !(val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())) {
+            else if (val instanceof Map<?, ?> && dataManager.isInitialized(val)) {
                 Map<Object, Object> map = (Map<Object, Object>)val;
                 List<Object[]> savedArray = save != null ? (List<Object[]>)save.get(p) : null;
                 
@@ -1033,19 +1018,19 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             }
             else if (save != null && (ObjectUtil.isSimple(val) || ObjectUtil.isSimple(save.get(p)))) {
                 if (save.containsKey(p))
-                    dataManager.setInternalProperty(entity, p, save.get(p));
+                    dataManager.setPropertyValue(entity, p, save.get(p));
             }
             else if (save != null && (val instanceof Enum || save.get(p) instanceof Enum || val instanceof Value || save.get(p) instanceof Value)) {
                 if (save.containsKey(p))
-                    dataManager.setInternalProperty(entity, p, save.get(p));
+                    dataManager.setPropertyValue(entity, p, save.get(p));
             } 
             else if (save != null && save.containsKey(p)) {
                 if (!ObjectUtil.objectEquals(dataManager, val, save.get(p)))
-                    dataManager.setInternalProperty(entity, p, save.get(p));
+                    dataManager.setPropertyValue(entity, p, save.get(p));
             }
             else if (isEntity(val))
                 resetEntity(mergeContext, val, val, cache);
-            else if (val != null && parent != null && !ObjectUtil.isSimple(val))
+            else if (val != null && parent != null && !ObjectUtil.isSimple(val) && !(val instanceof Enum))
                 resetEntity(mergeContext, val, parent, cache);
         }
         

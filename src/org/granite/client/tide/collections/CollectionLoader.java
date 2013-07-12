@@ -40,7 +40,6 @@ public class CollectionLoader implements Loader<PersistentCollection> {
     private final ServerSession serverSession;
     
     private final Object entity;
-    @SuppressWarnings("unused")
 	private final String propertyName;
     
     private boolean localInitializing = false;
@@ -80,7 +79,7 @@ public class CollectionLoader implements Loader<PersistentCollection> {
         this.initializationCallback = callback;
         
         EntityManager entityManager = PersistenceManager.getEntityManager(entity);
-        if (!initializing && entityManager.initializeObject(serverSession, collection))                
+        if (!initializing && entityManager.initializeObject(serverSession, entity, propertyName, collection))                
             initializing = true;
     }
 }

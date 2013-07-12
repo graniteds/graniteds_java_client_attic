@@ -49,6 +49,11 @@ public class PersistentSortedSet<E> extends AbstractPersistentSimpleCollection<E
 		if (collection != null)
 			init(clone ? new TreeSet<E>(collection) : collection, false);
 	}
+	
+	@Override
+	protected void doInitialize() {
+		init(new TreeSet<E>(), false);
+	}
 
 	public Comparator<? super E> comparator() {
 		return getCollection().comparator();

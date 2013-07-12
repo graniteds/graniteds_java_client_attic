@@ -84,7 +84,7 @@ public class ResultHandler<T> implements Runnable {
 	        for (Type type : tideResponder.getClass().getGenericInterfaces()) {
 	        	if (type instanceof ParameterizedType && ((ParameterizedType)type).getRawType().equals(TideResponder.class)) {
 	        		Type expectedReturnType = ((ParameterizedType)type).getActualTypeArguments()[0];
-	        		result = serverSession.getConverters().convert(result, expectedReturnType);
+	        		result = serverSession.convert(result, expectedReturnType);
 	        		if (invocationResult != null)
 	        			invocationResult.setResult(result);
 	        		break;

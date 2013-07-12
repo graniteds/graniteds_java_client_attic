@@ -33,7 +33,6 @@ import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.tide.Context;
-import org.granite.client.tide.collections.ManagedPersistentAssociation;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.RemoteInitializer;
@@ -73,7 +72,7 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 	/**
 	 * 	{@inheritdoc}
 	 */
-    public boolean initializeObject(ServerSession serverSession, Object object) {
+    public boolean initializeObject(ServerSession serverSession, Object entity, String propertyName, Object object) {
 		if (!enabled || context.isFinished())
 			return false;
 		
@@ -82,7 +81,6 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 //		if (!(object instanceof ManagedPersistentAssociation && dataManager.isEntity(((ManagedPersistentAssociation)object).getOwner())))
 //			return false;
 		
-		Object entity = ((ManagedPersistentAssociation)object).getOwner();
 		EntityManager entityManager = PersistenceManager.getEntityManager(entity);
 		if (entityManager == null)
 			return false;
@@ -95,7 +93,7 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 		entityManager.addReference(entity, null, null, null);
 		
 		synchronized (objectsInitializing) {
-			objectsInitializing.add(new Object[] { context, path != null ? path.getPath() : entity, ((ManagedPersistentAssociation)object).getPropertyName() });
+			objectsInitializing.add(new Object[] { context, path != null ? path.getPath() : entity, propertyName });
 		}
 		
 		context.callLater(new DoInitializeObjects(serverSession));

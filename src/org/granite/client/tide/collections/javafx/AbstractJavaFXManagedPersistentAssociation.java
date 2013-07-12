@@ -116,7 +116,7 @@ public abstract class AbstractJavaFXManagedPersistentAssociation implements Mana
             return;
         
         EntityManager entityManager = PersistenceManager.getEntityManager(entity);
-        if (!initializing && entityManager.initializeObject(serverSession, this))                
+        if (!initializing && entityManager.initializeObject(serverSession, entity, propertyName, this))                
             initializing = true;
     }
     

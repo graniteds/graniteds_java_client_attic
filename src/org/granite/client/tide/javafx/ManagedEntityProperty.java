@@ -122,7 +122,7 @@ public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
 	
 	@SuppressWarnings("unchecked")
 	private Property<Object> getVersionProperty(Object value) {
-		String versionPropertyName = dataManager.getEntityDescriptor(value).getVersionPropertyName();
+		String versionPropertyName = dataManager.getVersionPropertyName(value);
 		if (versionPropertyName == null)
 			throw new RuntimeException("No version property found on entity " + value);
 		try {
@@ -131,7 +131,6 @@ public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
 		}
 		catch (Exception e) {
 			throw new RuntimeException("Could not get version property on entity " + value, e);
-		}
-		
+		}		
 	}
 }

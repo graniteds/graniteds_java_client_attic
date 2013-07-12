@@ -51,6 +51,11 @@ public class PersistentMap<K, V> extends AbstractPersistentMapCollection<K, V, M
 		if (collection != null)
 			init(clone ? new HashMap<K, V>(collection) : collection, false);
 	}
+	
+	@Override
+	public void doInitialize() {
+		init(new HashMap<K, V>(), false);
+	}
 
 	@Override
 	protected PersistentCollectionSnapshot createSnapshot(boolean forReading) {

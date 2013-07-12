@@ -20,6 +20,11 @@
 
 package org.granite.client.persistence;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.messaging.jmf.reflect.Property;
 import org.granite.messaging.jmf.reflect.PropertyAccessException;
@@ -256,4 +261,69 @@ public class Persistence {
 			throw new PropertyAccessException("Could not get " + property + " of object " + entity, e);
 		}
 	}
+	
+	public List<Property> getLazyProperties(Class<?> entityClass) {
+		List<Property> properties = reflection.findSerializableProperties(entityClass);
+		List<Property> lazyProperties = new ArrayList<Property>();
+		for (Property property : properties) {
+			if (property.isAnnotationPresent(Lazy.class))
+				lazyProperties.add(property);
+		}
+		return lazyProperties;
+	}
+
+	
+	public Object getPropertyValue(Object entity, String name, boolean raw) {
+		Property property = reflection.findSerializableProperty(entity.getClass(), name);
+		try {
+			return raw ? property.getRawObject(entity) : property.getObject(entity);
+        }
+        catch (Exception e) {
+        	throw new RuntimeException("Could not get " + property + " of object " + entity);
+        }
+	}
+	
+	public void setPropertyValue(Object entity, String name, Object value) {
+		Property property = reflection.findSerializableProperty(entity.getClass(), name);
+		try {
+			property.setObject(entity, value);
+        }
+        catch (Exception e) {
+        	throw new RuntimeException("Could not set " + property + " of object " + entity);
+        }
+	}
+	
+    public Map<String, Object> getPropertyValues(Object entity, boolean raw, boolean excludeIdUid, boolean excludeVersion, boolean includeReadOnly) {
+        Map<String, Object> values = new LinkedHashMap<String, Object>();
+        
+        List<Property> properties = reflection.findSerializableProperties(entity.getClass());
+        
+        List<Property> excludedProperties = new ArrayList<Property>();
+        if (isEntity(entity.getClass())) {
+            excludedProperties.add(getInitializedProperty(entity.getClass()));
+            excludedProperties.add(getDetachedStateProperty(entity.getClass()));
+	        if (excludeIdUid && hasIdProperty(entity.getClass()))
+	        	excludedProperties.add(getIdProperty(entity.getClass()));
+	        if (excludeIdUid && hasUidProperty(entity.getClass()))
+	        	excludedProperties.add(getUidProperty(entity.getClass()));
+	        if (excludeVersion && hasVersionProperty(entity.getClass()))
+	        	excludedProperties.add(getVersionProperty(entity.getClass()));
+        }
+        
+        for (Property property : properties) {
+            if (excludedProperties.contains(property))
+                continue;
+            
+            if (!includeReadOnly && !property.isWritable())
+            	continue;
+            
+            try {
+            	values.put(property.getName(), raw ? property.getRawObject(entity) : property.getObject(entity));
+            }
+            catch (Exception e) {
+            	throw new RuntimeException("Could not get property " + property.getName() + " on entity " + entity);
+            }
+        }
+        return values;
+    }
 }

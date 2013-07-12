@@ -192,7 +192,7 @@ public interface EntityManager {
     
     public MergeContext initMerge();
     
-    public Object mergeExternal(final MergeContext mergeContext, Object obj, Object previous, Expression expr, Object parent, String propertyName, String setter, boolean forceUpdate);
+    public Object mergeExternal(final MergeContext mergeContext, Object obj, Object previous, Expression expr, Object parent, String propertyName, boolean forceUpdate);
     
     /**
      *  Merge an object coming from a remote location (in general from a service) in the local context
@@ -364,11 +364,13 @@ public interface EntityManager {
     /**
      *  Trigger remote initialization of lazy-loaded objects
      * 
+     *  @param entity owner entity
+     *  @param propertyName property name
      *  @param object a lazy-loaded object
      * 
      *  @return true if initialization triggered
      */
-    public boolean initializeObject(ServerSession serverSession, Object object);
+    public boolean initializeObject(ServerSession serverSession, Object entity, String propertyName, Object object);
     
     /**
      *  Trigger remote validation of objects

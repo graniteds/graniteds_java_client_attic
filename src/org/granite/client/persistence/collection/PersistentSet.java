@@ -51,6 +51,11 @@ public class PersistentSet<E> extends AbstractPersistentSimpleCollection<E, Set<
 		if (collection != null)
 			init(clone ? new HashSet<E>(collection) : collection, false);
 	}
+	
+	@Override
+	public void doInitialize() {
+		init(new HashSet<E>(), false);
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override

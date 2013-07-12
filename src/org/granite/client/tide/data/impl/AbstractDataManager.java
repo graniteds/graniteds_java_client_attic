@@ -21,27 +21,25 @@
 package org.granite.client.tide.data.impl;
 
 import java.lang.annotation.ElementType;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.validation.Path;
 import javax.validation.Path.Node;
 import javax.validation.TraversableResolver;
 
-import org.granite.client.persistence.Id;
-import org.granite.client.persistence.Lazy;
+import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.persistence.Persistence;
-import org.granite.client.persistence.Version;
 import org.granite.client.platform.Platform;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.spi.DataManager;
-import org.granite.client.tide.data.spi.EntityDescriptor;
 import org.granite.logging.Logger;
-import org.granite.messaging.amf.RemoteClass;
-import org.granite.util.Introspector;
+import org.granite.messaging.jmf.reflect.Property;
 import org.granite.util.UUIDUtil;
 
 /**
@@ -51,7 +49,7 @@ public abstract class AbstractDataManager implements DataManager {
 	
 	private static final Logger log = Logger.getLogger(AbstractDataManager.class);
 
-    private static Map<Class<?>, EntityDescriptor> entityDescriptors = new HashMap<Class<?>, EntityDescriptor>(50);
+    private static ConcurrentMap<Class<?>, Set<String>> lazyPropertiesByClass = new ConcurrentHashMap<Class<?>, Set<String>>(50);
     
     
     protected Persistence persistence = null;
@@ -72,12 +70,43 @@ public abstract class AbstractDataManager implements DataManager {
     	return persistence.getId(entity);
     }
     
+    public boolean hasIdProperty(Object entity) {
+    	if (entity == null)
+    		return false;
+    	return persistence.hasIdProperty(entity.getClass());
+    }
+    
     public String getDetachedState(Object entity) {
     	return persistence.getDetachedState(entity);
     }
     
     public Object getVersion(Object entity) {
     	return persistence.getVersion(entity);
+    }
+    
+    public boolean hasVersionProperty(Object entity) {
+    	if (entity == null)
+    		return false;
+    	return persistence.hasVersionProperty(entity.getClass());
+    }
+    
+    public String getVersionPropertyName(Object entity) {
+    	if (entity == null)
+    		return null;
+    	Property property = persistence.getVersionProperty(entity.getClass());
+    	return property != null ? property.getName() : null;
+    }
+    
+    public Object getPropertyValue(Object entity, String name) {
+    	if (entity == null)
+    		return null;
+    	return persistence.getPropertyValue(entity, name, true);
+    }
+    
+    public void setPropertyValue(Object entity, String name, Object value) {
+    	if (entity == null)
+    		return;
+    	persistence.setPropertyValue(entity, name, value);
     }
     
     public String getUid(Object entity) {
@@ -105,8 +134,10 @@ public abstract class AbstractDataManager implements DataManager {
     	return entity.getClass().getName() + ":" + getUid(entity);
     }
     
-    public boolean isInitialized(Object entity) {
-    	return persistence.isInitialized(entity);
+    public boolean isInitialized(Object object) {
+    	if (object instanceof LazyableCollection)
+    		return !((LazyableCollection)object).isInitialized();
+    	return persistence.isInitialized(object);
     }
     
     
@@ -143,55 +174,35 @@ public abstract class AbstractDataManager implements DataManager {
 	        log.error(e, "Could not copy internal state of object " + ObjectUtil.toString(obj));
 	    }
     }
+    
+    public Map<String, Object> getPropertyValues(Object entity, boolean excludeVersion, boolean includeReadOnly) {
+        return persistence.getPropertyValues(entity, true, false, excludeVersion, includeReadOnly);
+    }
+    
+    public Map<String, Object> getPropertyValues(Object entity, boolean excludeIdUid, boolean excludeVersion, boolean includeReadOnly) {
+        return persistence.getPropertyValues(entity, true, excludeIdUid, excludeVersion, includeReadOnly);
+    }
 
     
-    public EntityDescriptor getEntityDescriptor(Object entity) {
-    	if (entity == null)
-    		throw new IllegalArgumentException("Entity must not be null");
-    	
-        EntityDescriptor desc = entityDescriptors.get(entity.getClass());
-        if (desc != null)
-        	return desc;
-        	
-    	String className;
-        if (entity.getClass().isAnnotationPresent(RemoteClass.class))
-            className = entity.getClass().getAnnotation(RemoteClass.class).value();
-        else
-            className = entity.getClass().getName();
-        
-        String idPropertyName = null, versionPropertyName = null;
-        
-        Map<String, Boolean> lazy = new HashMap<String, Boolean>();
-        for (Method m : entity.getClass().getMethods()) {
-            if (m.getName().startsWith("get") && m.getParameterTypes().length == 0 && m.getReturnType() != Void.class) {
-                if (m.isAnnotationPresent(Id.class))
-                    idPropertyName = Introspector.decapitalize(m.getName().substring(3));
-                else if (m.isAnnotationPresent(Version.class))
-                    versionPropertyName = Introspector.decapitalize(m.getName().substring(3));
-                else if (m.isAnnotationPresent(Lazy.class))
-                    lazy.put(Introspector.decapitalize(m.getName().substring(3)), true);
-            }
-        }
-        
-        Class<?> clazz = entity.getClass();
-        while (clazz != null && clazz != Object.class) {
-            for (Field f : clazz.getDeclaredFields()) {
-                if (f.isAnnotationPresent(Id.class) && idPropertyName == null) {
-                    idPropertyName = f.getName();
-                }
-                else if (f.isAnnotationPresent(Version.class) && versionPropertyName == null) {
-                    versionPropertyName = f.getName();
-                }
-                else if (f.isAnnotationPresent(Lazy.class))
-                    lazy.put(Introspector.decapitalize(f.getName().substring(3)), true);
-            }
-            clazz = clazz.getSuperclass();
-        }
-        
-        desc = new EntityDescriptor(className, idPropertyName, versionPropertyName, lazy);
-        entityDescriptors.put(entity.getClass(), desc);
-
-        return desc;
+    private Set<String> getLazyPropertyNames(Class<?> entityClass) {
+    	Set<String> lazyPropertyNames = lazyPropertiesByClass.get(entityClass);
+    	if (lazyPropertyNames == null) {
+	    	List<Property> lazyProperties = persistence.getLazyProperties(entityClass);
+	    	lazyPropertyNames = new HashSet<String>();
+	    	for (Property lazyProperty : lazyProperties)
+	    		lazyPropertyNames.add(lazyProperty.getName());
+	    	
+	    	lazyPropertiesByClass.putIfAbsent(entityClass, lazyPropertyNames);	    	
+    	}
+    	return lazyPropertyNames;
+    }
+    
+    public boolean isLazyProperty(Object entity, String propertyName) {
+		return getLazyPropertyNames(entity.getClass()).contains(propertyName);
+    }
+    
+    public void setLazyProperty(Object entity, String propertyName) {
+    	getLazyPropertyNames(entity.getClass()).add(propertyName);    	
     }
 
     

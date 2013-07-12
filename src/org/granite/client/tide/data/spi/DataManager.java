@@ -20,7 +20,6 @@
 
 package org.granite.client.tide.data.spi;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,6 +39,8 @@ public interface DataManager {
     
     public Object getId(Object entity);
     
+    public boolean hasIdProperty(Object entity);
+    
     public String getDetachedState(Object entity);
     
     public boolean defineProxy(Object target, Object source);
@@ -50,9 +51,23 @@ public interface DataManager {
     
     public Object getVersion(Object entity);
     
-    // public void setVersion(Object entity, Object version);
+    public boolean hasVersionProperty(Object entity);
+    
+    public String getVersionPropertyName(Object entity);
     
     public String getUid(Object entity);
+    
+    public Map<String, Object> getPropertyValues(Object entity, boolean excludeIdUid, boolean excludeVersion, boolean includeReadOnly);
+    
+    public Map<String, Object> getPropertyValues(Object entity, boolean excludeVersion, boolean includeReadOnly);
+    
+    public Object getPropertyValue(Object entity, String name);
+    
+    public void setPropertyValue(Object entity, String name, Object value);
+    
+    public boolean isLazyProperty(Object entity, String name);
+    
+    public void setLazyProperty(Object entity, String name);
     
     public String getCacheKey(Object entity);
     
@@ -64,17 +79,6 @@ public interface DataManager {
     
     public boolean isDeepDirtyEntity(Object entity);
     
-    public EntityDescriptor getEntityDescriptor(Object entity);
-    
-    public Object getProperty(Object object, String propertyName);
-
-    public void setProperty(Object object, String propertyName, Object oldValue, Object newValue);
-
-    public void setInternalProperty(Object object, String propertyName, Object value);
-    
-    public Map<String, Object> getPropertyValues(Object object, boolean includeReadOnly, boolean includeTransient);
-    
-    public Map<String, Object> getPropertyValues(Object object, List<String> excludedProperties, boolean includeReadOnly, boolean includeTransient);
     
     public ManagedPersistentCollection<Object> newPersistentCollection(Object parent, String propertyName, LazyableCollection nextList);
     

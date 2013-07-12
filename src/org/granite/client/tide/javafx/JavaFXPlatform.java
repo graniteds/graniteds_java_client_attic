@@ -62,7 +62,7 @@ public class JavaFXPlatform implements org.granite.client.tide.Platform {
 			serverSession.setStatus(serverSessionStatus);
 		}
 	}
-
+	
 	@Override
 	public DataManager getDataManager() {
 		return dataManager;

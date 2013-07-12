@@ -48,7 +48,12 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 		if (collection != null)
 			init((clone ? new ArrayList<E>(collection) : collection), false);
 	}
-
+	
+	@Override
+	public void doInitialize() {
+		init(new ArrayList<E>(), false);
+	}
+	
 	public boolean addAll(int index, Collection<? extends E> c) {
 		checkInitializedWrite();
 		if (getCollection().addAll(index, c)) {

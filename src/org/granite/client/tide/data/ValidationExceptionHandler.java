@@ -61,7 +61,7 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 						Object bean = rootBean;
 						String[] path = iv.getPath().split("\\.");
 						for (int i = 0; i < path.length-1; i++)
-							bean = context.getDataManager().getProperty(bean, path[i]);
+							bean = context.getDataManager().getPropertyValue(bean, path[i]);
 						leafBean = bean;
 					}
 				}

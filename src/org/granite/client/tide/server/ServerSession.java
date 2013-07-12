@@ -20,6 +20,7 @@
 
 package org.granite.client.tide.server;
 
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,7 +78,6 @@ import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.Update;
 import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.logging.Logger;
-import org.granite.messaging.amf.io.convert.Converters;
 import org.granite.tide.Expression;
 import org.granite.tide.invocation.ContextResult;
 import org.granite.tide.invocation.ContextUpdate;
@@ -273,8 +273,10 @@ public class ServerSession implements ContextAware {
 		remoteClassConfigurator.setPackageNames(packageNames);
 	}
 	
-	public Converters getConverters() {
-		return configuration.getGraniteConfig().getConverters();
+	public Object convert(Object value, Type expectedType) {
+		if (contentType == ContentType.JMF_AMF)
+			return value;
+		return configuration.getGraniteConfig().getConverters().convert(value, expectedType);
 	}
 	
 	@PostConstruct
@@ -767,7 +769,7 @@ public class ServerSession implements ContextAware {
     //                    if (!isGlobal() && r.getScope() == ScopeType.SESSION.ordinal())
     //                        val = parentContext.getEntityManager().mergeExternal(val, previous, res);
     //                    else
-                        val = entityManager.mergeExternal(mergeContext, val, previous, res, null, null, null, false);
+                        val = entityManager.mergeExternal(mergeContext, val, previous, res, null, null, false);
                         
                         if (propName != null) {
                             if (obj instanceof PropertyHolder) {
@@ -785,7 +787,7 @@ public class ServerSession implements ContextAware {
             // Merges final result object
             if (result != null) {
                 if (mergeExternal)
-                    result = entityManager.mergeExternal(mergeContext, result, mergeWith, null, null, null, null, false);
+                    result = entityManager.mergeExternal(mergeContext, result, mergeWith, null, null, null, false);
                 else
                     log.debug("skipped merge of remote result");
                 if (invocationResult != null)

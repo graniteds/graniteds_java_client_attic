@@ -36,6 +36,6 @@ public interface RemoteInitializer {
      *
      *  @param object a lazy loaded object
      */
-    public boolean initializeObject(ServerSession serverSession, Object object);
+    public boolean initializeObject(ServerSession serverSession, Object entity, String propertyName, Object object);
 
 }

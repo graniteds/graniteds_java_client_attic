@@ -49,6 +49,11 @@ public class PersistentSortedMap<K, V> extends AbstractPersistentMapCollection<K
 		if (collection != null)
 			init(clone ? new TreeMap<K, V>(collection) : collection, false);
 	}
+	
+	@Override
+	public void doInitialize() {
+		init(new TreeMap<K, V>(), false);
+	}
 
 	public Comparator<? super K> comparator() {
 		return getCollection().comparator();

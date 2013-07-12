@@ -33,32 +33,12 @@ public class EntityDescriptor {
     @SuppressWarnings("unused")
     private final static Logger log = Logger.getLogger(EntityDescriptor.class);
     
-    private final String className;
-    private final String idPropertyName;
-    private final String versionPropertyName;
-    
     private final Map<String, Boolean> lazy = new HashMap<String, Boolean>();
     
     
-    public EntityDescriptor(String className, String idPropertyName, String versionPropertyName, Map<String, Boolean> lazy) {
-    	this.className = className;
-    	this.idPropertyName = idPropertyName;
-    	this.versionPropertyName = versionPropertyName;
+    public EntityDescriptor(Map<String, Boolean> lazy) {
    		if (lazy != null)
    			this.lazy.putAll(lazy);
-    }
-    
-    
-    public String getClassName() {
-        return className;
-    }
-    
-    public String getIdPropertyName() {
-        return idPropertyName;
-    }
-    
-    public String getVersionPropertyName() {
-        return versionPropertyName;
     }
     
     public boolean isLazy(String propertyName) {

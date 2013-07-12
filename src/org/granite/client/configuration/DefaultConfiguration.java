@@ -33,13 +33,6 @@ public class DefaultConfiguration implements Configuration {
 
 	private static final String DEFAULT_CONFIG_PATH = DefaultConfiguration.class.getPackage().getName().replace('.', '/') + "/granite-config.xml";
 	
-	private static Configuration instance = null;
-
-	public static synchronized Configuration getInstance() {
-		if (instance == null)
-			instance = new DefaultConfiguration();
-		return instance;
-	}
 	
 	private GraniteConfig graniteConfig;
 	private ServicesConfig servicesConfig;
