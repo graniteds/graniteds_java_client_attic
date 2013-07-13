@@ -20,14 +20,12 @@
 
 package org.granite.client.persistence.collection.javafx;
 
-import javafx.beans.Observable;
-
 import org.granite.client.persistence.collection.PersistentCollection;
 
 /**
  * @author Franck WOLFF
  */
-public interface ObservablePersistentCollection<C extends PersistentCollection> extends Observable, PersistentCollection {
+public interface UnsafePersistentCollection<C extends PersistentCollection> extends PersistentCollection {
 
 	C internalPersistentCollection();
 }

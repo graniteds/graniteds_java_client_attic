@@ -50,8 +50,8 @@ import org.granite.client.persistence.collection.PersistentMap;
 import org.granite.client.persistence.collection.PersistentSet;
 import org.granite.client.persistence.collection.PersistentSortedMap;
 import org.granite.client.persistence.collection.PersistentSortedSet;
-import org.granite.client.persistence.collection.javafx.ObservablePersistentCollection;
-import org.granite.client.persistence.collection.javafx.ObservablePersistentCollections;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
+import org.granite.client.persistence.collection.javafx.UnsafePersistentCollection;
 import org.granite.messaging.jmf.reflect.Property;
 
 import com.sun.javafx.collections.ObservableListWrapper;
@@ -218,8 +218,8 @@ public abstract class AbstractJavaFXProperty implements JavaFXProperty {
 		if (fieldValue instanceof ObservableValue) {
 			Object wrappedValue = ((ObservableValue<?>)fieldValue).getValue();
 			
-			if (wrappedValue instanceof ObservablePersistentCollection)
-				return ((ObservablePersistentCollection<?>)wrappedValue).internalPersistentCollection();
+			if (wrappedValue instanceof UnsafePersistentCollection)
+				return ((UnsafePersistentCollection<?>)wrappedValue).internalPersistentCollection();
 			if (wrappedValue instanceof ObservableListWrapper)
 				return observableListWrapperField.get(wrappedValue);
 			if (wrappedValue instanceof ObservableSetWrapper)
@@ -303,26 +303,26 @@ public abstract class AbstractJavaFXProperty implements JavaFXProperty {
 			WritableValue<Object> writableValue = (WritableValue<Object>)property.getObject(holder);
 			
 			if (writableValue instanceof WritableListValue) {
-				if (value instanceof PersistentList)
-					value = ObservablePersistentCollections.newObservablePersistentList((PersistentList<Object>)value);
-				else if (value instanceof PersistentBag)
-					value = ObservablePersistentCollections.newObservablePersistentBag((PersistentBag<Object>)value);
+				if (value instanceof PersistentBag)
+					value = FXPersistentCollections.observablePersistentBag((PersistentBag<Object>)value);
+				else if (value instanceof PersistentList)
+					value = FXPersistentCollections.observablePersistentList((PersistentList<Object>)value);
 				else
 					value = FXCollections.observableList((List<Object>)value);
 			}
 			else if (writableValue instanceof WritableSetValue) {
-				if (value instanceof PersistentSet)
-					value = ObservablePersistentCollections.newObservablePersistentSet((PersistentSet<Object>)value);
-				else if (value instanceof PersistentSortedSet)
-					value = ObservablePersistentCollections.newObservablePersistentSortedSet((PersistentSortedSet<Object>)value);
+				if (value instanceof PersistentSortedSet)
+					value = FXPersistentCollections.observablePersistentSortedSet((PersistentSortedSet<Object>)value);
+				else if (value instanceof PersistentSet)
+					value = FXPersistentCollections.observablePersistentSet((PersistentSet<Object>)value);
 				else
 					value = FXCollections.observableSet((Set<Object>)value);
 			}
 			else if (writableValue instanceof WritableMapValue) {
-				if (value instanceof PersistentMap)
-					value = ObservablePersistentCollections.newObservablePersistentMap((PersistentMap<Object, Object>)value);
-				else if (value instanceof PersistentSortedMap)
-					value = ObservablePersistentCollections.newObservablePersistentSortedMap((PersistentSortedMap<Object, Object>)value);
+				if (value instanceof PersistentSortedMap)
+					value = FXPersistentCollections.observablePersistentSortedMap((PersistentSortedMap<Object, Object>)value);
+				else if (value instanceof PersistentMap)
+					value = FXPersistentCollections.observablePersistentMap((PersistentMap<Object, Object>)value);
 				else
 					value = FXCollections.observableMap((Map<Object, Object>)value);
 			}

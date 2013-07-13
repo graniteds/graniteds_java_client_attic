@@ -20,13 +20,108 @@
 
 package org.granite.client.persistence.collection.javafx;
 
-import javafx.collections.ObservableSet;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Iterator;
 
+import org.granite.client.persistence.Loader;
+import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.collection.PersistentSet;
+
+import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
  * @author Franck WOLFF
  */
-public interface ObservablePersistentSet<E> extends ObservableSet<E>, ObservablePersistentCollection<PersistentSet<E>> {
+public class ObservablePersistentSet<E> extends ObservableSetWrapper<E> implements UnsafePersistentCollection<PersistentSet<E>> {
+	
+	private final PersistentSet<E> persistentSet;
 
+	public ObservablePersistentSet(PersistentSet<E> persistentSet) {
+		super(persistentSet);
+		
+		this.persistentSet = persistentSet;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Iterator<E> iterator() {
+		return (Iterator<E>)super.iterator();
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		persistentSet.writeExternal(out);
+	}
+	
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		persistentSet.readExternal(in);
+	}
+
+	@Override
+	public boolean wasInitialized() {
+		return persistentSet.wasInitialized();
+	}
+
+	@Override
+	public void uninitialize() {
+		persistentSet.uninitialize();
+	}
+
+	@Override
+	public void initialize() {
+		persistentSet.initialize();
+	}
+
+	@Override
+	public void initializing() {
+		persistentSet.initializing();
+	}
+
+	@Override
+	public PersistentCollection clone(boolean uninitialize) {
+		return persistentSet.clone(uninitialize);
+	}
+
+	@Override
+	public Loader<PersistentCollection> getLoader() {
+		return persistentSet.getLoader();
+	}
+
+	@Override
+	public void setLoader(Loader<PersistentCollection> loader) {
+		persistentSet.setLoader(loader);
+	}
+
+	@Override
+	public boolean isDirty() {
+		return persistentSet.isDirty();
+	}
+
+	@Override
+	public void dirty() {
+		persistentSet.dirty();
+	}
+
+	@Override
+	public void clearDirty() {
+		persistentSet.clearDirty();
+	}
+
+	@Override
+	public void addListener(InitializationListener listener) {
+		persistentSet.addListener(listener);
+	}
+
+	@Override
+	public void withInitialized(InitializationCallback callback) {
+		persistentSet.withInitialized(callback);
+	}
+	
+	@Override
+	public PersistentSet<E> internalPersistentCollection() {
+		return persistentSet;
+	}
 }

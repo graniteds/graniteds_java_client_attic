@@ -20,13 +20,101 @@
 
 package org.granite.client.persistence.collection.javafx;
 
-import javafx.collections.ObservableMap;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
+import org.granite.client.persistence.Loader;
+import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.collection.PersistentSortedMap;
+
+import com.sun.javafx.collections.ObservableMapWrapper;
 
 /**
  * @author Franck WOLFF
  */
-public interface ObservablePersistentSortedMap<K, V> extends ObservableMap<K, V>, ObservablePersistentCollection<PersistentSortedMap<K, V>> {
+public class ObservablePersistentSortedMap<K, V> extends ObservableMapWrapper<K, V> implements UnsafePersistentCollection<PersistentSortedMap<K, V>> {
+	
+	private final PersistentSortedMap<K, V> persistentSortedMap;
 
+	public ObservablePersistentSortedMap(PersistentSortedMap<K, V> persistentSortedMap) {
+		super(persistentSortedMap);
+		
+		this.persistentSortedMap = persistentSortedMap;
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		persistentSortedMap.writeExternal(out);
+	}
+	
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		persistentSortedMap.readExternal(in);
+	}
+
+	@Override
+	public boolean wasInitialized() {
+		return persistentSortedMap.wasInitialized();
+	}
+
+	@Override
+	public void uninitialize() {
+		persistentSortedMap.uninitialize();
+	}
+
+	@Override
+	public void initialize() {
+		persistentSortedMap.initialize();
+	}
+
+	@Override
+	public void initializing() {
+		persistentSortedMap.initializing();
+	}
+
+	@Override
+	public PersistentCollection clone(boolean uninitialize) {
+		return persistentSortedMap.clone(uninitialize);
+	}
+
+	@Override
+	public Loader<PersistentCollection> getLoader() {
+		return persistentSortedMap.getLoader();
+	}
+
+	@Override
+	public void setLoader(Loader<PersistentCollection> loader) {
+		persistentSortedMap.setLoader(loader);
+	}
+
+	@Override
+	public boolean isDirty() {
+		return persistentSortedMap.isDirty();
+	}
+
+	@Override
+	public void dirty() {
+		persistentSortedMap.dirty();
+	}
+
+	@Override
+	public void clearDirty() {
+		persistentSortedMap.clearDirty();
+	}
+
+	@Override
+	public void addListener(InitializationListener listener) {
+		persistentSortedMap.addListener(listener);
+	}
+
+	@Override
+	public void withInitialized(InitializationCallback callback) {
+		persistentSortedMap.withInitialized(callback);
+	}
+	
+	@Override
+	public PersistentSortedMap<K, V> internalPersistentCollection() {
+		return persistentSortedMap;
+	}
 }

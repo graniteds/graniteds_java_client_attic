@@ -20,13 +20,101 @@
 
 package org.granite.client.persistence.collection.javafx;
 
-import javafx.collections.ObservableList;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
+import org.granite.client.persistence.Loader;
 import org.granite.client.persistence.collection.PersistentBag;
+import org.granite.client.persistence.collection.PersistentCollection;
+
+import com.sun.javafx.collections.ObservableListWrapper;
 
 /**
  * @author Franck WOLFF
  */
-public interface ObservablePersistentBag<E> extends ObservableList<E>, ObservablePersistentCollection<PersistentBag<E>> {
+public class ObservablePersistentBag<E> extends ObservableListWrapper<E> implements UnsafePersistentCollection<PersistentBag<E>> {
+	
+	private final PersistentBag<E> persistentBag;
 
+	public ObservablePersistentBag(PersistentBag<E> persistentBag) {
+		super(persistentBag);
+		
+		this.persistentBag = persistentBag;
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		persistentBag.writeExternal(out);
+	}
+	
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		persistentBag.readExternal(in);
+	}
+
+	@Override
+	public boolean wasInitialized() {
+		return persistentBag.wasInitialized();
+	}
+
+	@Override
+	public void uninitialize() {
+		persistentBag.uninitialize();
+	}
+
+	@Override
+	public void initialize() {
+		persistentBag.initialize();
+	}
+
+	@Override
+	public void initializing() {
+		persistentBag.initializing();
+	}
+
+	@Override
+	public PersistentCollection clone(boolean uninitialize) {
+		return persistentBag.clone(uninitialize);
+	}
+
+	@Override
+	public Loader<PersistentCollection> getLoader() {
+		return persistentBag.getLoader();
+	}
+
+	@Override
+	public void setLoader(Loader<PersistentCollection> loader) {
+		persistentBag.setLoader(loader);
+	}
+
+	@Override
+	public boolean isDirty() {
+		return persistentBag.isDirty();
+	}
+
+	@Override
+	public void dirty() {
+		persistentBag.dirty();
+	}
+
+	@Override
+	public void clearDirty() {
+		persistentBag.clearDirty();
+	}
+
+	@Override
+	public void addListener(InitializationListener listener) {
+		persistentBag.addListener(listener);
+	}
+
+	@Override
+	public void withInitialized(InitializationCallback callback) {
+		persistentBag.withInitialized(callback);
+	}
+	
+	@Override
+	public PersistentBag<E> internalPersistentCollection() {
+		return persistentBag;
+	}
 }

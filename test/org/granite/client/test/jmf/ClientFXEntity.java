@@ -15,7 +15,7 @@ import org.granite.client.persistence.Entity;
 import org.granite.client.persistence.Id;
 import org.granite.client.persistence.Uid;
 import org.granite.client.persistence.Version;
-import org.granite.client.persistence.collection.javafx.ObservablePersistentCollections;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
 
 @Entity
 @RemoteAlias("org.granite.client.test.jmf.ServerEntity")
@@ -39,7 +39,7 @@ public class ClientFXEntity implements Serializable {
 
 	private StringProperty name = new SimpleStringProperty(this, "name", null);
 	
-	private ReadOnlyListWrapper<ClientFXCollectionEntity> list = ObservablePersistentCollections.newReadOnlyPersistentListWrapper(this, "list");
+	private ReadOnlyListWrapper<ClientFXCollectionEntity> list = FXPersistentCollections.readOnlyObservablePersistentList(this, "list");
 
 	public ClientFXEntity() {
 	}

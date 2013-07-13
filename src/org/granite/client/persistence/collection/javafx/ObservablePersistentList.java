@@ -20,13 +20,101 @@
 
 package org.granite.client.persistence.collection.javafx;
 
-import javafx.collections.ObservableList;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
+import org.granite.client.persistence.Loader;
+import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.collection.PersistentList;
 
-/**
- * @author Franck WOLFF
- */
-public interface ObservablePersistentList<E> extends ObservableList<E>, ObservablePersistentCollection<PersistentList<E>> {
+import com.sun.javafx.collections.ObservableListWrapper;
 
+/**
+ * @author William DRAI
+ */
+public class ObservablePersistentList<E> extends ObservableListWrapper<E> implements UnsafePersistentCollection<PersistentList<E>> {
+	
+	private final PersistentList<E> persistentList;
+
+	public ObservablePersistentList(PersistentList<E> persistentList) {
+		super(persistentList);
+		
+		this.persistentList = persistentList;
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		persistentList.writeExternal(out);
+	}
+	
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		persistentList.readExternal(in);
+	}
+
+	@Override
+	public boolean wasInitialized() {
+		return persistentList.wasInitialized();
+	}
+
+	@Override
+	public void uninitialize() {
+		persistentList.uninitialize();
+	}
+
+	@Override
+	public void initialize() {
+		persistentList.initialize();
+	}
+
+	@Override
+	public void initializing() {
+		persistentList.initializing();
+	}
+
+	@Override
+	public PersistentCollection clone(boolean uninitialize) {
+		return persistentList.clone(uninitialize);
+	}
+
+	@Override
+	public Loader<PersistentCollection> getLoader() {
+		return persistentList.getLoader();
+	}
+
+	@Override
+	public void setLoader(Loader<PersistentCollection> loader) {
+		persistentList.setLoader(loader);
+	}
+
+	@Override
+	public boolean isDirty() {
+		return persistentList.isDirty();
+	}
+
+	@Override
+	public void dirty() {
+		persistentList.dirty();
+	}
+
+	@Override
+	public void clearDirty() {
+		persistentList.clearDirty();
+	}
+
+	@Override
+	public void addListener(InitializationListener listener) {
+		persistentList.addListener(listener);
+	}
+
+	@Override
+	public void withInitialized(InitializationCallback callback) {
+		persistentList.withInitialized(callback);
+	}
+	
+	@Override
+	public PersistentList<E> internalPersistentCollection() {
+		return persistentList;
+	}
 }
