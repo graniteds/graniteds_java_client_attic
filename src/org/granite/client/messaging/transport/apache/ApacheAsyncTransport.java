@@ -26,6 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.ClientPNames;
@@ -41,6 +42,7 @@ import org.granite.client.messaging.transport.AbstractTransport;
 import org.granite.client.messaging.transport.HTTPTransport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportFuture;
+import org.granite.client.messaging.transport.TransportHttpStatusException;
 import org.granite.client.messaging.transport.TransportIOException;
 import org.granite.client.messaging.transport.TransportMessage;
 import org.granite.logging.Logger;
@@ -148,6 +150,14 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 	            public void completed(HttpResponse response) {
 	            	if (!message.isConnect())
 	            		getStatusHandler().handleIO(false);
+	            	
+	            	if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+	            		channel.onError(message, new TransportHttpStatusException(
+	            			response.getStatusLine().getStatusCode(),
+	            			response.getStatusLine().getReasonPhrase())
+	            		);
+	            		return;
+	            	}
 	            	
 	        		InputStream is = null;
 	        		try {
