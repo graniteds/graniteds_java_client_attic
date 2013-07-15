@@ -20,18 +20,11 @@
 
 package org.granite.client.messaging.jmf;
 
-import java.util.Map;
-
 import org.granite.messaging.jmf.SharedContext;
+
 
 /**
  * @author Franck WOLFF
  */
 public interface ClientSharedContext extends SharedContext {
-
-	void registerAlias(Class<?> remoteAliasAnnotatedClass);
-	void registerAliases(Class<?>... remoteAliasAnnotatedClasses);
-	
-	void registerAlias(String clientClassName, String serverClassName);
-	void registerAliases(Map<String, String> clientToServerAliases);
 }

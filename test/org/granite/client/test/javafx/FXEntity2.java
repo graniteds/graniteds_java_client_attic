@@ -8,11 +8,11 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 import org.granite.client.javafx.JavaFXObject;
-import org.granite.messaging.amf.RemoteClass;
+import org.granite.client.messaging.RemoteAlias;
 
 
 @JavaFXObject
-@RemoteClass("org.granite.client.test.javafx.Entity2")
+@RemoteAlias("org.granite.client.test.javafx.Entity2")
 public class FXEntity2 implements Serializable {
 
 	private static final long serialVersionUID = 1L;

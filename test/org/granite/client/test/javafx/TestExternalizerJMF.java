@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.client.messaging.jmf.DefaultClientSharedContext;
 import org.granite.hibernate.jmf.EntityCodec;
@@ -28,6 +29,7 @@ public class TestExternalizerJMF {
 	
 	private SharedContext serverSharedContext;
 	private ClientSharedContext clientSharedContext;
+	private ClientAliasRegistry clientAliasRegistry = new ClientAliasRegistry();
 	
 	@Before
 	public void before() throws Exception {
@@ -39,18 +41,18 @@ public class TestExternalizerJMF {
 		List<ExtendedObjectCodec> clientCodecs = new ArrayList<ExtendedObjectCodec>();
 		//clientCodecs.add(new JavaFXEntityCodec());
 		CodecRegistry clientCodecRegistry = new DefaultCodecRegistry(clientCodecs);
-		clientSharedContext = new DefaultClientSharedContext(clientCodecRegistry);
+		clientAliasRegistry.registerAlias("org.granite.client.persistence.javafx.PersistentSet", "org.granite.client.persistence.collection.PersistentSet");
+		clientAliasRegistry.registerAlias("org.granite.client.persistence.javafx.PersistentList", "org.granite.client.persistence.collection.PersistentList");
+		clientAliasRegistry.registerAlias("org.granite.client.persistence.javafx.PersistentMap", "org.granite.client.persistence.collection.PersistentMap");
 		
-		clientSharedContext.registerAlias("org.granite.client.persistence.javafx.PersistentSet", "org.granite.client.persistence.collection.PersistentSet");
-		clientSharedContext.registerAlias("org.granite.client.persistence.javafx.PersistentList", "org.granite.client.persistence.collection.PersistentList");
-		clientSharedContext.registerAlias("org.granite.client.persistence.javafx.PersistentMap", "org.granite.client.persistence.collection.PersistentMap");
+		clientSharedContext = new DefaultClientSharedContext(clientCodecRegistry, null, null, clientAliasRegistry);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testExternalizationSetServerToClient() throws Exception {
-		clientSharedContext.registerAlias("org.granite.client.test.javafx.FXEntity1b", "org.granite.client.test.javafx.Entity1b");
-		clientSharedContext.registerAlias("org.granite.client.test.javafx.FXEntity2b", "org.granite.client.test.javafx.Entity2b");
+		clientAliasRegistry.registerAlias("org.granite.client.test.javafx.FXEntity1b", "org.granite.client.test.javafx.Entity1b");
+		clientAliasRegistry.registerAlias("org.granite.client.test.javafx.FXEntity2b", "org.granite.client.test.javafx.Entity2b");
 		
 		Entity1b entity1 = new Entity1b();
 		entity1.setName("Test");
@@ -75,8 +77,8 @@ public class TestExternalizerJMF {
 
 	@Test
 	public void testExternalizationSetClientToServer() throws Exception {
-		clientSharedContext.registerAlias("org.granite.client.test.javafx.Entity1b", "org.granite.client.test.javafx.FXEntity1b");
-		clientSharedContext.registerAlias("org.granite.client.test.javafx.Entity2b", "org.granite.client.test.javafx.FXEntity2b");
+		clientAliasRegistry.registerAlias("org.granite.client.test.javafx.Entity1b", "org.granite.client.test.javafx.FXEntity1b");
+		clientAliasRegistry.registerAlias("org.granite.client.test.javafx.Entity2b", "org.granite.client.test.javafx.FXEntity2b");
 		
 		FXEntity1b entity1 = new FXEntity1b();
 		entity1.setName("Test");

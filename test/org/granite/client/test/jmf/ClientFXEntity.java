@@ -2,6 +2,8 @@ package org.granite.client.test.jmf;
 
 import java.io.Serializable;
 
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyListProperty;
 import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -30,6 +32,8 @@ public class ClientFXEntity implements Serializable {
 	
 	@Id
 	private ReadOnlyObjectWrapper<Integer> id = new ReadOnlyObjectWrapper<Integer>(this, "id", null);
+	
+	private ReadOnlyBooleanWrapper fuck = new ReadOnlyBooleanWrapper(this, "fuck", false);
 	
 	@Uid
 	private StringProperty uid = new SimpleStringProperty(this, "uid", null);
@@ -88,5 +92,12 @@ public class ClientFXEntity implements Serializable {
 	}
 	public ObservableList<ClientFXCollectionEntity> getList() {
 		return list.get();
+	}
+	
+	public ReadOnlyBooleanProperty fuckProperty() {
+		return fuck.getReadOnlyProperty();
+	}
+	public boolean getFuck() {
+		return fuck.get();
 	}
 }

@@ -22,6 +22,7 @@ package org.granite.client.platform.javafx;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.client.configuration.SimpleConfiguration;
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.persistence.javafx.PersistentBag;
 import org.granite.client.persistence.javafx.PersistentList;
 import org.granite.client.persistence.javafx.PersistentMap;
@@ -54,11 +55,13 @@ public class JavaFXPlatform extends Platform {
 		configuration.addConfigurator(new Configuration.Configurator() {
 			@Override
 			public void configure(GraniteConfig graniteConfig) {
-				graniteConfig.registerClassAlias(PersistentSet.class);
-				graniteConfig.registerClassAlias(PersistentBag.class);
-				graniteConfig.registerClassAlias(PersistentList.class);
-				graniteConfig.registerClassAlias(PersistentMap.class);
-				graniteConfig.registerClassAlias(InvalidValue.class);
+				ClientAliasRegistry aliasRegistry = new ClientAliasRegistry();
+				aliasRegistry.registerAlias(PersistentSet.class);
+				aliasRegistry.registerAlias(PersistentBag.class);
+				aliasRegistry.registerAlias(PersistentList.class);
+				aliasRegistry.registerAlias(PersistentMap.class);
+				aliasRegistry.registerAlias(InvalidValue.class);
+				graniteConfig.setAliasRegistry(aliasRegistry);
 			}
 		});
 		return configuration;

@@ -30,7 +30,6 @@ import net.sf.extcos.spi.ResourceType;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.config.GraniteConfig;
-import org.granite.messaging.amf.RemoteClass;
 
 /**
  * @author William DRAI
@@ -59,10 +58,10 @@ public class RemoteClassScanner implements Configuration.Configurator {
 		for (Class<?> remoteClass : scanner.getClasses(new ComponentQuery() {
 			@Override
 			protected void query() {
-				select(JavaClassResourceType.javaClasses()).from(basePackageNames).returning(allAnnotatedWith(RemoteClass.class));
+				select(JavaClassResourceType.javaClasses()).from(basePackageNames).returning(allAnnotatedWith(RemoteAlias.class));
 			}
 		})) {
-			graniteConfig.registerClassAlias(remoteClass);
+			((ClientAliasRegistry)graniteConfig.getAliasRegistry()).registerAlias(remoteClass.getName(), remoteClass.getAnnotation(RemoteAlias.class).value());
 		}
 	}	
 	

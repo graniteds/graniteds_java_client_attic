@@ -10,12 +10,12 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableMap;
 
 import org.granite.client.javafx.JavaFXObject;
+import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.persistence.javafx.PersistentMap;
-import org.granite.messaging.amf.RemoteClass;
 
 
 @JavaFXObject
-@RemoteClass("org.granite.client.test.javafx.Entity1c")
+@RemoteAlias("org.granite.client.test.javafx.Entity1c")
 public class FXEntity1c implements Serializable {
 
 	private static final long serialVersionUID = 1L;

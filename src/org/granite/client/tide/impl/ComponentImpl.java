@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
@@ -41,7 +42,6 @@ import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TrackingContext;
 import org.granite.logging.Logger;
-import org.granite.messaging.amf.RemoteClass;
 
 /**
  * @author William DRAI
@@ -102,7 +102,7 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
     
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		if (!method.getDeclaringClass().isAnnotationPresent(RemoteClass.class))
+		if (!method.getDeclaringClass().isAnnotationPresent(RemoteAlias.class))
 			return method.invoke(proxy, args);
 		
 		return callComponent(getContext(), method.getName(), args, false);

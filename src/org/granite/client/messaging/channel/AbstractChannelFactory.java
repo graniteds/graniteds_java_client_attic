@@ -1,9 +1,12 @@
 package org.granite.client.messaging.channel;
 
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
+import org.granite.messaging.AliasRegistry;
 import org.granite.util.ContentType;
+
 
 public abstract class AbstractChannelFactory implements ChannelFactory {
 	
@@ -11,6 +14,9 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	
 	protected Transport remotingTransport = null;
 	protected Transport messagingTransport = null;
+
+	protected AliasRegistry aliasRegistry = null;
+	private boolean scanRemoteAliases = true;
 
 	protected AbstractChannelFactory(ContentType contentType) {
 		this(contentType, null, null);
@@ -41,6 +47,18 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	public void setMessagingTransport(Transport messagingTransport) {
 		this.messagingTransport = messagingTransport;
 	}
+
+	public void setAliasRegistry(AliasRegistry aliasRegistry) {
+		this.aliasRegistry = aliasRegistry;
+	}
+
+	public boolean getScanRemoteAliases() {
+		return scanRemoteAliases;
+	}
+
+	public void setScanRemoteAliases(boolean scanRemoteAliases) {
+		this.scanRemoteAliases = scanRemoteAliases;
+	}
 	
 	public void start() {
 		if (remotingTransport == null)
@@ -53,9 +71,17 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 			messagingTransport = remotingTransport;
 		else if (!messagingTransport.isStarted() && !messagingTransport.start())
 			throw new TransportException("Could not start messaging transport: " + messagingTransport);
+		
+		if (aliasRegistry == null)
+			aliasRegistry = new ClientAliasRegistry();
+		
+		if (scanRemoteAliases)
+			aliasRegistry.scan();
 	}
 	
 	public void stop() {
+		aliasRegistry = null;
+		
 		stop(true);
 	}
 
