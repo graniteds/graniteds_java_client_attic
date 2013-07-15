@@ -23,20 +23,19 @@ package org.granite.client.messaging.transport.apache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.nio.client.DefaultHttpAsyncClient;
-import org.apache.http.nio.reactor.IOReactorStatus;
-import org.apache.http.params.BasicHttpParams;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.granite.client.messaging.channel.Channel;
 import org.granite.client.messaging.transport.AbstractTransport;
 import org.granite.client.messaging.transport.HTTPTransport;
@@ -55,20 +54,19 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 	
 	private static final Logger log = Logger.getLogger(ApacheAsyncTransport.class);
 
-	protected final BasicHttpParams params;
-	
-	protected DefaultHttpAsyncClient httpClient = null;
+	protected CloseableHttpAsyncClient httpClient = null;
 	protected CookieStore cookieStore = new BasicCookieStore();
+	protected RequestConfig defaultRequestConfig = null;
 	
 	public ApacheAsyncTransport() {
 		this(null);
 	}
 	
-	public ApacheAsyncTransport(BasicHttpParams params) {
-		this.params = params;
+	public ApacheAsyncTransport(RequestConfig defaultRequestConfig) {
+		this.defaultRequestConfig = defaultRequestConfig;
 	}
 
-	public void configure(DefaultHttpAsyncClient client) {
+	public void configure(HttpAsyncClientBuilder clientBuilder) {
 		// Can be overwritten...
 	}
 
@@ -82,21 +80,17 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 		log.info("Starting Apache HttpAsyncClient transport...");
 		
 		try {
-			httpClient = new DefaultHttpAsyncClient();
+			RequestConfig requestConfig = defaultRequestConfig;
+			if (requestConfig == null)
+				requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY).build();
 			
-			configure(httpClient);
-			if (params != null)
-				params.copyParams(httpClient.getParams());
+			HttpAsyncClientBuilder httpClientBuilder = HttpAsyncClients.custom();
+			httpClientBuilder.setDefaultCookieStore(cookieStore);
+			httpClientBuilder.setDefaultRequestConfig(requestConfig);
+			configure(httpClientBuilder);
+			httpClient = httpClientBuilder.build();
 			
-			httpClient.setCookieStore(cookieStore);
 			httpClient.start();
-			
-			final long timeout = System.currentTimeMillis() + 10000L; // 10sec.
-			while (httpClient.getStatus() != IOReactorStatus.ACTIVE) {
-				if (System.currentTimeMillis() > timeout)
-					throw new TimeoutException("HttpAsyncClient start process too long");
-				Thread.sleep(100);
-			}
 			
 			log.info("Apache HttpAsyncClient transport started.");
 			return true;
@@ -112,13 +106,13 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 
 	@Override
 	public synchronized boolean isStarted() {
-		return httpClient != null && httpClient.getStatus() == IOReactorStatus.ACTIVE;
+		return httpClient != null;
 	}
 
 	@Override
 	public TransportFuture send(final Channel channel, final TransportMessage message) throws TransportException {
 		synchronized (this) {
-		    if (httpClient == null || httpClient.getStatus() != IOReactorStatus.ACTIVE) {
+		    if (httpClient == null) {
 		    	TransportIOException e = new TransportIOException(message, "Apache HttpAsyncClient not started");
 		    	getStatusHandler().handleException(e);
 		    	throw e;
@@ -130,7 +124,6 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 		
 		try {
 		    HttpPost request = new HttpPost(channel.getUri());
-			request.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
 			request.setHeader("Content-Type", message.getContentType());
 			request.setHeader("GDSClientType", "java");	// Notify the server that we expect Java serialization mode
 			
@@ -142,8 +135,6 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 				throw new TransportException("Message serialization failed: " + message.getId(), e);
 			}
 			request.setEntity(new ByteArrayEntity(os.getBytes(), 0, os.size()));
-
-//			request.setEntity(new DeferredInputStreamEntity(message));
 			
 			final Future<HttpResponse> future = httpClient.execute(request, new FutureCallback<HttpResponse>() {
 	
@@ -230,7 +221,7 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 		super.stop();
 		
 		try {
-			httpClient.shutdown();
+			httpClient.close();
 		}
 		catch (Exception e) {
 			getStatusHandler().handleException(new TransportException("Could not stop Apache HttpAsyncClient", e));
@@ -243,29 +234,4 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 		
 		log.info("Apache HttpAsyncClient transport stopped.");
 	}
-	
-//	static class DeferredInputStreamEntity extends BasicHttpEntity {
-//
-//		private final TransportMessage message;
-//		private InputStream content = null;
-//		
-//		public DeferredInputStreamEntity(TransportMessage message) {
-//			this.message = message;
-//		}
-//		
-//		@Override
-//		public synchronized InputStream getContent() throws IllegalStateException {
-//			if (content == null) {
-//				PublicByteArrayOutputStream os = new PublicByteArrayOutputStream(256);
-//				try {
-//					message.encode(os);
-//				}
-//				catch (IOException e) {
-//					throw new TransportException("Message serialization failed: " + message.getId(), e);
-//				}
-//				content = new ByteArrayInputStream(os.getBytes(), 0, os.size());
-//			}
-//			return content;
-//		}
-//	}
 }
