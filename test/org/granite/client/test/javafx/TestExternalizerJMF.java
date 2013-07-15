@@ -111,14 +111,14 @@ public class TestExternalizerJMF {
 //		entity1.getList().add(entity2);
 //		entity2.setEntity1(entity1);
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
 //		ObjectOutput out = graniteConfigJavaFX.newAMF3Serializer(baos);
 //		out.writeObject(entity1);
 //		
 //		byte[] buf = baos.toByteArray();
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 //		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
 //		Object entity = in.readObject();
@@ -137,14 +137,14 @@ public class TestExternalizerJMF {
 //		entity1.getList().add(entity2);
 //		entity2.setEntity1(entity1);
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
 //		ObjectOutput out = graniteConfigHibernate.newAMF3Serializer(baos);
 //		out.writeObject(entity1);
 //		
 //		byte[] buf = baos.toByteArray();
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 //		ObjectInput in = graniteConfigJavaFX.newAMF3Deserializer(bais);
 //		Object entity = in.readObject();
@@ -161,14 +161,14 @@ public class TestExternalizerJMF {
 //		entity1.getList().add(entity2);
 //		entity2.setEntity1(entity1);
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
 //		ObjectOutput out = graniteConfigJavaFX.newAMF3Serializer(baos);
 //		out.writeObject(entity1);
 //		
 //		byte[] buf = baos.toByteArray();
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 //		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
 //		Object entity = in.readObject();
@@ -186,14 +186,14 @@ public class TestExternalizerJMF {
 //		entity1.getList().add(entity2);
 //		entity2.setEntity1(entity1);
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
 //		ObjectOutput out = graniteConfigJavaFX.newAMF3Serializer(baos);
 //		out.writeObject(entity1);
 //		
 //		byte[] buf = baos.toByteArray();
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 //		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
 //		Object entity = in.readObject();
@@ -211,14 +211,14 @@ public class TestExternalizerJMF {
 //		entity2.setName("Test2");
 //		entity1.getMap().put("test", entity2);
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
 //		ObjectOutput out = graniteConfigHibernate.newAMF3Serializer(baos);
 //		out.writeObject(entity1);
 //		
 //		byte[] buf = baos.toByteArray();
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 //		ObjectInput in = graniteConfigJavaFX.newAMF3Deserializer(bais);
 //		Object entity = in.readObject();
@@ -235,14 +235,14 @@ public class TestExternalizerJMF {
 //		entity2.setName("Test2");
 //		entity1.getMap().put("test", entity2);
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayOutputStream baos = new ByteArrayOutputStream(20000);
 //		ObjectOutput out = graniteConfigJavaFX.newAMF3Serializer(baos);
 //		out.writeObject(entity1);
 //		
 //		byte[] buf = baos.toByteArray();
 //		
-//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 //		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);
 //		Object entity = in.readObject();
@@ -271,7 +271,7 @@ public class TestExternalizerJMF {
 //		for (int test = 0; test < 5; test++) {
 //			long time = System.nanoTime();
 //			
-//			SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//			SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //			ByteArrayOutputStream baos = new ByteArrayOutputStream(1000000);
 //			ObjectOutput out = graniteConfigHibernate.newAMF3Serializer(baos);
 //			out.writeObject(list);
@@ -283,7 +283,7 @@ public class TestExternalizerJMF {
 //			time = System.nanoTime();
 //			System.out.println("Buf size: " + buf.length);
 //			
-//			SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), "java");
+//			SimpleGraniteContext.createThreadInstance(graniteConfigJavaFX, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //			ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 //			ObjectInput in = graniteConfigJavaFX.newAMF3Deserializer(bais);
 //			Object read = in.readObject();

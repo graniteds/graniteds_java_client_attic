@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.granite.client.messaging.codec.MessagingCodec;
+import org.granite.client.messaging.codec.MessagingCodec.ClientType;
 
 /**
  * @author Franck WOLFF
@@ -44,6 +45,10 @@ public class DefaultTransportMessage<M> implements TransportMessage {
 		this.sessionId = sessionId;
 		this.message = message;
 		this.codec = codec;
+	}
+
+	public ClientType getClientType() {
+		return codec.getClientType();
 	}
 
 	public String getId() {

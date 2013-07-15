@@ -48,13 +48,18 @@ public class AMF3MessagingCodec implements MessagingCodec<Message[]> {
 	}
 
 	@Override
+	public ClientType getClientType() {
+		return config.getClientType();
+	}
+
+	@Override
 	public String getContentType() {
 		return ContentType.AMF.mimeType();
 	}
 
 	@Override
 	public void encode(Message[] messages, OutputStream output) throws IOException {
-		SimpleGraniteContext.createThreadInstance(config.getGraniteConfig(), config.getServicesConfig(), new HashMap<String, Object>(0), "java");
+		SimpleGraniteContext.createThreadInstance(config.getGraniteConfig(), config.getServicesConfig(), new HashMap<String, Object>(0), getClientType().toString());
 		try {
 			AMF3Serializer serializer = new AMF3Serializer(output);
 			serializer.writeObject(messages);
@@ -67,7 +72,7 @@ public class AMF3MessagingCodec implements MessagingCodec<Message[]> {
 
 	@Override
 	public Message[] decode(InputStream input) throws IOException {
-		SimpleGraniteContext.createThreadInstance(config.getGraniteConfig(), config.getServicesConfig(), new HashMap<String, Object>(0), "java");
+		SimpleGraniteContext.createThreadInstance(config.getGraniteConfig(), config.getServicesConfig(), new HashMap<String, Object>(0), getClientType().toString());
 		try {
 			AMF3Deserializer deserializer = new AMF3Deserializer(input);
 			Object[] objects = (Object[])deserializer.readObject();

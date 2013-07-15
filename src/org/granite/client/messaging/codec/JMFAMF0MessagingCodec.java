@@ -42,6 +42,11 @@ public class JMFAMF0MessagingCodec implements MessagingCodec<AMF0Message> {
 	}
 
 	@Override
+	public ClientType getClientType() {
+		return ClientType.JAVA;
+	}
+
+	@Override
 	public String getContentType() {
 		return ContentType.JMF_AMF.mimeType();
 	}

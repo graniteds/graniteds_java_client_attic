@@ -159,7 +159,7 @@ public class TestSimpleCall {
                 String method = (String)invocation.getParameters()[2];
                 Object[] args = ((Object[])invocation.getParameters()[3]);
 
-//        		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), "java");
+//        		SimpleGraniteContext.createThreadInstance(graniteConfigHibernate, servicesConfig, new HashMap<String, Object>(), ClientType.JAVA.toString());
 //        		byte[] buf = new byte[10000];
 //        		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 //        		ObjectInput in = graniteConfigHibernate.newAMF3Deserializer(bais);

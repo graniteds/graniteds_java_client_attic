@@ -23,6 +23,7 @@ package org.granite.client.configuration;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.granite.client.messaging.codec.MessagingCodec.ClientType;
 import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
 
@@ -33,9 +34,10 @@ public class DefaultConfiguration implements Configuration {
 
 	private static final String DEFAULT_CONFIG_PATH = DefaultConfiguration.class.getPackage().getName().replace('.', '/') + "/granite-config.xml";
 	
-	
 	private GraniteConfig graniteConfig;
 	private ServicesConfig servicesConfig;
+	
+	private ClientType clientType = ClientType.AS3;
 
 	public DefaultConfiguration() {
 		InputStream is = null;
@@ -58,6 +60,14 @@ public class DefaultConfiguration implements Configuration {
 		}
 	}
 	
+	public ClientType getClientType() {
+		return clientType;
+	}
+
+	public void setClientType(ClientType clientType) {
+		this.clientType = clientType;
+	}
+
 	public void addConfigurator(Configurator configurator) {		
 	}
 	

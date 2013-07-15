@@ -170,7 +170,7 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 				webSocketClient.getCookies().put("JSESSIONID", transportMessage.getSessionId());
 			
 			String u = uri.toString();
-			u += "?connectId=" + transportMessage.getId() + "&GDSClientType=java";
+			u += "?connectId=" + transportMessage.getId() + "&GDSClientType=" + transportMessage.getClientType();
 			if (transportMessage.getClientId() != null)
 				u += "&GDSClientId=" + transportMessage.getClientId();
 			else if (channel.getClientId() != null)

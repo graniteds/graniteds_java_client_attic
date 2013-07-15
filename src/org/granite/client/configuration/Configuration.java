@@ -20,6 +20,7 @@
 
 package org.granite.client.configuration;
 
+import org.granite.client.messaging.codec.MessagingCodec.ClientType;
 import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
 
@@ -28,7 +29,7 @@ import org.granite.config.flex.ServicesConfig;
  */
 public interface Configuration {
 	
-	// String getClientType();
+	ClientType getClientType();
 
 	GraniteConfig getGraniteConfig();
 	ServicesConfig getServicesConfig();

@@ -23,10 +23,14 @@ package org.granite.client.messaging.transport;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.granite.client.messaging.codec.MessagingCodec.ClientType;
+
 /**
  * @author Franck WOLFF
  */
 public interface TransportMessage {
+
+	ClientType getClientType();
 
 	String getId();
 	

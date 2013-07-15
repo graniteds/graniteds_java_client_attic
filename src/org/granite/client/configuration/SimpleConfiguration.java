@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.granite.client.messaging.codec.MessagingCodec.ClientType;
 import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
 
@@ -40,6 +41,7 @@ public class SimpleConfiguration implements Configuration {
 	private GraniteConfig graniteConfig = null;
 	private ServicesConfig servicesConfig = null;
 
+	private ClientType clientType = ClientType.AS3;
 	
 	public SimpleConfiguration() {		
 	}
@@ -47,6 +49,14 @@ public class SimpleConfiguration implements Configuration {
 	public SimpleConfiguration(String graniteStdConfigPath, String graniteConfigPath) {
 		this.graniteStdConfigPath = graniteStdConfigPath;
 		this.graniteConfigPath = graniteConfigPath;
+	}
+	
+	public ClientType getClientType() {
+		return clientType;
+	}
+
+	public void setClientType(ClientType clientType) {
+		this.clientType = clientType;
 	}
 	
 	public void setGraniteStdConfigPath(String graniteConfigPath) {
