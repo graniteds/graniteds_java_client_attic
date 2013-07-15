@@ -125,6 +125,13 @@ public abstract class BaseIdentity extends ComponentImpl implements Identity, Ex
 			
 			@Override
 			public void fault(TideFaultEvent event) {
+				if (event.getFault().getCode() == Code.ACCESS_DENIED) {
+					// Not in role for the destination
+					BaseIdentity.this.loggedIn.set(false);
+					
+					getServerSession().logout(null);
+				}
+				
 				if (tideResponder != null)
 					tideResponder.fault(event);
 			}

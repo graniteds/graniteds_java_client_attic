@@ -544,12 +544,19 @@ public class ServerSession implements ContextAware {
 		context.getEventBus().raiseEvent(context, LOGOUT);		
     }
     
+    public void loggedOut(TideRpcEvent event) {
+    	log.info("User logged out");
+    	
+    	sessionId = null;
+    	
+    	logoutState.loggedOut(event);
+    }
+    
 	/**
 	 * 	@private
 	 * 	Implementation of logout
 	 * 	
-	 * 	@param ctx current context
-	 *  @param componentName component name of identity
+	 * 	@param logoutObserver observer that will be notified of logout result
 	 */
 	public void logout(final Observer logoutObserver) {
 		if (sessionExpirationFuture != null) {
@@ -862,7 +869,8 @@ public class ServerSession implements ContextAware {
 		}
 		
 		public synchronized void logout(Observer logoutObserver) {
-			addObserver(logoutObserver);
+			if (logoutObserver != null)
+				addObserver(logoutObserver);
 			if (!logoutInProgress) {
 		        logoutInProgress = true;
 			    waitForLogout = 1;
