@@ -1474,7 +1474,7 @@ public class EntityManagerImpl implements EntityManager {
             if (((PersistentCollection)previous).wasInitialized()) {
                 if (mergeContext.isUninitializeAllowed() && mergeContext.hasVersionChanged(parent)) {
                     log.debug("uninitialize lazy collection %s", ObjectUtil.toString(previous));
-                    ((LazyableCollection)previous).uninitialize();
+                    ((PersistentCollection)previous).uninitialize();
                 }
                 else
                     log.debug("keep initialized collection %s", ObjectUtil.toString(previous));
