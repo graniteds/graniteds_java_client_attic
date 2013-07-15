@@ -20,19 +20,13 @@
 
 package org.granite.client.messaging.channel;
 
-import java.io.IOException;
 import java.net.URI;
-import java.util.Map;
 
 import org.granite.client.configuration.Configuration;
-import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.messaging.channel.amf.AMFMessagingChannel;
 import org.granite.client.messaging.channel.amf.AMFRemotingChannel;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.platform.Platform;
-import org.granite.logging.Logger;
-import org.granite.scan.ScannedItem;
-import org.granite.scan.ScannedItemHandler;
 import org.granite.util.ContentType;
 
 /**
@@ -40,8 +34,6 @@ import org.granite.util.ContentType;
  */
 public class AMFChannelFactory extends AbstractChannelFactory {
     
-	private static final Logger log = Logger.getLogger(AMFChannelFactory.class);
-	
 	private final Configuration defaultConfiguration;
 	
 	public AMFChannelFactory() {
@@ -79,38 +71,5 @@ public class AMFChannelFactory extends AbstractChannelFactory {
 	
 	public Configuration getDefaultConfiguration() {
 		return defaultConfiguration;
-	}
-	
-	static class MessagingScannedItemHandler implements ScannedItemHandler {
-
-		final Map<String, String> clientToServerAliases;
-		
-		MessagingScannedItemHandler(Map<String, String> clientToServerAliases) {
-			this.clientToServerAliases = clientToServerAliases;
-		}
-		
-		@Override
-		public boolean handleMarkerItem(ScannedItem item) {
-			return false;
-		}
-
-		@Override
-		public void handleScannedItem(ScannedItem item) {
-			if ("class".equals(item.getExtension())) {
-				try {
-					Class<?> cls = item.loadAsClass();
-					RemoteAlias alias = cls.getAnnotation(RemoteAlias.class);
-					if (alias != null)
-						clientToServerAliases.put(cls.getName(), alias.value());
-				}
-				catch (ClassFormatError e) {
-				}
-				catch (ClassNotFoundException e) {
-				}
-				catch (IOException e) {
-					log.error(e, "Could not load class: %s", item);
-				}
-			}
-		}
 	}
 }
