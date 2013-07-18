@@ -273,6 +273,10 @@ public class Persistence {
 	}
 
 	
+	public List<Property> getProperties(Class<?> entityClass) {
+		return reflection.findSerializableProperties(entityClass);
+	}
+	
 	public Object getPropertyValue(Object entity, String name, boolean raw) {
 		Property property = reflection.findSerializableProperty(entity.getClass(), name);
 		try {

@@ -23,6 +23,7 @@ package org.granite.client.messaging;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.granite.logging.Logger;
 import org.granite.messaging.AliasRegistry;
@@ -55,7 +56,16 @@ public class ClientAliasRegistry implements AliasRegistry {
 	}
 	
 	
-	public void scan() {
+	public void scan(Set<String> packageNames) {
+		if (!packageNames.isEmpty()) {
+			try {
+				RemoteAliasScanner.scan(this, packageNames);
+			}
+			catch (Exception e) {
+				log.debug("Extcos scanner not available, using classpath scanner");
+			}
+		}
+		
 		scanMarker = (scanMarker != null ? scanMarker : MESSAGING_SCAN_MARKER);
 		Scanner scanner = ScannerFactory.createScanner(new MessagingScannedItemHandler(), scanMarker);
         try {

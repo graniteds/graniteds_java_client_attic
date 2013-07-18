@@ -52,6 +52,7 @@ public class AMFChannelFactory extends AbstractChannelFactory {
 		super(ContentType.AMF, remotingTransport, messagingTransport);
 		
 		this.defaultConfiguration = (defaultConfiguration != null ? defaultConfiguration : Platform.getInstance().newConfiguration());
+		this.aliasRegistry = this.defaultConfiguration.getGraniteConfig().getAliasRegistry();
 	}
 
 	@Override

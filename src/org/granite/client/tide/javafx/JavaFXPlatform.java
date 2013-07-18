@@ -22,17 +22,8 @@ package org.granite.client.tide.javafx;
 
 import javafx.application.Platform;
 
-import org.granite.client.configuration.Configuration;
-import org.granite.client.configuration.SimpleConfiguration;
-import org.granite.client.messaging.ClientAliasRegistry;
-import org.granite.client.persistence.javafx.PersistentBag;
-import org.granite.client.persistence.javafx.PersistentList;
-import org.granite.client.persistence.javafx.PersistentMap;
-import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.server.ServerSession;
-import org.granite.client.validation.InvalidValue;
-import org.granite.config.GraniteConfig;
 
 /**
  * @author William DRAI
@@ -46,22 +37,6 @@ public class JavaFXPlatform implements org.granite.client.tide.Platform {
 	public void configure(Object instance) {
 		if (instance instanceof ServerSession) {
 			ServerSession serverSession = (ServerSession)instance;
-			
-			Configuration configuration = new SimpleConfiguration("org/granite/client/tide/javafx/granite-config-javafx.xml", null);
-			configuration.addConfigurator(new Configuration.Configurator() {
-				@Override
-				public void configure(GraniteConfig graniteConfig) {
-					ClientAliasRegistry aliasRegistry = new ClientAliasRegistry();
-					aliasRegistry.registerAlias(PersistentSet.class);
-					aliasRegistry.registerAlias(PersistentBag.class);
-					aliasRegistry.registerAlias(PersistentList.class);
-					aliasRegistry.registerAlias(PersistentMap.class);
-					aliasRegistry.registerAlias(InvalidValue.class);
-					graniteConfig.setAliasRegistry(aliasRegistry);
-				}
-			});
-			serverSession.setConfiguration(configuration);
-			
 			serverSession.setStatus(serverSessionStatus);
 		}
 	}

@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 
 import org.granite.client.configuration.Configuration;
-import org.granite.client.configuration.DefaultConfiguration;
+import org.granite.client.configuration.SimpleConfiguration;
 import org.granite.client.persistence.Persistence;
 import org.granite.messaging.jmf.reflect.Reflection;
 
@@ -138,7 +138,7 @@ public class Platform {
 	}
 
 	public Configuration newConfiguration() {
-		return new DefaultConfiguration();
+		return new SimpleConfiguration();
 	}
 
 	public Persistence getPersistence() {
