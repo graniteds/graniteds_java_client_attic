@@ -18,14 +18,13 @@ import org.granite.client.messaging.transport.TransportStopListener;
 public class MockAMFRemotingChannel extends AMFRemotingChannel {
 
 	public MockAMFRemotingChannel() {
-		super(null, null, "test", URI.create("/temp"), RemotingChannel.DEFAULT_MAX_CONCURRENT_REQUESTS);
+		super(new MockTransport(), null, "test", URI.create("/temp"), RemotingChannel.DEFAULT_MAX_CONCURRENT_REQUESTS);
 	}
 	
 	public TransportMessage createMessage(AsyncToken token) throws UnsupportedEncodingException {
 		return createTransportMessage(token);
 	}
 
-	@SuppressWarnings("unused")
 	private static class MockTransport implements Transport {
 
 		@Override
