@@ -2,33 +2,32 @@ package org.granite.client.test.javafx;
 
 import java.io.Serializable;
 
+import javafx.beans.property.ReadOnlyListProperty;
+import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import org.granite.client.javafx.JavaFXObject;
 import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
+import org.granite.messaging.annotations.Serialized;
 
 
-@JavaFXObject
 @Entity
+@Serialized
 @RemoteAlias("org.granite.client.test.javafx.Entity1")
 public class FXEntity1 implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
-    private boolean __initialized = true;
     @SuppressWarnings("unused")
-	private String __detachedState = null;
-    
-    public boolean isInitialized() {
-        return __initialized;
-    }
+    private boolean __initialized__ = true;
+    @SuppressWarnings("unused")
+	private String __detachedState__ = null;
     
 	private StringProperty name = new SimpleStringProperty(this, "name", null);	
-	private ObservableList<FXEntity2> list = FXCollections.observableArrayList();
+	private ReadOnlyListWrapper<FXEntity2> list = FXPersistentCollections.readOnlyObservablePersistentList(this, "list");
 	
 	public StringProperty nameProperty() {
 		return name;
@@ -40,10 +39,10 @@ public class FXEntity1 implements Serializable {
 		this.name.set(name);
 	}
 	
-	public ObservableList<FXEntity2> getList() {
-		return list;
+	public ReadOnlyListProperty<FXEntity2> listProperty() {
+		return list.getReadOnlyProperty();
 	}
-	public void setList(ObservableList<FXEntity2> list) {
-		this.list = list;
+	public ObservableList<FXEntity2> getList() {
+		return list.get();
 	}
 }

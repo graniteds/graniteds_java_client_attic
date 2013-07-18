@@ -2,33 +2,32 @@ package org.granite.client.test.javafx;
 
 import java.io.Serializable;
 
+import javafx.beans.property.ReadOnlySetProperty;
+import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 
-import org.granite.client.javafx.JavaFXObject;
 import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.persistence.Entity;
-import org.granite.client.persistence.javafx.PersistentList;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
+import org.granite.messaging.annotations.Serialized;
 
 
-@JavaFXObject
 @Entity
+@Serialized
 @RemoteAlias("org.granite.client.test.javafx.Entity1b")
 public class FXEntity1b implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-
-	private boolean __initialized = true;
+	
     @SuppressWarnings("unused")
-	private String __detachedState = null;
-    
-    public boolean isInitialized() {
-        return __initialized;
-    }
+    private boolean __initialized__ = true;
+    @SuppressWarnings("unused")
+	private String __detachedState__ = null;
     
 	private StringProperty name = new SimpleStringProperty(this, "name", null);	
-	private ObservableList<FXEntity2b> list = new PersistentList<FXEntity2b>();
+	private ReadOnlySetWrapper<FXEntity2b> list = FXPersistentCollections.readOnlyObservablePersistentSet(this, "list");
 	
 	public StringProperty nameProperty() {
 		return name;
@@ -40,10 +39,10 @@ public class FXEntity1b implements Serializable {
 		this.name.set(name);
 	}
 	
-	public ObservableList<FXEntity2b> getList() {
-		return list;
+	public ReadOnlySetProperty<FXEntity2b> listProperty() {
+		return list.getReadOnlyProperty();
 	}
-	public void setList(ObservableList<FXEntity2b> list) {
-		this.list = list;
+	public ObservableSet<FXEntity2b> getList() {
+		return list.get();
 	}
 }

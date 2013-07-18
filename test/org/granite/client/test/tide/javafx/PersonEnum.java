@@ -20,9 +20,6 @@
 
 package org.granite.client.test.tide.javafx;
 
-import org.granite.client.persistence.Entity;
-import org.granite.client.persistence.javafx.PersistentList;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyListProperty;
 import javafx.beans.property.ReadOnlyListWrapper;
@@ -30,6 +27,9 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
+
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
 
 
 @Entity
@@ -40,7 +40,7 @@ public class PersonEnum extends AbstractEntity {
     private StringProperty firstName = new SimpleStringProperty(this, "firstName");
     private StringProperty lastName = new SimpleStringProperty(this, "lastName");
     private ObjectProperty<Salutation> salutation = new SimpleObjectProperty<Salutation>(this, "salutation");
-    private ReadOnlyListWrapper<Salutation> salutations = new ReadOnlyListWrapper<Salutation>(this, "salutations", new PersistentList<Salutation>());
+    private ReadOnlyListWrapper<Salutation> salutations = FXPersistentCollections.readOnlyObservablePersistentList(this, "salutations");
     
     
     public PersonEnum() {

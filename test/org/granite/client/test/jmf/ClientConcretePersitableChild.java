@@ -3,10 +3,10 @@ package org.granite.client.test.jmf;
 import java.io.Serializable;
 
 import org.granite.client.messaging.RemoteAlias;
-import org.granite.messaging.annotations.PropertiesOrder;
+import org.granite.messaging.annotations.Serialized;
 
 @RemoteAlias("org.granite.client.test.jmf.ConcretePersitableChild")
-@PropertiesOrder({"id", "a", "z"})
+@Serialized(propertiesOrder={"id", "a", "z"})
 public class ClientConcretePersitableChild implements Serializable {
 
 	private static final long serialVersionUID = 1L;

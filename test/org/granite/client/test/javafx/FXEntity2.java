@@ -7,23 +7,20 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-import org.granite.client.javafx.JavaFXObject;
 import org.granite.client.messaging.RemoteAlias;
+import org.granite.messaging.annotations.Serialized;
 
 
-@JavaFXObject
+@Serialized
 @RemoteAlias("org.granite.client.test.javafx.Entity2")
 public class FXEntity2 implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
-    private boolean __initialized = true;
     @SuppressWarnings("unused")
-	private String __detachedState = null;
-    
-    public boolean isInitialized() {
-        return __initialized;
-    }
+    private boolean __initialized__ = true;
+    @SuppressWarnings("unused")
+	private String __detachedState__ = null;
     
 	private StringProperty name = new SimpleStringProperty(this, "name", null);
 	private ObjectProperty<FXEntity1> entity1 = new SimpleObjectProperty<FXEntity1>(this, "entity1", null);

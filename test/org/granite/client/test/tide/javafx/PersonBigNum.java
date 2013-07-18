@@ -31,7 +31,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
 import org.granite.client.persistence.Entity;
-import org.granite.client.persistence.javafx.PersistentList;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
 
 
 @Entity
@@ -42,7 +42,7 @@ public class PersonBigNum extends AbstractEntity {
     private StringProperty firstName = new SimpleStringProperty(this, "firstName");
     private StringProperty lastName = new SimpleStringProperty(this, "lastName");
     private ObjectProperty<BigInteger> bigInt = new SimpleObjectProperty<BigInteger>(this, "bigInt");
-    private ReadOnlyListWrapper<BigInteger> bigInts = new ReadOnlyListWrapper<BigInteger>(this, "bigInts", new PersistentList<BigInteger>());
+    private ReadOnlyListWrapper<BigInteger> bigInts = FXPersistentCollections.readOnlyObservablePersistentList(this, "bigInts");
     
     
     public PersonBigNum() {

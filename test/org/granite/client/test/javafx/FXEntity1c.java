@@ -4,34 +4,33 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyMapProperty;
+import javafx.beans.property.ReadOnlyMapWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableMap;
 
-import org.granite.client.javafx.JavaFXObject;
 import org.granite.client.messaging.RemoteAlias;
-import org.granite.client.persistence.javafx.PersistentMap;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
+import org.granite.messaging.annotations.Serialized;
 
 
-@JavaFXObject
+@Serialized
 @RemoteAlias("org.granite.client.test.javafx.Entity1c")
 public class FXEntity1c implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
-    private boolean __initialized = true;
     @SuppressWarnings("unused")
-	private String __detachedState = null;
-    
-    public boolean isInitialized() {
-        return __initialized;
-    }
+    private boolean __initialized__ = true;
+    @SuppressWarnings("unused")
+	private String __detachedState__ = null;
     
 	private StringProperty name = new SimpleStringProperty(this, "name", null);
 	private ObjectProperty<BigDecimal> value = new SimpleObjectProperty<BigDecimal>(this, "value", null);
 	private ObjectProperty<BigDecimal> value2 = new SimpleObjectProperty<BigDecimal>(this, "value2", null);
-	private ObservableMap<String, FXEntity2c> map = new PersistentMap<String, FXEntity2c>();
+	private ReadOnlyMapWrapper<String, FXEntity2c> map = FXPersistentCollections.readOnlyObservablePersistentMap(this, "map");
 	
 	public StringProperty nameProperty() {
 		return name;
@@ -63,10 +62,10 @@ public class FXEntity1c implements Serializable {
 		this.value2.set(value);
 	}
 	
-	public ObservableMap<String, FXEntity2c> getMap() {
-		return map;
+	public ReadOnlyMapProperty<String, FXEntity2c> mapProperty() {
+		return map.getReadOnlyProperty();
 	}
-	public void setMap(ObservableMap<String, FXEntity2c> map) {
-		this.map = map;
+	public ObservableMap<String, FXEntity2c> getMap() {
+		return map.get();
 	}
 }
