@@ -199,14 +199,8 @@ public class EntityManagerImpl implements EntityManager {
         if (dirtyCheckContext == null)
             throw new IllegalArgumentException("Dirty check context cannot be null");
         
-//        if (dirtyCheckContext != null)
-//            dirtyCheckContext.removeEventListener(DIRTY_CHANGE, dirtyChangeHandler);
-            
         this.dirtyCheckContext = dirtyCheckContext;
         this.dirtyCheckContext.setTrackingContext(trackingContext);
-//        this.dirtyCheckContext.addEventListener(DIRTY_CHANGE, dirtyChangeHandler, false, 0, true);
-        
-        // _mergeContext = new MergeContext(this, dirtyCheckContext);
     }
 
     
@@ -216,66 +210,14 @@ public class EntityManagerImpl implements EntityManager {
      *  Create a new temporary entity manager
      */
     public EntityManager newTemporaryEntityManager() {
-        return new EntityManagerImpl("$$TMP$$" + (tmpEntityManagerId++), dataManager, trackingContext, expressionEvaluator);
+        try {
+            DataManager tmpDataManager = TypeUtil.newInstance(dataManager.getClass(), DataManager.class);
+            return new EntityManagerImpl("$$TMP$$" + (tmpEntityManagerId++), tmpDataManager, trackingContext, expressionEvaluator);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Could not create temporaty entity manager", e);
+        }
     }
-//    
-//    /**
-//     *  @private
-//     *  Allow uninitialize of persistent collections
-//     *
-//     *  @param allowed allow uninitialize of collections
-//     */
-//    public void setUninitializeAllowed(boolean allowed) {
-//        _mergeContext.uninitializeAllowed = allowed;
-//    }
-//    
-//    /**
-//     *  @private
-//     *  @return allow uninitialize of collections
-//     */
-//    public function get uninitializeAllowed():Boolean {
-//        return _mergeContext.uninitializeAllowed;
-//    }
-//    
-//    /**
-//     *  @private
-//     *  Force uninitialize of persistent collections
-//     * 
-//     *  @param uninitializing force uninitializing of collections during merge
-//     */
-//    public function set uninitializing(uninitializing:Boolean):void {
-//        _mergeContext.uninitializing = uninitializing;
-//    }
-    
-    
-//    /**
-//     *  Entity manager is dirty when any entity/collection/map has been modified
-//     *
-//     *  @return is dirty
-//     */
-//    [Bindable(event="dirtyChange")]
-//    public function get dirty():Boolean {
-//        return _dirtyCheckContext.dirty;
-//    }
-//    
-//    /**
-//     *  Internal handler for dirty flag changes. Redispaches event from the dirty check context
-//     * 
-//     *  @param event dirty change event
-//     */
-//    private function dirtyChangeHandler(event:PropertyChangeEvent):void {
-//        dispatchEvent(event);
-//    }
-//    
-//    
-//    /**
-//     *  List of conflicts detected during last merge operation
-//     * 
-//     *  @return conflicts list 
-//     */
-//    public Conflicts getMergeConflicts() {
-//        return _mergeContext.mergeConflicts;
-//    }
     
     
     /**
@@ -298,9 +240,7 @@ public class EntityManagerImpl implements EntityManager {
     public void attachEntity(Object entity, boolean putInCache) {
         EntityManager em = PersistenceManager.getEntityManager(entity);
         if (em != null && em != this && !em.isActive()) {
-            throw new Error("The entity instance " + entity
-                + " cannot be attached to two contexts (current: " + em.getId()
-                + ", new: " + id + ")");
+            throw new Error("The entity instance " + entity + " cannot be attached to two contexts (current: " + em.getId() + ", new: " + id + ")");
         }
         
         PersistenceManager.setEntityManager(entity, this);
@@ -886,6 +826,12 @@ public class EntityManagerImpl implements EntityManager {
         
         mergeContext.pushMerge(obj, dest);
         
+        boolean tracking = false;
+        if (mergeContext.isResolvingConflict()) {
+            dataManager.startTracking(dest, parent);
+            tracking = true;
+        }
+        
         boolean ignore = false;
         if (isEntity(dest)) {
             // If we are in an uninitialing temporary entity manager, try to reproxy associations when possible
@@ -973,7 +919,8 @@ public class EntityManagerImpl implements EntityManager {
             log.debug("mergeEntity result: %s", dest.toString());
         
         // Keep notified of collection updates to notify the server at next remote call
-        dataManager.startTracking(dest, parent);
+        if (!tracking)
+            dataManager.startTracking(dest, parent);
         
         return dest;
     }

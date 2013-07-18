@@ -47,7 +47,12 @@ public class Contact extends AbstractEntity {
         super(id, version, uid);
         this.email.set(email);
     }    
-        
+    public Contact(Long id, Long version, String uid, Person person, String email) {
+        super(id, version, uid);
+        this.person.set(person);
+        this.email.set(email);
+    }    
+    
     public ObjectProperty<Person> personProperty() {
         return person;
     }

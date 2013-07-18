@@ -95,4 +95,10 @@ public class Person extends AbstractEntity {
     public ObservableList<Contact> getContacts() {
     	return contacts.get();
     }
+    public void addContact(Contact contact) {
+    	contacts.get().add(contact);
+    }
+    public Contact getContact(int idx) {
+    	return contacts.get().get(idx);
+    }
 }
