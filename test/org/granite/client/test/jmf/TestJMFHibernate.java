@@ -55,7 +55,7 @@ public class TestJMFHibernate {
 	
 	private SharedContext dumpSharedContext;
 	private SharedContext serverSharedContext;
-	private ClientAliasRegistry clientAliasRegistry = new ClientAliasRegistry();
+	private ClientAliasRegistry clientAliasRegistry;
 	private ClientSharedContext clientSharedContext;
 	
 	@Before
@@ -77,6 +77,8 @@ public class TestJMFHibernate {
 		dumpSharedContext = new DefaultSharedContext(new DefaultCodecRegistry());
 		
 		serverSharedContext = new DefaultSharedContext(new DefaultCodecRegistry(serverExtendedObjectCodecs));
+		
+		clientAliasRegistry = new ClientAliasRegistry();
 		
 		clientSharedContext = new DefaultClientSharedContext(new DefaultCodecRegistry(clientExtendedObjectCodecs), null, null, clientAliasRegistry);
 	}
