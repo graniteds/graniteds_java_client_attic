@@ -80,10 +80,12 @@ public interface DataManager {
 
     
     public static enum TrackingType {        
-        COLLECTION,
+        LIST,
+        SET,
         MAP,
         ENTITY_PROPERTY,
-        ENTITY_COLLECTION,
+        ENTITY_LIST,
+        ENTITY_SET,
         ENTITY_MAP
     }
     
@@ -130,15 +132,15 @@ public interface DataManager {
     
     public static interface TrackingHandler {
         
-        public void collectionChangeHandler(ChangeKind kind, Object target, int location, Object[] items);
+        public void collectionChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items);
         
-        public void mapChangeHandler(ChangeKind kind, Object target, int location, Object[] items);
+        public void mapChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items);
 
         public void entityPropertyChangeHandler(Object target, String property, Object oldValue, Object newValue);
 
-        public void entityCollectionChangeHandler(ChangeKind kind, Object target, int location, Object[] items);
-
-        public void entityMapChangeHandler(ChangeKind kind, Object target, int location, Object[] items);
+        public void entityCollectionChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items);
+        
+        public void entityMapChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items);
     }
 
 

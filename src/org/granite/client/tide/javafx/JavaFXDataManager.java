@@ -41,6 +41,8 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import javafx.event.Event;
 
 import javax.validation.ConstraintViolation;
@@ -242,6 +244,16 @@ public class JavaFXDataManager extends AbstractDataManager {
         }
     }
     
+    public class EntitySetChangeListener<E> implements SetChangeListener<E> {
+        @Override
+        public void onChanged(Change<? extends E> change) {
+            if (change.wasRemoved())
+                trackingHandler.entityCollectionChangeHandler(ChangeKind.REMOVE, change.getSet(), null, new Object[] { change.getElementRemoved() });
+            if (change.wasAdded())
+                trackingHandler.entityCollectionChangeHandler(ChangeKind.ADD, change.getSet(), null, new Object[] { change.getElementAdded() });
+        }
+    }
+    
     public class DefaultListChangeListener<E> implements ListChangeListener<E> {
         @Override
         public void onChanged(ListChangeListener.Change<? extends E> change) {
@@ -258,6 +270,16 @@ public class JavaFXDataManager extends AbstractDataManager {
                 if (change.wasAdded())
                     trackingHandler.collectionChangeHandler(ChangeKind.ADD, change.getList(), change.getFrom(), change.getAddedSubList().toArray());
             }
+        }
+    }
+    
+    public class DefaultSetChangeListener<E> implements SetChangeListener<E> {
+        @Override
+        public void onChanged(SetChangeListener.Change<? extends E> change) {
+            if (change.wasRemoved())
+                trackingHandler.collectionChangeHandler(ChangeKind.REMOVE, change.getSet(), null, new Object[] { change.getElementRemoved() });
+            if (change.wasAdded())
+                trackingHandler.collectionChangeHandler(ChangeKind.ADD, change.getSet(), null, new Object[] { change.getElementAdded() });
         }
     }
     
@@ -286,9 +308,11 @@ public class JavaFXDataManager extends AbstractDataManager {
     }
  
     private ListChangeListener<Object> listChangeListener = new DefaultListChangeListener<Object>();
+    private SetChangeListener<Object> setChangeListener = new DefaultSetChangeListener<Object>();
     private MapChangeListener<Object, Object> mapChangeListener = new DefaultMapChangeListener<Object, Object>();
     private ChangeListener<Object> entityPropertyChangeListener = new EntityPropertyChangeListener<Object>();
     private ListChangeListener<Object> entityListChangeListener = new EntityListChangeListener<Object>();
+    private SetChangeListener<Object> entitySetChangeListener = new EntitySetChangeListener<Object>();
     private MapChangeListener<Object, Object> entityMapChangeListener = new EntityMapChangeListener<Object, Object>();
     
     private WeakIdentityHashMap<Object, TrackingType> trackingListeners = new WeakIdentityHashMap<Object, TrackingType>();
@@ -302,11 +326,21 @@ public class JavaFXDataManager extends AbstractDataManager {
         if (previous instanceof ObservableList<?>) {
             if (parent != null) {
                 ((ObservableList<?>)previous).addListener(entityListChangeListener);
-                trackingListeners.put(previous, TrackingType.ENTITY_COLLECTION);
+                trackingListeners.put(previous, TrackingType.ENTITY_LIST);
             }
             else {
                 ((ObservableList<?>)previous).addListener(listChangeListener);
-                trackingListeners.put(previous, TrackingType.COLLECTION);
+                trackingListeners.put(previous, TrackingType.LIST);
+            }
+        }
+        else if (previous instanceof ObservableSet<?>) {
+            if (parent != null) {
+                ((ObservableSet<?>)previous).addListener(entitySetChangeListener);
+                trackingListeners.put(previous, TrackingType.ENTITY_SET);
+            }
+            else {
+                ((ObservableSet<?>)previous).addListener(setChangeListener);
+                trackingListeners.put(previous, TrackingType.SET);
             }
         }
         else if (previous instanceof ObservableMap<?, ?>) {
@@ -339,6 +373,12 @@ public class JavaFXDataManager extends AbstractDataManager {
             else
                 ((ObservableList<?>)previous).removeListener(listChangeListener);
         }
+        else if (previous instanceof ObservableSet<?>) {
+            if (parent != null)
+                ((ObservableSet<?>)previous).removeListener(entitySetChangeListener);
+            else
+                ((ObservableSet<?>)previous).removeListener(setChangeListener);
+        }
         else if (previous instanceof ObservableMap<?, ?>) {
             if (parent != null)
                 ((ObservableMap<?, ?>)previous).removeListener(entityMapChangeListener);
@@ -366,21 +406,29 @@ public class JavaFXDataManager extends AbstractDataManager {
             Object obj = ikey.next();
             TrackingType type = trackingListeners.get(obj);
             switch (type) {
-            case COLLECTION:
+            case LIST:
                 ((ObservableList<?>)obj).removeListener(listChangeListener);
+                break;
+            case SET:
+                ((ObservableSet<?>)obj).removeListener(setChangeListener);
                 break;
             case MAP:
                 ((ObservableMap<?, ?>)obj).removeListener(mapChangeListener);
                 break;
             case ENTITY_PROPERTY:
-                for (ObservableValue<?> property : instrospectProperties(obj))
-                    property.removeListener(entityPropertyChangeListener);
+                for (ObservableValue<?> property : instrospectProperties(obj)) {
+                    if (property instanceof WritableValue<?>)
+                        property.removeListener(entityPropertyChangeListener);
+                }
                 break;
-            case ENTITY_COLLECTION:
-                ((ObservableList<?>)obj).removeListener(listChangeListener);
+            case ENTITY_LIST:
+                ((ObservableList<?>)obj).removeListener(entityListChangeListener);
+                break;
+            case ENTITY_SET:
+                ((ObservableSet<?>)obj).removeListener(entitySetChangeListener);
                 break;
             case ENTITY_MAP:
-                ((ObservableMap<?, ?>)obj).removeListener(mapChangeListener);
+                ((ObservableMap<?, ?>)obj).removeListener(entityMapChangeListener);
                 break;
             }
         }

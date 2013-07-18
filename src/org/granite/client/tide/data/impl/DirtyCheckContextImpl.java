@@ -192,7 +192,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                         break;
                     }
                 }
-                else if ((val instanceof List<?> || val instanceof Map<?, ?>)) {
+                else if ((val instanceof Collection<?> || val instanceof Map<?, ?>)) {
 	               	if (!dataManager.isInitialized(val))
 	               		continue;
 	               	
@@ -261,7 +261,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                     if (isEntityDeepChanged(val, null, cache))
 						return true;
                 }
-                else if (val instanceof List<?> || val instanceof Map<?, ?>) {
+                else if (val instanceof Collection<?> || val instanceof Map<?, ?>) {
                 	 if (!dataManager.isInitialized(val))
                 		 continue;
                 	 
@@ -270,8 +270,8 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 	 if (savedArray != null && !savedArray.isEmpty())
                 		 return true;
                 	 
-                	 if (val instanceof List<?>) {
-                		 for (Object elt : (List<?>)val) {
+                	 if (val instanceof Collection<?>) {
+                		 for (Object elt : (Collection<?>)val) {
                 			 if (isEntityDeepChanged(elt, null, cache))
                 				 return true;
                 		 }
@@ -331,10 +331,18 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 	        }
     	}
     	else {
-    		for (Object e : save) {
-    			if (!coll.contains(e))
-    				return false;
-    		}
+            for (int i = 0; i < save.size(); i++) {
+                boolean found = false;
+                for (Iterator<?> ic = coll.iterator(); ic.hasNext(); ) {
+                    Object obj = ic.next();
+                    if (isSame(save.get(i), obj)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    return false;
+            }
     	}
         return true;
     }    
@@ -415,6 +423,38 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 return false;
             for (int idx = 0; idx < list1.size(); idx++) {
                 if (!isSameExt(list1.get(idx), list2.get(idx)))
+                    return false;
+            }
+            return true;
+        }
+        else if (val1 instanceof Collection<?> && val2 instanceof Collection<?>) {
+            if ((val1 instanceof PersistentCollection && !((PersistentCollection)val1).wasInitialized()) 
+                    || (val2 instanceof PersistentCollection && !((PersistentCollection)val2).wasInitialized()))
+                return false;
+            Collection<?> coll1 = (Collection<?>)val1;
+            Collection<?> coll2 = (Collection<?>)val2;
+            if (coll1.size() != coll2.size())
+                return false;
+            for (Object obj1 : coll1) {
+                boolean found = false;
+                for (Object obj2 : coll2) {
+                    if (isSameExt(obj1, obj2)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    return false;
+            }
+            for (Object obj2 : coll2) {
+                boolean found = false;
+                for (Object obj1 : coll1) {
+                    if (isSameExt(obj1, obj2)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
                     return false;
             }
             return true;
@@ -1086,8 +1126,8 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             return Array.getLength(val) == 0;
         else if (val instanceof Date)
             return ((Date)val).getTime() == 0L;
-        else if (val instanceof List<?>)
-            return ((List<?>)val).size() == 0;
+        else if (val instanceof Collection<?>)
+            return ((Collection<?>)val).size() == 0;
         else if (val instanceof Map<?, ?>)
             return ((Map<?, ?>)val).size() == 0;
         return false; 

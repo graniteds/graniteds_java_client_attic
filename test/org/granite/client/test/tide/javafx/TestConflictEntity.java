@@ -387,4 +387,68 @@ public class TestConflictEntity {
 		Assert.assertEquals("Contacts count", 1, person.getContacts().size());
 		Assert.assertEquals("Contact", 3L, person.getContact(0).getId().longValue());
 	}
+    
+    @Test
+    public void testMergeConflictEntitySet() {
+       PersonSet person = new PersonSet(1L, 0L, "P01", null, null);
+       ContactSet contact = new ContactSet(1L, 0L, "C01", person, null);
+       person.addContact(contact);
+       person = (PersonSet)entityManager.mergeExternalData(person);
+       
+       person.setLastName("toto");
+       ContactSet addedContactSet = new ContactSet(null, null, "C02", person, "test");
+       person.addContact(addedContactSet);
+       
+       Assert.assertTrue("PersonSet dirty", entityManager.isDirtyEntity(person));
+       
+       PersonSet person2 = new PersonSet(1L, 1L, "P01", null, "tutu");
+       ContactSet contact2 = new ContactSet(1L, 1L, "C01", person2, "test2");
+       person2.addContact(contact2);
+       
+       final Conflicts[] conflicts = new Conflicts[1];
+
+       entityManager.addListener(new DataConflictListener() {           
+           @Override
+           public void onConflict(EntityManager em, Conflicts cs) {
+               conflicts[0] = cs;
+           }
+       });
+       
+       entityManager.mergeExternalData(person2, null, "S2", null, null);
+       
+       Assert.assertNotNull("Conflicts after merge", conflicts[0]);
+       Assert.assertTrue("PersonSet still dirty after merge", entityManager.isDirtyEntity(person));
+       
+       conflicts[0].acceptAllClient();
+       conflicts[0] = null;
+       
+       Assert.assertEquals("PersonSet last name", "toto", person.getLastName());
+       Assert.assertEquals("PersonSet contacts", 2, person.getContacts().size());
+       Assert.assertEquals("PersonSet version", 1L, person.getVersion().longValue());
+       Assert.assertTrue("PersonSet dirty", entityManager.isDirtyEntity(person));
+       
+       entityManager.resetEntity(person);
+       
+       Assert.assertEquals("PersonSet last name after cancel", "tutu", person.getLastName());
+       Assert.assertEquals("PersonSet contacts after cancel", 1, person.getContacts().size());
+       
+       person.setLastName("toto");
+       
+       PersonSet person3 = new PersonSet(1L, 2L, "P01", null, "titi");
+       ContactSet contact3 = new ContactSet(1L, 1L, "C01", person3, "test2");
+       person3.addContact(contact3);
+       ContactSet contact3b = new ContactSet(2L, 0L, "C02", person3, "test3");
+       person3.addContact(contact3b);
+       
+       entityManager.mergeExternalData(person3, null, "S2", null, null);
+       
+       Assert.assertNotNull("Conflicts after merge 2", conflicts[0]);
+       
+       conflicts[0].acceptAllServer();
+       
+       Assert.assertEquals("PersonSet last name", "titi", person.getLastName());
+       Assert.assertEquals("PersonSet version", 2L, person.getVersion().longValue());
+       Assert.assertEquals("PersonSet contacts", 2, person.getContacts().size());
+       Assert.assertFalse("PersonSet not dirty", entityManager.isDirtyEntity(person));
+    }
 }
