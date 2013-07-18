@@ -25,9 +25,13 @@ import java.util.ServiceLoader;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.client.configuration.SimpleConfiguration;
+import org.granite.client.messaging.ExtCosRemoteAliasScanner;
+import org.granite.client.messaging.RemoteAliasScanner;
+import org.granite.client.messaging.StandardRemoteAliasScanner;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.persistence.Persistence;
+import org.granite.logging.Logger;
 import org.granite.messaging.jmf.reflect.Reflection;
 
 /**
@@ -35,6 +39,8 @@ import org.granite.messaging.jmf.reflect.Reflection;
  */
 public class Platform {
 
+	private static final Logger log = Logger.getLogger(Platform.class);
+	
 	public static final String SYSTEM_PROPERTY_KEY = Platform.class.getName();
 	
 	protected static Platform instance = null;
@@ -140,6 +146,17 @@ public class Platform {
 		
 		this.reflection = reflection;
 		this.persistence = new Persistence(reflection);
+	}
+	
+	public RemoteAliasScanner newRemoteAliasScanner() {
+		try {
+			return new ExtCosRemoteAliasScanner();
+		}
+		catch (Throwable t) {
+			log.debug(t, "Extcos scanner not available, using classpath scanner");
+		}
+		
+		return new StandardRemoteAliasScanner();
 	}
 	
 	public Reflection getReflection() {

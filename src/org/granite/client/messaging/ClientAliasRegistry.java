@@ -20,17 +20,13 @@
 
 package org.granite.client.messaging;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.granite.client.platform.Platform;
 import org.granite.logging.Logger;
 import org.granite.messaging.AliasRegistry;
-import org.granite.scan.ScannedItem;
-import org.granite.scan.ScannedItemHandler;
-import org.granite.scan.Scanner;
-import org.granite.scan.ScannerFactory;
 
 
 /**
@@ -44,22 +40,14 @@ public class ClientAliasRegistry implements AliasRegistry {
 	private Map<String, String> clientToServerAliases = new HashMap<String, String>();
 	
 	public void scan(Set<String> packageNames) {
-		if (!packageNames.isEmpty()) {
-			try {
-				RemoteAliasScanner.scan(this, packageNames);
-				return;
-			}
-			catch (Throwable t) {
-				log.debug(t, "Extcos scanner not available, using classpath scanner");
-			}
-		
-			Scanner scanner = ScannerFactory.createScanner(new MessagingScannedItemHandler(packageNames), null);
-	        try {
-	            scanner.scan();
-	        }
-	        catch (Exception e) {
-	            log.error(e, "Could not scan classpath for @RemoteAlias");
-	        }
+		if (packageNames != null && !packageNames.isEmpty()) {
+			RemoteAliasScanner scanner = Platform.getInstance().newRemoteAliasScanner();
+			
+			Set<Class<?>> aliases = scanner.scan(packageNames);
+			for (Class<?> alias : aliases)
+				registerAlias(alias);
+			
+			log.debug("Using remote aliases: %s", aliases);
 		}
 	}
 	
@@ -97,54 +85,4 @@ public class ClientAliasRegistry implements AliasRegistry {
 		String className = serverToClientAliases.get(alias);
 		return className != null ? className : alias;
 	}
-	
-	
-	class MessagingScannedItemHandler implements ScannedItemHandler {
-
-		final String[] packageNames;
-		
-		MessagingScannedItemHandler(Set<String> packageNames) {
-			this.packageNames = new String[packageNames.size()];
-			int i = 0;
-			for (String packageName : packageNames)
-				this.packageNames[i++] = packageName.replace('.', '/') + '/';
-		}
-		
-		@Override
-		public boolean handleMarkerItem(ScannedItem item) {
-			return false;
-		}
-
-		@Override
-		public void handleScannedItem(ScannedItem item) {
-			if ("class".equals(item.getExtension())) {
-				boolean scan = false;
-				
-				String path = item.getRelativePath();
-				for (String packageName : packageNames) {
-					if (path.startsWith(packageName)) {
-						scan = true;
-						break;
-					}
-				}
-				
-				if (scan) {
-					try {
-						Class<?> cls = item.loadAsClass();
-						RemoteAlias alias = cls.getAnnotation(RemoteAlias.class);
-						if (alias != null)
-							registerAlias(cls);
-					}
-					catch (ClassFormatError e) {
-					}
-					catch (ClassNotFoundException e) {
-					}
-					catch (IOException e) {
-						log.error(e, "Could not load class: %s", item);
-					}
-				}
-			}
-		}
-	}
-	
 }

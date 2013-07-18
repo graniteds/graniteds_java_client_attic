@@ -22,66 +22,10 @@ package org.granite.client.messaging;
 
 import java.util.Set;
 
-import net.sf.extcos.ComponentQuery;
-import net.sf.extcos.ComponentScanner;
-import net.sf.extcos.spi.ResourceAccessor;
-import net.sf.extcos.spi.ResourceType;
-
 /**
- * @author William DRAI
+ * @author Franck WOLFF
  */
-public class RemoteAliasScanner {
-	
-	public static void scan(final ClientAliasRegistry aliasRegistry, final Set<String> packageNames) {
-		if (packageNames.isEmpty())
-			return;
-		
-		ComponentScanner scanner = new ComponentScanner();
-		
-		final String[] basePackageNames = packageNames.toArray(new String[packageNames.size()]);
-		
-		Set<Class<?>> remoteClasses = scanner.getClasses(new ComponentQuery() {
-			@Override
-			protected void query() {
-				select(JavaClassResourceType.javaClasses()).from(basePackageNames).returning(allAnnotatedWith(RemoteAlias.class));
-			}
-		});
-		
-		for (Class<?> remoteClass : remoteClasses) {
-			if (remoteClass.isAnnotationPresent(RemoteAlias.class))
-				aliasRegistry.registerAlias(remoteClass);
-		}
-	}	
-	
-	public static class JavaClassResourceType implements ResourceType {
-		
-		private static final String JAVA_CLASS_SUFFIX = "class";
-		private static JavaClassResourceType instance;
+public interface RemoteAliasScanner {
 
-		/**
-		 * Always instantiate via the {@link #javaClasses()} method.
-		 */
-		private JavaClassResourceType() {
-		}
-
-		@Override
-		public String getFileSuffix() {
-			return JAVA_CLASS_SUFFIX;
-		}
-
-		/**
-		 * EDSL method
-		 */
-		public static JavaClassResourceType javaClasses() {
-			if (instance == null)
-				instance = new JavaClassResourceType();
-
-			return instance;
-		}
-
-		@Override
-		public ResourceAccessor getResourceAccessor() {
-			return new JavaResourceAccessor();
-		}
-	}
+	Set<Class<?>> scan(Set<String> packageNames);
 }
