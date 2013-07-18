@@ -48,6 +48,8 @@ public class Platform {
 	protected final Reflection reflection;
 	protected final Persistence persistence;
 	
+	protected Object context;
+	
 	public static synchronized Platform getInstance() {
 		
 		if (instance == null) {
@@ -148,6 +150,14 @@ public class Platform {
 		this.persistence = new Persistence(reflection);
 	}
 	
+	public Object getContext() {
+		return context;
+	}
+
+	public void setContext(Object context) {
+		this.context = context;
+	}
+
 	public RemoteAliasScanner newRemoteAliasScanner() {
 		try {
 			return new ExtCosRemoteAliasScanner();
@@ -167,11 +177,11 @@ public class Platform {
 		return new SimpleConfiguration();
 	}
 	
-	public Transport newRemotingTransport(Object context) {
+	public Transport newRemotingTransport() {
 		return new ApacheAsyncTransport();
 	}
 	
-	public Transport newMessagingTransport(Object context) {
+	public Transport newMessagingTransport() {
 		return null;
 	}
 
