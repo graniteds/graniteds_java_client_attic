@@ -21,7 +21,6 @@
 package org.granite.client.platform;
 
 import java.util.Iterator;
-import java.util.ServiceLoader;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.client.configuration.SimpleConfiguration;
@@ -33,6 +32,7 @@ import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.persistence.Persistence;
 import org.granite.logging.Logger;
 import org.granite.messaging.jmf.reflect.Reflection;
+import org.granite.scan.ServiceLoader;
 
 /**
  * @author Franck WOLFF
@@ -92,8 +92,6 @@ public class Platform {
 			throw new PlatformConfigurationError("Could not load Platform service", t);
 		}
 		
-		platformLoader.reload();
-		
 		return instance;
 	}
 
@@ -113,14 +111,8 @@ public class Platform {
 		if (platformClassLoader == null)
 			platformClassLoader = Thread.currentThread().getContextClassLoader();
 
-		if (platformClassName == null) {
-			try {
-				platformClassName = platformClassLoader.loadClass("org.granite.client.platform.android.AndroidPlatform").getName();
-			}
-			catch (ClassNotFoundException e) {
-				platformClassName = Platform.class.getName();
-			}
-		}
+		if (platformClassName == null)
+			platformClassName = Platform.class.getName();
 		
 		try {
 			@SuppressWarnings("unchecked")
