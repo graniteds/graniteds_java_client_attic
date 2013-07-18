@@ -25,6 +25,8 @@ import java.util.ServiceLoader;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.client.configuration.DefaultConfiguration;
+import org.granite.client.messaging.transport.Transport;
+import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.persistence.Persistence;
 import org.granite.messaging.jmf.reflect.Reflection;
 
@@ -139,6 +141,14 @@ public class Platform {
 
 	public Configuration newConfiguration() {
 		return new DefaultConfiguration();
+	}
+	
+	public Transport newRemotingTransport(Object context) {
+		return new ApacheAsyncTransport();
+	}
+	
+	public Transport newMessagingTransport(Object context) {
+		return null;
 	}
 
 	public Persistence getPersistence() {

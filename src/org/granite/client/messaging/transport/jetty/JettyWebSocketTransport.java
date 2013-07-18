@@ -44,7 +44,7 @@ import org.granite.util.PublicByteArrayOutputStream;
 /**
  * @author William DRAI
  */
-public class JettyWebSocketTransport extends AbstractTransport implements WebSocketTransport {
+public class JettyWebSocketTransport extends AbstractTransport<Object> implements WebSocketTransport {
 	
 	private static final Logger log = Logger.getLogger(JettyWebSocketTransport.class);
 
@@ -69,8 +69,6 @@ public class JettyWebSocketTransport extends AbstractTransport implements WebSoc
 	public synchronized boolean start() {
 		if (isStarted())
 			return true;
-		
-		stop();
 
 		log.info("Starting Jetty WebSocketClient transport...");
 		

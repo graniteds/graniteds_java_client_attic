@@ -26,7 +26,6 @@ import java.util.concurrent.Future;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
@@ -44,49 +43,53 @@ import org.granite.client.messaging.transport.TransportFuture;
 import org.granite.client.messaging.transport.TransportHttpStatusException;
 import org.granite.client.messaging.transport.TransportIOException;
 import org.granite.client.messaging.transport.TransportMessage;
+import org.granite.client.messaging.transport.TransportStateException;
 import org.granite.logging.Logger;
 import org.granite.util.PublicByteArrayOutputStream;
 
 /**
  * @author Franck WOLFF
  */
-public class ApacheAsyncTransport extends AbstractTransport implements HTTPTransport {
+public class ApacheAsyncTransport extends AbstractTransport<Object> implements HTTPTransport {
 	
 	private static final Logger log = Logger.getLogger(ApacheAsyncTransport.class);
 
-	protected CloseableHttpAsyncClient httpClient = null;
-	protected CookieStore cookieStore = new BasicCookieStore();
-	protected RequestConfig defaultRequestConfig = null;
+	private CloseableHttpAsyncClient httpClient = null;
+	private RequestConfig defaultRequestConfig = null;
 	
 	public ApacheAsyncTransport() {
-		this(null);
-	}
-	
-	public ApacheAsyncTransport(RequestConfig defaultRequestConfig) {
-		this.defaultRequestConfig = defaultRequestConfig;
 	}
 
 	public void configure(HttpAsyncClientBuilder clientBuilder) {
 		// Can be overwritten...
 	}
 
+	public RequestConfig getDefaultRequestConfig() {
+		return defaultRequestConfig;
+	}
+
+	public void setDefaultRequestConfig(RequestConfig defaultRequestConfig) {
+		this.defaultRequestConfig = defaultRequestConfig;
+	}
+
+	protected synchronized CloseableHttpAsyncClient getCloseableHttpAsyncClient() {
+		return httpClient;
+	}
+
 	@Override
 	public synchronized boolean start() {
-		if (isStarted())
+		if (httpClient != null)
 			return true;
-		
-		stop();
 		
 		log.info("Starting Apache HttpAsyncClient transport...");
 		
 		try {
-			RequestConfig requestConfig = defaultRequestConfig;
-			if (requestConfig == null)
-				requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY).build();
+			if (defaultRequestConfig == null)
+				defaultRequestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY).build();
 			
 			HttpAsyncClientBuilder httpClientBuilder = HttpAsyncClients.custom();
-			httpClientBuilder.setDefaultCookieStore(cookieStore);
-			httpClientBuilder.setDefaultRequestConfig(requestConfig);
+			httpClientBuilder.setDefaultCookieStore(new BasicCookieStore());
+			httpClientBuilder.setDefaultRequestConfig(defaultRequestConfig);
 			configure(httpClientBuilder);
 			httpClient = httpClientBuilder.build();
 			
@@ -111,12 +114,11 @@ public class ApacheAsyncTransport extends AbstractTransport implements HTTPTrans
 
 	@Override
 	public TransportFuture send(final Channel channel, final TransportMessage message) throws TransportException {
-		synchronized (this) {
-		    if (httpClient == null) {
-		    	TransportIOException e = new TransportIOException(message, "Apache HttpAsyncClient not started");
-		    	getStatusHandler().handleException(e);
-		    	throw e;
-			}
+		CloseableHttpAsyncClient httpClient = getCloseableHttpAsyncClient();
+	    if (httpClient == null) {
+	    	TransportException e = new TransportStateException("Apache HttpAsyncClient not started");
+	    	getStatusHandler().handleException(e);
+	    	throw e;
 		}
 	    
 		if (!message.isConnect())

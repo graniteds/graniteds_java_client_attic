@@ -31,6 +31,9 @@ import org.granite.util.ContentType;
 public interface ChannelFactory {
 
 	ContentType getContentType();
+	
+	Object getContext();
+	void setContext(Object context);
 
 	Transport getRemotingTransport();
 	void setRemotingTransport(Transport remotingTransport);

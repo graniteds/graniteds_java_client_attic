@@ -27,6 +27,9 @@ import org.granite.client.messaging.channel.Channel;
  * @author Franck WOLFF
  */
 public interface Transport {
+
+	void setContext(Object context);
+	Object getContext();
 	
 	void setConfiguration(Configuration config);
 	Configuration getConfiguration();

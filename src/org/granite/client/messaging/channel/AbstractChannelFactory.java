@@ -2,7 +2,7 @@ package org.granite.client.messaging.channel;
 
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportException;
-import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
+import org.granite.client.platform.Platform;
 import org.granite.util.ContentType;
 
 public abstract class AbstractChannelFactory implements ChannelFactory {
@@ -11,6 +11,7 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	
 	protected Transport remotingTransport = null;
 	protected Transport messagingTransport = null;
+	protected Object context = null;
 
 	protected AbstractChannelFactory(ContentType contentType) {
 		this(contentType, null, null);
@@ -20,6 +21,14 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 		this.contentType = contentType;
 		this.remotingTransport = remotingTransport;
 		this.messagingTransport = messagingTransport;
+	}
+
+	public Object getContext() {
+		return context;
+	}
+
+	public void setContext(Object context) {
+		this.context = context;
 	}
 
 	public ContentType getContentType() {
@@ -44,13 +53,16 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	
 	public void start() {
 		if (remotingTransport == null)
-			remotingTransport = new ApacheAsyncTransport();
+			remotingTransport = Platform.getInstance().newRemotingTransport(context);
 		
 		if (!remotingTransport.isStarted() && !remotingTransport.start())
 			throw new TransportException("Could not start remoting transport: " + remotingTransport);
 		
-		if (messagingTransport == null)
-			messagingTransport = remotingTransport;
+		if (messagingTransport == null) {
+			messagingTransport = Platform.getInstance().newMessagingTransport(context);
+			if (messagingTransport == null)
+				messagingTransport = remotingTransport;
+		}
 		else if (!messagingTransport.isStarted() && !messagingTransport.start())
 			throw new TransportException("Could not start messaging transport: " + messagingTransport);
 	}
