@@ -199,14 +199,8 @@ public class EntityManagerImpl implements EntityManager {
         if (dirtyCheckContext == null)
             throw new IllegalArgumentException("Dirty check context cannot be null");
         
-//        if (dirtyCheckContext != null)
-//            dirtyCheckContext.removeEventListener(DIRTY_CHANGE, dirtyChangeHandler);
-            
         this.dirtyCheckContext = dirtyCheckContext;
         this.dirtyCheckContext.setTrackingContext(trackingContext);
-//        this.dirtyCheckContext.addEventListener(DIRTY_CHANGE, dirtyChangeHandler, false, 0, true);
-        
-        // _mergeContext = new MergeContext(this, dirtyCheckContext);
     }
 
     
@@ -216,66 +210,14 @@ public class EntityManagerImpl implements EntityManager {
      *  Create a new temporary entity manager
      */
     public EntityManager newTemporaryEntityManager() {
-        return new EntityManagerImpl("$$TMP$$" + (tmpEntityManagerId++), dataManager, trackingContext, expressionEvaluator);
+        try {
+            DataManager tmpDataManager = TypeUtil.newInstance(dataManager.getClass(), DataManager.class);
+            return new EntityManagerImpl("$$TMP$$" + (tmpEntityManagerId++), tmpDataManager, trackingContext, expressionEvaluator);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Could not create temporaty entity manager", e);
+        }
     }
-//    
-//    /**
-//     *  @private
-//     *  Allow uninitialize of persistent collections
-//     *
-//     *  @param allowed allow uninitialize of collections
-//     */
-//    public void setUninitializeAllowed(boolean allowed) {
-//        _mergeContext.uninitializeAllowed = allowed;
-//    }
-//    
-//    /**
-//     *  @private
-//     *  @return allow uninitialize of collections
-//     */
-//    public function get uninitializeAllowed():Boolean {
-//        return _mergeContext.uninitializeAllowed;
-//    }
-//    
-//    /**
-//     *  @private
-//     *  Force uninitialize of persistent collections
-//     * 
-//     *  @param uninitializing force uninitializing of collections during merge
-//     */
-//    public function set uninitializing(uninitializing:Boolean):void {
-//        _mergeContext.uninitializing = uninitializing;
-//    }
-    
-    
-//    /**
-//     *  Entity manager is dirty when any entity/collection/map has been modified
-//     *
-//     *  @return is dirty
-//     */
-//    [Bindable(event="dirtyChange")]
-//    public function get dirty():Boolean {
-//        return _dirtyCheckContext.dirty;
-//    }
-//    
-//    /**
-//     *  Internal handler for dirty flag changes. Redispaches event from the dirty check context
-//     * 
-//     *  @param event dirty change event
-//     */
-//    private function dirtyChangeHandler(event:PropertyChangeEvent):void {
-//        dispatchEvent(event);
-//    }
-//    
-//    
-//    /**
-//     *  List of conflicts detected during last merge operation
-//     * 
-//     *  @return conflicts list 
-//     */
-//    public Conflicts getMergeConflicts() {
-//        return _mergeContext.mergeConflicts;
-//    }
     
     
     /**
@@ -298,9 +240,7 @@ public class EntityManagerImpl implements EntityManager {
     public void attachEntity(Object entity, boolean putInCache) {
         EntityManager em = PersistenceManager.getEntityManager(entity);
         if (em != null && em != this && !em.isActive()) {
-            throw new Error("The entity instance " + entity
-                + " cannot be attached to two contexts (current: " + em.getId()
-                + ", new: " + id + ")");
+            throw new Error("The entity instance " + entity + " cannot be attached to two contexts (current: " + em.getId() + ", new: " + id + ")");
         }
         
         PersistenceManager.setEntityManager(entity, this);
@@ -713,27 +653,23 @@ public class EntityManagerImpl implements EntityManager {
                 if (obj == null) {
                     next = null;
                 }
-//                else if (((obj instanceof LazyableCollection && !((LazyableCollection)obj).isInitialized()) 
-//                    || (obj instanceof LazyableCollection && !(previous instanceof LazyableCollection))) && isEntity(parent) && propertyName != null) {
-//                    next = mergeLazyableCollection(mergeContext, (LazyableCollection)obj, previous, null, parent, propertyName);
-//                    addRef = true;
-//                }
                 else if (((obj instanceof PersistentCollection && !((PersistentCollection)obj).wasInitialized()) 
                     || (obj instanceof PersistentCollection && !(previous instanceof PersistentCollection))) && isEntity(parent) && propertyName != null) {
                     next = mergePersistentCollection(mergeContext, (PersistentCollection)obj, previous, null, parent, propertyName);
                     addRef = true;
                 }
                 else if (obj instanceof List<?>) {
-                    next = mergeCollection(mergeContext, (List<Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
+                    next = mergeList(mergeContext, (List<Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
+                    addRef = true;
+                }
+                else if (obj instanceof Set<?>) {
+                    next = mergeSet(mergeContext, (Set<Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
                 else if (obj instanceof Map<?, ?>) {
                     next = mergeMap(mergeContext, (Map<Object, Object>)obj, previous, parent == null ? expr : null, parent, propertyName);
                     addRef = true;
                 }
-//                else if (obj instanceof Enum) {
-//                	next = obj;
-//                }
                 else if (obj.getClass().isArray()) {
                 	next = mergeArray(mergeContext, obj, previous, expr, parent, propertyName);
                 	addRef = true;
@@ -886,6 +822,12 @@ public class EntityManagerImpl implements EntityManager {
         
         mergeContext.pushMerge(obj, dest);
         
+        boolean tracking = false;
+        if (mergeContext.isResolvingConflict()) {
+            dataManager.startTracking(dest, parent);
+            tracking = true;
+        }
+        
         boolean ignore = false;
         if (isEntity(dest)) {
             // If we are in an uninitialing temporary entity manager, try to reproxy associations when possible
@@ -973,7 +915,8 @@ public class EntityManagerImpl implements EntityManager {
             log.debug("mergeEntity result: %s", dest.toString());
         
         // Keep notified of collection updates to notify the server at next remote call
-        dataManager.startTracking(dest, parent);
+        if (!tracking)
+            dataManager.startTracking(dest, parent);
         
         return dest;
     }
@@ -1009,8 +952,8 @@ public class EntityManagerImpl implements EntityManager {
      *  @return merged collection (=== previous when previous not null)
      */ 
     @SuppressWarnings("unchecked")
-    private List<?> mergeCollection(MergeContext mergeContext, List<Object> coll, Object previous, Expression expr, Object parent, String propertyName) {
-        log.debug("mergeCollection: %s previous %s", ObjectUtil.toString(coll), ObjectUtil.toString(previous));
+    private List<?> mergeList(MergeContext mergeContext, List<Object> coll, Object previous, Expression expr, Object parent, String propertyName) {
+        log.debug("mergeList: %s previous %s", ObjectUtil.toString(coll), ObjectUtil.toString(previous));
         
         if (mergeContext.isUninitializing() && isEntity(parent) && propertyName != null) {
         	if (dataManager.hasVersionProperty(parent) && dataManager.getVersion(parent) != null
@@ -1162,6 +1105,167 @@ public class EntityManagerImpl implements EntityManager {
             dataManager.startTracking(nextList, parent);
 
         return nextList;
+    }
+    
+    /**
+     *  @private 
+     *  Merge a collection coming from the server in the context
+     *
+     *  @param coll external collection
+     *  @param previous previously existing collection in the context (can be null if no existing collection)
+     *  @param expr current path from the context
+     *  @param parent owner object for collections
+     *  @param propertyName property name in owner object
+     * 
+     *  @return merged collection (=== previous when previous not null)
+     */ 
+    @SuppressWarnings("unchecked")
+    private Set<?> mergeSet(MergeContext mergeContext, Set<Object> coll, Object previous, Expression expr, Object parent, String propertyName) {
+        log.debug("mergeSet: %s previous %s", ObjectUtil.toString(coll), ObjectUtil.toString(previous));
+        
+        if (mergeContext.isUninitializing() && isEntity(parent) && propertyName != null) {
+            if (dataManager.hasVersionProperty(parent) && dataManager.getVersion(parent) != null
+                && dataManager.isLazyProperty(parent, propertyName) && previous instanceof PersistentCollection && ((PersistentCollection)previous).wasInitialized()) {
+                log.debug("uninitialize lazy collection %s", ObjectUtil.toString(previous));
+                mergeContext.pushMerge(coll, previous);
+                
+                ((PersistentCollection)previous).uninitialize();
+                return (Set<?>)previous;
+            }
+        }
+        
+        if (previous != null && previous instanceof PersistentCollection && !((PersistentCollection)previous).wasInitialized()) {
+            log.debug("initialize lazy collection %s", ObjectUtil.toString(previous));
+            mergeContext.pushMerge(coll, previous);
+            
+            ((PersistentCollection)previous).initializing();
+            
+            Set<Object> added = new HashSet<Object>(coll.size());
+            for (Iterator<Object> icoll = coll.iterator(); icoll.hasNext(); ) {
+                Object obj = icoll.next();
+
+                obj = mergeExternal(mergeContext, obj, null, null, propertyName != null ? parent : null, propertyName, false);
+                added.add(obj);
+            }
+            
+            ((PersistentCollection)previous).initialize();
+            ((Collection<Object>)previous).addAll(added);
+            
+            // Keep notified of collection updates to notify the server at next remote call
+            dataManager.startTracking(previous, parent);
+
+            return (Set<?>)previous;
+        }
+
+        boolean tracking = false;
+        
+        Set<?> nextSet = null;
+        Set<Object> set = null;
+        if (previous != null && previous instanceof Set<?>)
+            set = (Set<Object>)previous;
+        else if (mergeContext.getSourceEntityManager() != null) {
+            try {
+                set = coll.getClass().newInstance();
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Could not create class " + coll.getClass());
+            }
+        }
+        else
+            set = (Set<Object>)coll;
+                        
+        mergeContext.pushMerge(coll, set);
+
+        Set<Object> prevColl = set != coll ? set : null;
+        Set<Object> destColl = prevColl;
+
+        if (prevColl != null && mergeContext.isMergeUpdate()) {
+            // Enable tracking before modifying collection when resolving a conflict
+            // so the dirty checking can save changes
+            if (mergeContext.isResolvingConflict()) {
+                dataManager.startTracking(prevColl, parent);
+                tracking = true;
+            }
+            
+            for (Iterator<Object> ic = destColl.iterator(); ic.hasNext(); ) {
+                Object obj = ic.next();
+                boolean found = false;
+                for (Iterator<Object> jc = coll.iterator(); jc.hasNext(); ) {
+                    Object next = jc.next();
+                    if (ObjectUtil.objectEquals(dataManager, next, obj)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    ic.remove();
+            }
+        }
+        Set<Object> changed = new HashSet<Object>();
+        for (Iterator<Object> ic = coll.iterator(); ic.hasNext(); ) {
+            Object obj = ic.next();
+            if (destColl != null) {
+                boolean found = false;
+                for (Iterator<Object> jc = destColl.iterator(); jc.hasNext(); ) {
+                    Object prev = jc.next();
+                    if (ObjectUtil.objectEquals(dataManager, prev, obj)) {
+                        obj = mergeExternal(mergeContext, obj, prev, propertyName != null ? expr : null, propertyName != null ? parent : null, propertyName, false);
+                        if (obj != prev) {
+                            ic.remove();
+                            changed.add(obj);
+                        }
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    obj = mergeExternal(mergeContext, obj, null, propertyName != null ? expr : null, propertyName != null ? parent : null, propertyName, false);
+                    
+                    if (mergeContext.isMergeUpdate())
+                        destColl.add(obj);
+                }
+            }
+            else {
+                Object prev = obj;
+                obj = mergeExternal(mergeContext, obj, null, propertyName != null ? expr : null, propertyName != null ? parent : null, propertyName, false);
+                if (obj != prev) {
+                    ic.remove();
+                    changed.add(obj);
+                }
+            }
+        }
+        if (destColl != null)
+            destColl.addAll(changed);
+        else
+            coll.addAll(changed);
+        
+        if (destColl != null && mergeContext.isMergeUpdate()) {
+            if (!mergeContext.isResolvingConflict() && !mergeContext.isSkipDirtyCheck())
+                dirtyCheckContext.markNotDirty(previous, parent);
+            
+            nextSet = prevColl;
+        }
+        else if (prevColl instanceof PersistentCollection && !mergeContext.isMergeUpdate()) {
+            nextSet = prevColl;
+        }
+        else
+            nextSet = coll;
+        
+        // Wrap/instrument persistent collections
+        if (isEntity(parent) && propertyName != null && nextSet instanceof PersistentCollection 
+                && !(((PersistentCollection)nextSet).getLoader() instanceof CollectionLoader)) {
+            log.debug("instrument persistent collection from %s", ObjectUtil.toString(nextSet));
+            
+            ((PersistentCollection)nextSet).setLoader(new CollectionLoader(mergeContext.getServerSession(), parent, propertyName));
+        }
+        else
+            log.debug("mergeCollection result: %s", ObjectUtil.toString(nextSet));
+        
+        mergeContext.pushMerge(coll, nextSet, false);
+        
+        if (!tracking)
+            dataManager.startTracking(nextSet, parent);
+
+        return nextSet;
     }
 
     /**
@@ -1574,9 +1678,15 @@ public class EntityManagerImpl implements EntityManager {
 	                        if (val instanceof PersistentCollection && !((PersistentCollection)val).wasInitialized())
 	                            continue;
 	                        if (val instanceof List<?>) {
-	                            int idx = ((List<?>)val).indexOf(entity);
+	                            List<?> list = (List<?>)val;
+	                            int idx = list.indexOf(entity);
 	                            if (idx >= 0)
-	                                ((List<?>)val).remove(idx);
+	                                list.remove(idx);
+	                        }
+	                        else if (val instanceof Collection<?>) {
+	                            Collection<?> coll = (Collection<?>)val;
+	                            if (coll.contains(entity))
+	                                coll.remove(entity);
 	                        }
 	                        else if (val instanceof Map<?, ?>) {
 	                            Map<?, ?> map = (Map<?, ?>)val;
@@ -1595,7 +1705,7 @@ public class EntityManagerImpl implements EntityManager {
 	                /* May not be necessary, should be cleaned up by weak reference */
 	                Map<String, Object> pvalues = dataManager.getPropertyValues(entity, false, true);
 	                for (Object val : pvalues.values()) {
-	                    if (val instanceof List<?> || val instanceof Map<?, ?> || (val != null && val.getClass().isArray()))
+	                    if (val instanceof Collection<?> || val instanceof Map<?, ?> || (val != null && val.getClass().isArray()))
 	                        entityReferences.remove(val);
 	                }
 	                entityReferences.remove(entity);
@@ -1922,7 +2032,7 @@ public class EntityManagerImpl implements EntityManager {
          *
          *  @param event collection event
          */ 
-        public void collectionChangeHandler(ChangeKind kind, Object target, int location, Object[] items) {
+        public void collectionChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
             if ((mergeContext != null && mergeContext.getSourceEntityManager() == this) || !isActive())
                 return;
@@ -1940,7 +2050,7 @@ public class EntityManagerImpl implements EntityManager {
          *
          *  @param event collection event
          */ 
-        public void entityCollectionChangeHandler(ChangeKind kind, Object target, int location, Object[] items) {
+        public void entityCollectionChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
             if ((mergeContext != null && mergeContext.getSourceEntityManager() == this) || !isActive())
                 return;
@@ -2010,7 +2120,7 @@ public class EntityManagerImpl implements EntityManager {
          *
          *  @param event map event
          */ 
-        public void mapChangeHandler(ChangeKind kind, Object target, int location, Object[] items) {
+        public void mapChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
             if ((mergeContext != null && mergeContext.getSourceEntityManager() == this) || !isActive())
                 return;
@@ -2028,7 +2138,7 @@ public class EntityManagerImpl implements EntityManager {
          *
          *  @param event map event
          */ 
-        public void entityMapChangeHandler(ChangeKind kind, Object target, int location, Object[] items) {
+        public void entityMapChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
             if ((mergeContext != null && mergeContext.getSourceEntityManager() == this) || !isActive())
                 return;

@@ -20,7 +20,6 @@
 
 package org.granite.client.tide.data.spi;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -40,7 +39,7 @@ public class MergeContext {
     private static ThreadLocal<Map<EntityManager, MergeContext>> mergeContext = new ThreadLocal<Map<EntityManager, MergeContext>>() {
         @Override
         protected Map<EntityManager, MergeContext> initialValue() {
-            return new HashMap<EntityManager, MergeContext>();
+            return new IdentityHashMap<EntityManager, MergeContext>();
         }
     };
     

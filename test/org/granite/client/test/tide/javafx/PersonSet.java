@@ -20,13 +20,15 @@
 
 package org.granite.client.test.tide.javafx;
 
+import java.util.Iterator;
+
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyListProperty;
-import javafx.beans.property.ReadOnlyListWrapper;
+import javafx.beans.property.ReadOnlySetProperty;
+import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 
 import org.granite.client.persistence.Entity;
 import org.granite.client.persistence.Lazy;
@@ -34,7 +36,7 @@ import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
 
 
 @Entity
-public class Person extends AbstractEntity {
+public class PersonSet extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
     
@@ -42,20 +44,20 @@ public class Person extends AbstractEntity {
     private StringProperty firstName = new SimpleStringProperty(this, "firstName");
     private StringProperty lastName = new SimpleStringProperty(this, "lastName");
     @Lazy
-    private ReadOnlyListWrapper<Contact> contacts = FXPersistentCollections.readOnlyObservablePersistentList(this, "contacts");
+    private ReadOnlySetWrapper<ContactSet> contacts = FXPersistentCollections.readOnlyObservablePersistentSet(this, "contacts");
     
     
-    public Person() {
+    public PersonSet() {
         super();
     }
     
-    public Person(Long id, Long version, String uid, String firstName, String lastName) {
+    public PersonSet(Long id, Long version, String uid, String firstName, String lastName) {
         super(id, version, uid);
         this.firstName.set(firstName);
         this.lastName.set(lastName);
     }
     
-    public Person(Long id, boolean initialized, String detachedState) {
+    public PersonSet(Long id, boolean initialized, String detachedState) {
         super(id, initialized, detachedState);
     }
     
@@ -89,16 +91,23 @@ public class Person extends AbstractEntity {
         this.lastName.set(lastName);
     }
     
-    public ReadOnlyListProperty<Contact> contactsProperty() {
+    public ReadOnlySetProperty<ContactSet> contactsProperty() {
         return contacts.getReadOnlyProperty();
     }
-    public ObservableList<Contact> getContacts() {
+    public ObservableSet<ContactSet> getContacts() {
     	return contacts.get();
     }
-    public void addContact(Contact contact) {
+    public void addContact(ContactSet contact) {
     	contacts.get().add(contact);
     }
-    public Contact getContact(int idx) {
-    	return contacts.get().get(idx);
+    public ContactSet getContact(int idx) {
+        Iterator<ContactSet> ic = contacts.iterator();
+        int i = 0;
+        ContactSet contact = null;
+        while (ic.hasNext() && i <= idx) {
+            contact = ic.next();
+            i++;
+        }
+    	return contact;
     }
 }

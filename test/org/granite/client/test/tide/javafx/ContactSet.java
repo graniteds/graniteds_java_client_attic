@@ -30,38 +30,38 @@ import org.granite.client.persistence.Lazy;
 
 
 @Entity
-public class Contact extends AbstractEntity {
+public class ContactSet extends AbstractEntity {
 
     private static final long serialVersionUID = 1L;
     
     @Lazy
-    private ObjectProperty<Person> person = new SimpleObjectProperty<Person>(this, "person");
+    private ObjectProperty<PersonSet> person = new SimpleObjectProperty<PersonSet>(this, "person");
     private StringProperty email = new SimpleStringProperty(this, "email");
     
     
-    public Contact() {
+    public ContactSet() {
         super();
     }
     
-    public Contact(Long id, Long version, String uid, String email) {
+    public ContactSet(Long id, Long version, String uid, String email) {
         super(id, version, uid);
         this.email.set(email);
     }    
-    public Contact(Long id, Long version, String uid, Person person, String email) {
+    public ContactSet(Long id, Long version, String uid, PersonSet person, String email) {
         super(id, version, uid);
         this.person.set(person);
         this.email.set(email);
     }    
     
-    public ObjectProperty<Person> personProperty() {
+    public ObjectProperty<PersonSet> personProperty() {
         return person;
     }
     
-    public Person getPerson() {
+    public PersonSet getPerson() {
         return person.get();
     }
     
-    public void setPerson(Person person) {
+    public void setPerson(PersonSet person) {
         this.person.set(person);
     }
     
