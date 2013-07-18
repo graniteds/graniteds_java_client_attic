@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.granite.client.persistence.LazyableCollection;
+import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.DataManager.ChangeKind;
@@ -155,6 +155,9 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
      */ 
     @SuppressWarnings("unchecked")
 	public boolean isEntityChanged(Object entity, Object embedded, String propName, Object value) {
+		if (!dataManager.isInitialized(entity))
+			return false;
+		
         boolean saveTracking = trackingContext.isEnabled();
         try {
             trackingContext.setEnabled(false);
@@ -189,7 +192,10 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                         break;
                     }
                 }
-                else if ((val instanceof List<?> || val instanceof Map<?, ?>) && !(val instanceof LazyableCollection && !((LazyableCollection)val).isInitialized())) {
+                else if ((val instanceof List<?> || val instanceof Map<?, ?>)) {
+	               	if (!dataManager.isInitialized(val))
+	               		continue;
+	               	
                     List<Change> savedArray = (List<Change>)saveval;
                     if (savedArray != null && !savedArray.isEmpty()) {
                         dirty = true;
@@ -220,6 +226,9 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 		if (cache.containsKey(entity))
 			return false;
 		cache.put(entity, true);
+		
+		if (!dataManager.isInitialized(entity))
+			return false;
 		
 		boolean saveTracking = trackingContext.isEnabled();
 		try {
@@ -254,7 +263,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 }
                 else if (val instanceof List<?> || val instanceof Map<?, ?>) {
                 	 if (!dataManager.isInitialized(val))
-                		 return false;
+                		 continue;
                 	 
                 	 @SuppressWarnings("unchecked")
                 	 List<Change> savedArray = (List<Change>)saveval;
@@ -365,8 +374,8 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             return true;
         }
         else if (val1 instanceof Set<?> && val2 instanceof Set<?>) {
-			if ((val1 instanceof LazyableCollection && !((LazyableCollection)val1).isInitialized()) 
-					|| (val2 instanceof LazyableCollection && !((LazyableCollection)val2).isInitialized()))
+			if ((val1 instanceof PersistentCollection && !((PersistentCollection)val1).wasInitialized()) 
+					|| (val2 instanceof PersistentCollection && !((PersistentCollection)val2).wasInitialized()))
 				return false;
             Collection<?> coll1 = (Collection<?>)val1;
             Collection<?> coll2 = (Collection<?>)val2;
@@ -397,8 +406,8 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             return true;
         }
         else if (val1 instanceof List<?> && val2 instanceof List<?>) {
-			if ((val1 instanceof LazyableCollection && !((LazyableCollection)val1).isInitialized()) 
-					|| (val2 instanceof LazyableCollection && !((LazyableCollection)val2).isInitialized()))
+			if ((val1 instanceof PersistentCollection && !((PersistentCollection)val1).wasInitialized()) 
+					|| (val2 instanceof PersistentCollection && !((PersistentCollection)val2).wasInitialized()))
 				return false;
             List<?> list1 = (List<?>)val1;
             List<?> list2 = (List<?>)val2;
@@ -411,8 +420,8 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
             return true;
         }
         else if (val1 instanceof Map<?, ?> && val2 instanceof Map<?, ?>) {
-			if ((val1 instanceof LazyableCollection && !((LazyableCollection)val1).isInitialized()) 
-					|| (val2 instanceof LazyableCollection && !((LazyableCollection)val2).isInitialized()))
+			if ((val1 instanceof PersistentCollection && !((PersistentCollection)val1).wasInitialized()) 
+					|| (val2 instanceof PersistentCollection && !((PersistentCollection)val2).wasInitialized()))
 				return false;
             Map<?, ?> map1 = (Map<?, ?>)val1;
             Map<?, ?> map2 = (Map<?, ?>)val2;
@@ -780,11 +789,11 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 			else if (isEntity(sourceValue)) {
 				save.put(propName, mergeContext.getFromCache(sourceValue));
 			}
-			else if (sourceValue instanceof Collection<?> && !(sourceValue instanceof LazyableCollection && !((LazyableCollection)sourceValue).isInitialized())) {
+			else if (sourceValue instanceof Collection<?> && !(sourceValue instanceof PersistentCollection && !((PersistentCollection)sourceValue).wasInitialized())) {
 				List<Object> snapshot = new ArrayList<Object>((Collection<?>)sourceValue);
 				save.put(propName, snapshot);
 			}
-			else if (sourceValue instanceof Map<?, ?> && !(sourceValue instanceof LazyableCollection && !((LazyableCollection)sourceValue).isInitialized())) {
+			else if (sourceValue instanceof Map<?, ?> && !(sourceValue instanceof PersistentCollection && !((PersistentCollection)sourceValue).wasInitialized())) {
 				Map<?, ?> map = (Map<?, ?>)sourceValue;
 				List<Object[]> snapshot = new ArrayList<Object[]>(map.size());
 				for (Entry<?, ?> entry : map.entrySet())
