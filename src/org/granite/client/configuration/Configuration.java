@@ -30,15 +30,10 @@ import org.granite.config.flex.ServicesConfig;
 public interface Configuration {
 	
 	ClientType getClientType();
+	void setClientType(ClientType clientType);
 
 	GraniteConfig getGraniteConfig();
 	ServicesConfig getServicesConfig();
 	
 	void load();
-	
-	void addConfigurator(Configurator configurator);
-	
-	static interface Configurator {		
-		void configure(GraniteConfig graniteConfig);
-	}
 }

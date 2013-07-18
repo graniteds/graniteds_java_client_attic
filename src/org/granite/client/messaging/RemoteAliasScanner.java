@@ -20,7 +20,6 @@
 
 package org.granite.client.messaging;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import net.sf.extcos.ComponentQuery;
@@ -28,26 +27,12 @@ import net.sf.extcos.ComponentScanner;
 import net.sf.extcos.spi.ResourceAccessor;
 import net.sf.extcos.spi.ResourceType;
 
-import org.granite.client.configuration.Configuration;
-import org.granite.config.GraniteConfig;
-
 /**
  * @author William DRAI
  */
-public class RemoteClassScanner implements Configuration.Configurator {
+public class RemoteAliasScanner {
 	
-	private Set<String> packageNames = new HashSet<String>();
-	
-	public void addPackageName(String packageName) {
-		this.packageNames.add(packageName);
-	}
-	
-	public void setPackageNames(Set<String> packageNames) {
-		this.packageNames.clear();
-		this.packageNames.addAll(packageNames);
-	}
-	
-	public void configure(GraniteConfig graniteConfig) {
+	public static void scan(final ClientAliasRegistry aliasRegistry, final Set<String> packageNames) {
 		if (packageNames.isEmpty())
 			return;
 		
@@ -61,7 +46,8 @@ public class RemoteClassScanner implements Configuration.Configurator {
 				select(JavaClassResourceType.javaClasses()).from(basePackageNames).returning(allAnnotatedWith(RemoteAlias.class));
 			}
 		})) {
-			((ClientAliasRegistry)graniteConfig.getAliasRegistry()).registerAlias(remoteClass.getName(), remoteClass.getAnnotation(RemoteAlias.class).value());
+			if (remoteClass.isAnnotationPresent(RemoteAlias.class))
+				aliasRegistry.registerAlias(remoteClass);
 		}
 	}	
 	
