@@ -5,23 +5,20 @@ import java.io.Serializable;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-import org.granite.client.javafx.JavaFXObject;
-import org.granite.messaging.amf.RemoteClass;
+import org.granite.client.messaging.RemoteAlias;
+import org.granite.messaging.annotations.Serialized;
 
 
-@JavaFXObject
-@RemoteClass("org.granite.client.test.javafx.Entity2c")
+@Serialized
+@RemoteAlias("org.granite.client.test.javafx.Entity2c")
 public class FXEntity2c implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
-    private boolean __initialized = true;
     @SuppressWarnings("unused")
-	private String __detachedState = null;
-    
-    public boolean isInitialized() {
-        return __initialized;
-    }
+    private boolean __initialized__ = true;
+    @SuppressWarnings("unused")
+	private String __detachedState__ = null;
     
 	private StringProperty name = new SimpleStringProperty(this, "name", null);
 	

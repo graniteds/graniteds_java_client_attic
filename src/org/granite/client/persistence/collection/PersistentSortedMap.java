@@ -27,7 +27,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.granite.messaging.persistence.PersistentCollectionSnapshot;
-import org.granite.messaging.persistence.PersistentCollectionSnapshotFactory;
 
 /**
  * @author Franck WOLFF
@@ -47,12 +46,12 @@ public class PersistentSortedMap<K, V> extends AbstractPersistentMapCollection<K
 
 	public PersistentSortedMap(SortedMap<K, V> collection, boolean clone) {	
 		if (collection != null)
-			init(clone ? new TreeMap<K, V>(collection) : collection, false);
+			init(clone ? new TreeMap<K, V>(collection) : collection, null, false);
 	}
 	
 	@Override
 	public void doInitialize() {
-		init(new TreeMap<K, V>(), false);
+		init(new TreeMap<K, V>(), null, false);
 	}
 
 	public Comparator<? super K> comparator() {
@@ -89,11 +88,11 @@ public class PersistentSortedMap<K, V> extends AbstractPersistentMapCollection<K
 	}
 
 	@Override
-	protected PersistentCollectionSnapshot createSnapshot(boolean forReading) {
-		PersistentCollectionSnapshotFactory factory = PersistentCollectionSnapshotFactory.newInstance();
+	protected PersistentCollectionSnapshot createSnapshot(Object io, boolean forReading) {
+		PersistentCollectionSnapshotFactory factory = PersistentCollectionSnapshotFactory.newInstance(io);
 		if (forReading || !wasInitialized())
-			return factory.newPersistentCollectionSnapshot(true);
-		return factory.newPersistentCollectionSnapshot(true, isDirty(), this);
+			return factory.newPersistentCollectionSnapshot(true, getDetachedState());
+		return factory.newPersistentCollectionSnapshot(true, getDetachedState(), isDirty(), this);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -109,16 +108,16 @@ public class PersistentSortedMap<K, V> extends AbstractPersistentMapCollection<K
 			}
 			SortedMap<K, V> map = new TreeMap<K, V>(comparator);
 			map.putAll((Map<K, V>)snapshot.getElementsAsMap());
-			init(map, snapshot.isDirty());
+			init(map, snapshot.getDetachedState(), snapshot.isDirty());
 		}
 		else
-			init(null, false);
+			init(null, snapshot.getDetachedState(), false);
 	}
 	
     public PersistentSortedMap<K, V> clone(boolean uninitialize) {
     	PersistentSortedMap<K, V> map = new PersistentSortedMap<K, V>();
     	if (wasInitialized() && !uninitialize)
-    		map.init(getCollection(), isDirty());
+    		map.init(getCollection(), null, isDirty());
         return map;
     }
 }

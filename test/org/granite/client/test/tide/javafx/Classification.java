@@ -28,7 +28,7 @@ import javafx.collections.ObservableList;
 
 import org.granite.client.persistence.Entity;
 import org.granite.client.persistence.Lazy;
-import org.granite.client.persistence.javafx.PersistentList;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
 
 
 @Entity
@@ -38,9 +38,9 @@ public class Classification extends AbstractEntity {
     
     private StringProperty name = new SimpleStringProperty(this, "name");
     @Lazy
-    private ReadOnlyListWrapper<Classification> subclasses = new ReadOnlyListWrapper<Classification>(this, "subclasses", new PersistentList<Classification>());
+    private ReadOnlyListWrapper<Classification> subclasses = FXPersistentCollections.readOnlyObservablePersistentList(this, "subclasses");
     @Lazy
-    private ReadOnlyListWrapper<Classification> superclasses = new ReadOnlyListWrapper<Classification>(this, "superclasses", new PersistentList<Classification>());
+    private ReadOnlyListWrapper<Classification> superclasses = FXPersistentCollections.readOnlyObservablePersistentList(this, "superclasses");
     
     
     public Classification() {

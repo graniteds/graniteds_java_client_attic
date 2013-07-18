@@ -25,12 +25,12 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-import org.granite.messaging.amf.RemoteClass;
+import org.granite.client.messaging.RemoteAlias;
 
 /**
  * @author William DRAI
  */
-@RemoteClass("org.granite.tide.validators.InvalidValue")
+@RemoteAlias("org.granite.tide.validators.InvalidValue")
 public class InvalidValue implements Externalizable {
 
 	private Object rootBean;

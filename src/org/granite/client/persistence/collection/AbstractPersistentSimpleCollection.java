@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.granite.messaging.persistence.PersistentCollectionSnapshot;
-import org.granite.messaging.persistence.PersistentCollectionSnapshotFactory;
 
 /**
  * @author Franck WOLFF
@@ -130,10 +129,10 @@ public abstract class AbstractPersistentSimpleCollection<E, C extends Collection
 	}
 
 	@Override
-	protected PersistentCollectionSnapshot createSnapshot(boolean forReading) {
-		PersistentCollectionSnapshotFactory factory = PersistentCollectionSnapshotFactory.newInstance();
+	protected PersistentCollectionSnapshot createSnapshot(Object io, boolean forReading) {
+		PersistentCollectionSnapshotFactory factory = PersistentCollectionSnapshotFactory.newInstance(io);
 		if (forReading || !wasInitialized())
-			return factory.newPersistentCollectionSnapshot();
-		return factory.newPersistentCollectionSnapshot(true, isDirty(), getCollection());
+			return factory.newPersistentCollectionSnapshot(getDetachedState());
+		return factory.newPersistentCollectionSnapshot(true, getDetachedState(), isDirty(), getCollection());
 	}
 }

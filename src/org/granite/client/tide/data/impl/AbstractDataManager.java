@@ -32,7 +32,6 @@ import javax.validation.Path;
 import javax.validation.Path.Node;
 import javax.validation.TraversableResolver;
 
-import org.granite.client.persistence.LazyableCollection;
 import org.granite.client.persistence.Persistence;
 import org.granite.client.platform.Platform;
 import org.granite.client.tide.data.EntityManager;
@@ -135,8 +134,6 @@ public abstract class AbstractDataManager implements DataManager {
     }
     
     public boolean isInitialized(Object object) {
-    	if (object instanceof LazyableCollection)
-    		return !((LazyableCollection)object).isInitialized();
     	return persistence.isInitialized(object);
     }
     

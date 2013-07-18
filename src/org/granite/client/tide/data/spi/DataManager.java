@@ -26,10 +26,6 @@ import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.TraversableResolver;
 
-import org.granite.client.persistence.LazyableCollection;
-import org.granite.client.tide.collections.ManagedPersistentCollection;
-import org.granite.client.tide.collections.ManagedPersistentMap;
-
 /**
  * @author William DRAI
  */
@@ -79,10 +75,6 @@ public interface DataManager {
     
     public boolean isDeepDirtyEntity(Object entity);
     
-    
-    public ManagedPersistentCollection<Object> newPersistentCollection(Object parent, String propertyName, LazyableCollection nextList);
-    
-    public ManagedPersistentMap<Object, Object> newPersistentMap(Object parent, String propertyName, LazyableCollection nextMap);
     
     public void setTrackingHandler(TrackingHandler trackingHandler);
 

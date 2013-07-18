@@ -29,10 +29,10 @@ import java.util.Map;
 import java.util.Set;
 
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanPropertyBase;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
@@ -48,13 +48,6 @@ import javax.validation.Path;
 import javax.validation.Path.Node;
 import javax.validation.TraversableResolver;
 
-import org.granite.client.persistence.LazyableCollection;
-import org.granite.client.persistence.Persistence;
-import org.granite.client.platform.javafx.JavaFXReflection;
-import org.granite.client.tide.collections.ManagedPersistentCollection;
-import org.granite.client.tide.collections.ManagedPersistentMap;
-import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentCollection;
-import org.granite.client.tide.collections.javafx.JavaFXManagedPersistentMap;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.impl.AbstractDataManager;
@@ -71,10 +64,6 @@ public class JavaFXDataManager extends AbstractDataManager {
 	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(JavaFXDataManager.class);
     
-	
-	protected void initPersistence() {
-		persistence = new Persistence(new JavaFXReflection(null));
-	}
 	
     private TrackingHandler trackingHandler;
     
@@ -218,26 +207,16 @@ public class JavaFXDataManager extends AbstractDataManager {
 		}
     }
 
-    @Override
-    public ManagedPersistentCollection<Object> newPersistentCollection(Object parent, String propertyName, LazyableCollection nextList) {
-        return new JavaFXManagedPersistentCollection<Object>(parent, propertyName, nextList);
-    }
-
-    @Override
-    public ManagedPersistentMap<Object, Object> newPersistentMap(Object parent, String propertyName, LazyableCollection nextMap) {
-        return new JavaFXManagedPersistentMap<Object, Object>(parent, propertyName, nextMap);
-    }
-
     
     public class EntityPropertyChangeListener<E> implements ChangeListener<E> {
         @Override
         public void changed(ObservableValue<? extends E> property, E oldValue, E newValue) {
-            if (property instanceof Property<?>) {
-                if (((Property<?>)property).getBean() == null)
+            if (property instanceof ReadOnlyProperty<?>) {
+                if (((ReadOnlyProperty<?>)property).getBean() == null)
                     throw new IllegalStateException("Property bean must be defined");
-                if (((Property<?>)property).getName() == null || ((Property<?>)property).getName().trim().length() == 0)
+                if (((ReadOnlyProperty<?>)property).getName() == null || ((ReadOnlyProperty<?>)property).getName().trim().length() == 0)
                     throw new IllegalStateException("Property name must be defined");
-                trackingHandler.entityPropertyChangeHandler(((Property<?>)property).getBean(), ((Property<?>)property).getName(), oldValue, newValue);
+                trackingHandler.entityPropertyChangeHandler(((ReadOnlyProperty<?>)property).getBean(), ((ReadOnlyProperty<?>)property).getName(), oldValue, newValue);
             }
         }
     }
@@ -461,8 +440,6 @@ public class JavaFXDataManager extends AbstractDataManager {
     		if (bean == null || propertyPath.getName() == null || ElementType.TYPE.equals(elementType))
     			return true;
     		Object value = getPropertyValue(bean, propertyPath.getName());
-    		if (value instanceof LazyableCollection)
-    			return ((LazyableCollection)value).isInitialized();
     		return isInitialized(value);
     	}
     	

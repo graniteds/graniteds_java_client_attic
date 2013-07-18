@@ -27,7 +27,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.granite.messaging.persistence.PersistentCollectionSnapshot;
-import org.granite.messaging.persistence.PersistentCollectionSnapshotFactory;
 
 /**
  * @author Franck WOLFF
@@ -47,12 +46,12 @@ public class PersistentSortedSet<E> extends AbstractPersistentSimpleCollection<E
 
 	public PersistentSortedSet(SortedSet<E> collection, boolean clone) {		
 		if (collection != null)
-			init(clone ? new TreeSet<E>(collection) : collection, false);
+			init(clone ? new TreeSet<E>(collection) : collection, null, false);
 	}
 	
 	@Override
 	protected void doInitialize() {
-		init(new TreeSet<E>(), false);
+		init(new TreeSet<E>(), null, false);
 	}
 
 	public Comparator<? super E> comparator() {
@@ -90,11 +89,11 @@ public class PersistentSortedSet<E> extends AbstractPersistentSimpleCollection<E
 	}
 
 	@Override
-	protected PersistentCollectionSnapshot createSnapshot(boolean forReading) {
-		PersistentCollectionSnapshotFactory factory = PersistentCollectionSnapshotFactory.newInstance();
+	protected PersistentCollectionSnapshot createSnapshot(Object io, boolean forReading) {
+		PersistentCollectionSnapshotFactory factory = PersistentCollectionSnapshotFactory.newInstance(io);
 		if (forReading || !wasInitialized())
-			return factory.newPersistentCollectionSnapshot(true);
-		return factory.newPersistentCollectionSnapshot(true, isDirty(), getCollection());
+			return factory.newPersistentCollectionSnapshot(true, getDetachedState());
+		return factory.newPersistentCollectionSnapshot(true, getDetachedState(), isDirty(), getCollection());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -110,16 +109,16 @@ public class PersistentSortedSet<E> extends AbstractPersistentSimpleCollection<E
 			}
 			SortedSet<E> set = new TreeSet<E>(comparator);
 			set.addAll((Collection<? extends E>)snapshot.getElementsAsCollection());
-			init(set, snapshot.isDirty());
+			init(set, snapshot.getDetachedState(), snapshot.isDirty());
 		}
 		else
-			init(null, false);
+			init(null, snapshot.getDetachedState(), false);
 	}
 	
     public PersistentSortedSet<E> clone(boolean uninitialize) {
     	PersistentSortedSet<E> set = new PersistentSortedSet<E>();
     	if (wasInitialized() && !uninitialize)
-    		set.init(getCollection(), isDirty());
+    		set.init(getCollection(), null, isDirty());
         return set; 
     }
 }

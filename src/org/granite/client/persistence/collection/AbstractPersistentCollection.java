@@ -50,14 +50,17 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 
 	private volatile C collection = null;
 	private volatile boolean dirty = false;
+	private volatile String detachedState = null;
 	private Loader<PersistentCollection> loader = new DefaultCollectionLoader();
     private List<InitializationListener> listeners = new ArrayList<InitializationListener>();
 	
 	protected AbstractPersistentCollection() {
 	}
 	
-	protected void init(C collection, boolean dirty) {
+	protected void init(C collection, String detachedState, boolean dirty) {
 		this.collection = collection;
+		if (detachedState != null)
+			this.detachedState = detachedState;
 		this.dirty = dirty;
 	}
 	
@@ -82,6 +85,10 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 	
 	protected C getCollection() {
 		return collection;
+	}
+	
+	public String getDetachedState() {
+		return detachedState;
 	}
 	
 	protected ClassLoader getClassLoader() {
@@ -110,7 +117,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 		    @SuppressWarnings("unchecked")
 			AbstractPersistentCollection<C> collection = TypeUtil.newInstance(getClass(), AbstractPersistentCollection.class);
 	    	if (wasInitialized() && !uninitialize)
-	    		collection.init(getCollection(), isDirty());
+	    		collection.init(getCollection(), getDetachedState(), isDirty());
 	        return collection;
 		}
 		catch (Exception e) {
@@ -119,16 +126,16 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
     }
 
 	
-	protected abstract PersistentCollectionSnapshot createSnapshot(boolean forReading);
+	protected abstract PersistentCollectionSnapshot createSnapshot(Object io, boolean forReading);
 	protected abstract void updateFromSnapshot(ObjectInput in, PersistentCollectionSnapshot snapshot);
 
 	public void writeExternal(ObjectOutput out) throws IOException {
-		PersistentCollectionSnapshot snapshot = createSnapshot(false);
+		PersistentCollectionSnapshot snapshot = createSnapshot(out, false);
 		snapshot.writeExternal(out);
 	}
 
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		PersistentCollectionSnapshot snapshot = createSnapshot(true);
+		PersistentCollectionSnapshot snapshot = createSnapshot(in, true);
 		snapshot.readExternal(in);
 		updateFromSnapshot(in, snapshot);
 	}

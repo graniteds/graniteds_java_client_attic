@@ -22,8 +22,6 @@ package org.granite.client.configuration;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.granite.client.messaging.codec.MessagingCodec.ClientType;
 import org.granite.config.GraniteConfig;
@@ -33,10 +31,9 @@ import org.granite.config.flex.ServicesConfig;
  * @author Franck WOLFF
  */
 public class SimpleConfiguration implements Configuration {
-
-	private String graniteStdConfigPath = null;
+	
+	private String graniteStdConfigPath = SimpleConfiguration.class.getPackage().getName().replace('.', '/') + "/granite-config.xml";
 	private String graniteConfigPath = null;
-	private List<Configurator> configurators = new ArrayList<Configurator>(); 
 	
 	private GraniteConfig graniteConfig = null;
 	private ServicesConfig servicesConfig = null;
@@ -67,19 +64,14 @@ public class SimpleConfiguration implements Configuration {
 		this.graniteConfigPath = graniteConfigPath;
 	}
 	
-	public void addConfigurator(Configurator configurator) {
-		this.configurators.add(configurator);
-	}
-	
 	public void load() {
 		InputStream is = null;
 		try {
-			is = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/granite/client/configuration/granite-config.xml");
+			is = Thread.currentThread().getContextClassLoader().getResourceAsStream(graniteStdConfigPath);
 			if (graniteConfigPath != null)
 				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(graniteConfigPath);
 			graniteConfig = new GraniteConfig(graniteStdConfigPath, is, null, null);
-			for (Configurator configurator : configurators)
-				configurator.configure(graniteConfig);
+			postLoad(graniteConfig);
 			servicesConfig = new ServicesConfig(null, null, false);
 		}
 		catch (Exception e) {
@@ -94,6 +86,9 @@ public class SimpleConfiguration implements Configuration {
 			catch (IOException e) {
 			}
 		}
+	}
+	
+	protected void postLoad(GraniteConfig graniteConfig) {		
 	}
 	
 	public GraniteConfig getGraniteConfig() {

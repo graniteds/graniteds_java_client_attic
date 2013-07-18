@@ -46,12 +46,12 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 
 	public PersistentList(List<E> collection, boolean clone) {
 		if (collection != null)
-			init((clone ? new ArrayList<E>(collection) : collection), false);
+			init((clone ? new ArrayList<E>(collection) : collection), null, false);
 	}
 	
 	@Override
 	public void doInitialize() {
-		init(new ArrayList<E>(), false);
+		init(new ArrayList<E>(), null, false);
 	}
 	
 	public boolean addAll(int index, Collection<? extends E> c) {
@@ -120,15 +120,15 @@ public class PersistentList<E> extends AbstractPersistentSimpleCollection<E, Lis
 	@Override
 	protected void updateFromSnapshot(ObjectInput in, PersistentCollectionSnapshot snapshot) {
 		if (snapshot.isInitialized())
-			init(new ArrayList<E>((Collection<? extends E>)snapshot.getElementsAsCollection()), snapshot.isDirty());
+			init(new ArrayList<E>((Collection<? extends E>)snapshot.getElementsAsCollection()), snapshot.getDetachedState(), snapshot.isDirty());
 		else
-			init(null, false);
+			init(null, snapshot.getDetachedState(), false);
 	}
 	
     public PersistentList<E> clone(boolean uninitialize) {
     	PersistentList<E> list = new PersistentList<E>();
     	if (wasInitialized() && !uninitialize)
-    		list.init(getCollection(), isDirty());
+    		list.init(getCollection(), null, isDirty());
         return list; 
     }
 }

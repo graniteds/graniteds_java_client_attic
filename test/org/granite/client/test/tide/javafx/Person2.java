@@ -20,14 +20,14 @@
 
 package org.granite.client.test.tide.javafx;
 
-import org.granite.client.persistence.Entity;
-import org.granite.client.persistence.javafx.PersistentList;
-
 import javafx.beans.property.ReadOnlyListProperty;
 import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
+
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
 
 
 @Entity
@@ -37,8 +37,8 @@ public class Person2 extends AbstractEntity {
     
     private final StringProperty firstName = new SimpleStringProperty(this, "firstName");
     private final StringProperty lastName = new SimpleStringProperty(this, "lastName");
-    private final ReadOnlyListWrapper<String> names = new ReadOnlyListWrapper<String>(this, "names", new PersistentList<String>());
-    private final ReadOnlyListWrapper<Contact> contacts = new ReadOnlyListWrapper<Contact>(this, "contacts", new PersistentList<Contact>());
+    private final ReadOnlyListWrapper<String> names = FXPersistentCollections.readOnlyObservablePersistentList(this, "names");
+    private final ReadOnlyListWrapper<Contact> contacts = FXPersistentCollections.readOnlyObservablePersistentList(this, "contacts");
     
     
     public Person2() {

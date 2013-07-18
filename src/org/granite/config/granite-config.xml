@@ -77,7 +77,7 @@
     	<descriptor
             instance-of="java.lang.Object"
             java="org.granite.messaging.amf.io.util.DefaultJavaClassDescriptor"
-            as3="org.granite.messaging.engine.ClientJavaClassDescriptor" />
+            as3="org.granite.client.messaging.codec.ClientJavaClassDescriptor" />
     </descriptors>
     
     <distributed-data-factory type="org.granite.config.ClientDistributedDataFactory"/>

@@ -17,6 +17,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.client.messaging.jmf.DefaultClientSharedContext;
 import org.granite.client.messaging.jmf.ext.ClientEntityCodec;
@@ -54,6 +55,7 @@ public class TestJMFHibernate {
 	
 	private SharedContext dumpSharedContext;
 	private SharedContext serverSharedContext;
+	private ClientAliasRegistry clientAliasRegistry;
 	private ClientSharedContext clientSharedContext;
 	
 	@Before
@@ -76,7 +78,9 @@ public class TestJMFHibernate {
 		
 		serverSharedContext = new DefaultSharedContext(new DefaultCodecRegistry(serverExtendedObjectCodecs));
 		
-		clientSharedContext = new DefaultClientSharedContext(new DefaultCodecRegistry(clientExtendedObjectCodecs));
+		clientAliasRegistry = new ClientAliasRegistry();
+		
+		clientSharedContext = new DefaultClientSharedContext(new DefaultCodecRegistry(clientExtendedObjectCodecs), null, null, clientAliasRegistry);
 	}
 	
 	@After
@@ -790,8 +794,8 @@ public class TestJMFHibernate {
 
 	@Test
 	public void testEntity() throws ClassNotFoundException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		clientSharedContext.registerAlias(ClientEntity.class);
-		clientSharedContext.registerAlias(ClientCollectionEntity.class);
+		clientAliasRegistry.registerAlias(ClientEntity.class);
+		clientAliasRegistry.registerAlias(ClientCollectionEntity.class);
 
 		final Integer id = Integer.valueOf(3);
 		final String uid = UUID.randomUUID().toString();
@@ -829,8 +833,8 @@ public class TestJMFHibernate {
 
 	@Test
 	public void testFXEntity() throws ClassNotFoundException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		clientSharedContext.registerAlias(ClientFXEntity.class);
-		clientSharedContext.registerAlias(ClientFXCollectionEntity.class);
+		clientAliasRegistry.registerAlias(ClientFXEntity.class);
+		clientAliasRegistry.registerAlias(ClientFXCollectionEntity.class);
 
 		final Integer id = Integer.valueOf(3);
 		final String uid = UUID.randomUUID().toString();

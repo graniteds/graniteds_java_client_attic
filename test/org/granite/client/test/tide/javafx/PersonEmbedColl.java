@@ -20,9 +20,6 @@
 
 package org.granite.client.test.tide.javafx;
 
-import org.granite.client.persistence.Entity;
-import org.granite.client.persistence.javafx.PersistentList;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyListProperty;
 import javafx.beans.property.ReadOnlyListWrapper;
@@ -30,6 +27,9 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
+
+import org.granite.client.persistence.Entity;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
 
 
 @Entity
@@ -74,7 +74,7 @@ public class PersonEmbedColl extends AbstractEntity {
     
     public static class ContactList {
         
-        private ReadOnlyListWrapper<Contact> contacts = new ReadOnlyListWrapper<Contact>(this, "contacts", new PersistentList<Contact>());
+        private ReadOnlyListWrapper<Contact> contacts = FXPersistentCollections.readOnlyObservablePersistentList(this, "contacts");
         
         public ContactList() {            
         }

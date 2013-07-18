@@ -23,6 +23,7 @@ package org.granite.client.tide.impl;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.channel.ResponseMessageFuture;
 import org.granite.client.messaging.events.CancelledEvent;
@@ -36,7 +37,6 @@ import org.granite.client.tide.server.ComponentListener;
 import org.granite.client.tide.server.FaultException;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.tide.server.TideResponder;
-import org.granite.messaging.amf.RemoteClass;
 import org.granite.tide.invocation.InvocationCall;
 
 /**
@@ -176,8 +176,8 @@ public class ComponentListenerImpl<T> implements ComponentListener<T> {
     	call[0] = getComponent().getName();
     	String componentClassName = null;
     	if (getComponent().getClass() != ComponentImpl.class) {
-    		RemoteClass remoteClass = getComponent().getClass().getAnnotation(RemoteClass.class);
-    		componentClassName = remoteClass != null ? remoteClass.value() : getComponent().getClass().getName();
+    		RemoteAlias remoteAlias = getComponent().getClass().getAnnotation(RemoteAlias.class);
+    		componentClassName = remoteAlias != null ? remoteAlias.value() : getComponent().getClass().getName();
     	}
     	call[1] = componentClassName;
     	call[2] = getOperation();

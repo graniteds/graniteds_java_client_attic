@@ -29,6 +29,15 @@ public class MockAMFRemotingChannel extends AMFRemotingChannel {
 	private static class MockTransport implements Transport {
 
 		@Override
+		public void setContext(Object context) {
+		}
+
+		@Override
+		public Object getContext() {
+			return null;
+		}
+
+		@Override
 		public void setConfiguration(Configuration config) {
 		}
 

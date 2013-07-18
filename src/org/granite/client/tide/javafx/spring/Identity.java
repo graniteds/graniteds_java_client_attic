@@ -25,17 +25,17 @@ import java.util.Map;
 
 import javax.inject.Named;
 
+import org.granite.client.messaging.RemoteAlias;
 import org.granite.client.tide.javafx.BaseIdentity;
 import org.granite.client.tide.javafx.ObservablePermission;
 import org.granite.client.tide.javafx.ObservableRole;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.client.util.WeakIdentityHashMap;
-import org.granite.messaging.amf.RemoteClass;
 
 /**
  * @author William DRAI
  */
-@RemoteClass("org.granite.tide.spring.security.Identity")
+@RemoteAlias("org.granite.tide.spring.security.Identity")
 @Named
 public class Identity extends BaseIdentity {
 	

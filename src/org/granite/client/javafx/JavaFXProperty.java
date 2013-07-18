@@ -21,30 +21,89 @@
 package org.granite.client.javafx;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import javafx.beans.value.ObservableBooleanValue;
+import javafx.beans.value.ObservableDoubleValue;
+import javafx.beans.value.ObservableFloatValue;
+import javafx.beans.value.ObservableIntegerValue;
+import javafx.beans.value.ObservableLongValue;
 import javafx.beans.value.ObservableValue;
+import javafx.beans.value.WritableListValue;
+import javafx.beans.value.WritableMapValue;
+import javafx.beans.value.WritableSetValue;
 import javafx.beans.value.WritableValue;
+import javafx.collections.FXCollections;
 
+import org.granite.client.persistence.collection.PersistentBag;
+import org.granite.client.persistence.collection.PersistentList;
+import org.granite.client.persistence.collection.PersistentMap;
+import org.granite.client.persistence.collection.PersistentSet;
+import org.granite.client.persistence.collection.PersistentSortedMap;
+import org.granite.client.persistence.collection.PersistentSortedSet;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
+import org.granite.client.persistence.collection.javafx.UnsafePersistentCollection;
 import org.granite.messaging.amf.io.convert.Converters;
 import org.granite.messaging.amf.io.util.Property;
 import org.granite.util.TypeUtil;
 import org.granite.util.TypeUtil.DeclaredAnnotation;
+
+import com.sun.javafx.collections.ObservableListWrapper;
+import com.sun.javafx.collections.ObservableMapWrapper;
+import com.sun.javafx.collections.ObservableSetWrapper;
 
 /**
  * @author William DRAI
  */
 public class JavaFXProperty extends Property {
 	
-	private final Method property;
+	private static final Field observableListWrapperField;
+	static {
+		try {
+			observableListWrapperField = ObservableListWrapper.class.getDeclaredField("backingList");
+			observableListWrapperField.setAccessible(true);
+		}
+		catch (Throwable t) {
+			throw new ExceptionInInitializerError("Could not find backingList field in: " + ObservableListWrapper.class.getName());
+		}
+	}
+	
+	private static final Field observableSetWrapperField;
+	static {
+		try {
+			observableSetWrapperField = ObservableSetWrapper.class.getDeclaredField("backingSet");
+			observableSetWrapperField.setAccessible(true);
+		}
+		catch (Throwable t) {
+			throw new ExceptionInInitializerError("Could not find backingSet field in: " + ObservableSetWrapper.class.getName());
+		}
+	}
+	
+	private static final Field observableMapWrapperField;
+	static {
+		try {
+			observableMapWrapperField = ObservableMapWrapper.class.getDeclaredField("backingMap");
+			observableMapWrapperField.setAccessible(true);
+		}
+		catch (Throwable t) {
+			throw new ExceptionInInitializerError("Could not find backingMap field in: " + ObservableMapWrapper.class.getName());
+		}
+	}
+	
+	private final Field field;
 	private final Method setter;
 	private final Method getter;
 	
-    public JavaFXProperty(Converters converters, String name, Method property, Method getter, Method setter) {
+    public JavaFXProperty(Converters converters, String name, Field field, Method getter, Method setter) {
         super(converters, name);
-        this.property = property;
+        this.field = field;
+        field.setAccessible(true);
         this.setter = setter;
         this.getter = getter;
     }
@@ -52,23 +111,76 @@ public class JavaFXProperty extends Property {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void setProperty(Object instance, Object value, boolean convert) {
-		Object convertedValue = convert ? convert(value) : value;
 		try {
-			((WritableValue<Object>)property.invoke(instance)).setValue(convertedValue);
+			Class<?> fieldType = field.getType();
+			Object convertedValue = value;
+			
+			if (WritableValue.class.isAssignableFrom(fieldType)) {
+				WritableValue<Object> writableValue = (WritableValue<Object>)field.get(instance);
+				
+				if (writableValue instanceof WritableListValue) {
+					if (value instanceof PersistentBag)
+						convertedValue = FXPersistentCollections.observablePersistentBag((PersistentBag<Object>)value);
+					else if (value instanceof PersistentList)
+						convertedValue = FXPersistentCollections.observablePersistentList((PersistentList<Object>)value);
+					else
+						convertedValue = FXCollections.observableList((List<Object>)value);
+				}
+				else if (writableValue instanceof WritableSetValue) {
+					if (value instanceof PersistentSortedSet)
+						convertedValue = FXPersistentCollections.observablePersistentSortedSet((PersistentSortedSet<Object>)value);
+					else if (value instanceof PersistentSet)
+						convertedValue = FXPersistentCollections.observablePersistentSet((PersistentSet<Object>)value);
+					else
+						convertedValue = FXCollections.observableSet((Set<Object>)value);
+				}
+				else if (writableValue instanceof WritableMapValue) {
+					if (value instanceof PersistentSortedMap)
+						convertedValue = FXPersistentCollections.observablePersistentSortedMap((PersistentSortedMap<Object, Object>)value);
+					else if (value instanceof PersistentMap)
+						convertedValue = FXPersistentCollections.observablePersistentMap((PersistentMap<Object, Object>)value);
+					else
+						convertedValue = FXCollections.observableMap((Map<Object, Object>)value);
+				}
+				else
+					convertedValue = convert ? convert(value) : value;
+				
+				writableValue.setValue(convertedValue);
+			}
+			else {
+				convertedValue = convert ? convert(value) : value;
+				field.set(instance, convertedValue);
+			}
 		} 
 		catch (Exception e) {
-			throw new RuntimeException("Could not set value of property " + property, e);
+			throw new RuntimeException("Could not set value of property " + field, e);
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Object getProperty(Object instance) {
 		try {
-			return ((ObservableValue<Object>)property.invoke(instance)).getValue();
+			Object fieldValue = field.get(instance);
+			
+			if (fieldValue instanceof ObservableValue) {
+				Object wrappedValue = ((ObservableValue<?>)fieldValue).getValue();
+				
+				if (wrappedValue instanceof UnsafePersistentCollection)
+					return ((UnsafePersistentCollection<?>)wrappedValue).internalPersistentCollection();
+				if (wrappedValue instanceof ObservableListWrapper)
+					return observableListWrapperField.get(wrappedValue);
+				if (wrappedValue instanceof ObservableSetWrapper)
+					return observableSetWrapperField.get(wrappedValue);
+				if (wrappedValue instanceof ObservableMapWrapper)
+					return observableMapWrapperField.get(wrappedValue);
+				
+				return wrappedValue;
+			}
+			
+			return fieldValue;
 		} 
 		catch (Exception e) {
-			throw new RuntimeException("Could not get value of property " + property, e);
+			throw new RuntimeException("Could not get value of property " + field, e);
 		}
 	}
 
@@ -79,27 +191,44 @@ public class JavaFXProperty extends Property {
 		if (setter != null)
 			return setter.getDeclaringClass();
 		
-		throw new RuntimeException("Could not determine declaring class for property " + getName());
+		return field.getDeclaringClass();
 	}
 
 	@Override
 	public Type getType() {
-		if (property.getGenericReturnType() instanceof ParameterizedType && ((ParameterizedType)property.getGenericReturnType()).getActualTypeArguments().length == 1)
-			return ((ParameterizedType)property.getGenericReturnType()).getActualTypeArguments()[0];
-		if (getter != null)
-			return getter.getGenericReturnType();
-		if (setter != null)
-			return setter.getGenericParameterTypes()[0];
+		Class<?> type = field.getType();
 		
-		throw new RuntimeException("Could not determine property type for property " + getName());
+		if (ObservableValue.class.isAssignableFrom(type)) {
+			
+			if (getter != null)
+				return getter.getGenericReturnType();
+			if (setter != null)
+				return setter.getGenericParameterTypes()[0];
+			
+			if (ObservableBooleanValue.class.isAssignableFrom(type))
+				return Boolean.TYPE;
+			if (ObservableIntegerValue.class.isAssignableFrom(type))
+				return Integer.TYPE;
+			if (ObservableLongValue.class.isAssignableFrom(type))
+				return Long.TYPE;
+			if (ObservableDoubleValue.class.isAssignableFrom(type))
+				return Double.TYPE;
+			if (ObservableFloatValue.class.isAssignableFrom(type))
+				return Float.TYPE;
+			
+			if (field.getGenericType() instanceof ParameterizedType)
+				return ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];
+		}
+		
+		return type;
 	}
 
 	@Override
 	public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass, boolean recursive) {
-		if (property != null) {
-            if (property.isAnnotationPresent(annotationClass))
+		if (field != null) {
+            if (field.isAnnotationPresent(annotationClass))
                 return true;
-            if (recursive && TypeUtil.isAnnotationPresent(property, annotationClass))
+            if (recursive && TypeUtil.isAnnotationPresent(field, annotationClass))
             	return true;
 		}
         if (getter != null) {
@@ -120,10 +249,10 @@ public class JavaFXProperty extends Property {
 	@Override
 	public <T extends Annotation> T getAnnotation(Class<T> annotationClass, boolean recursive) {
     	T annotation = null;
-    	if (property != null) {
-    		annotation = property.getAnnotation(annotationClass);
+    	if (field != null) {
+    		annotation = field.getAnnotation(annotationClass);
     		if (annotation == null && recursive) {
-    			DeclaredAnnotation<T> declaredAnnotation = TypeUtil.getAnnotation(property, annotationClass);
+    			DeclaredAnnotation<T> declaredAnnotation = TypeUtil.getAnnotation(field, annotationClass);
     			if (declaredAnnotation != null)
     				annotation = declaredAnnotation.annotation;
     		}

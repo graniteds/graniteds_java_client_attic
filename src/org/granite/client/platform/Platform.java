@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 
 import org.granite.client.configuration.Configuration;
-import org.granite.client.configuration.DefaultConfiguration;
+import org.granite.client.configuration.SimpleConfiguration;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.persistence.Persistence;
@@ -140,7 +140,7 @@ public class Platform {
 	}
 
 	public Configuration newConfiguration() {
-		return new DefaultConfiguration();
+		return new SimpleConfiguration();
 	}
 	
 	public Transport newRemotingTransport(Object context) {

@@ -4,13 +4,21 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.client.messaging.jmf.DefaultClientSharedContext;
+import org.granite.client.messaging.jmf.ext.ClientEntityCodec;
 import org.granite.hibernate.jmf.EntityCodec;
+import org.granite.hibernate.jmf.PersistentBagCodec;
+import org.granite.hibernate.jmf.PersistentListCodec;
+import org.granite.hibernate.jmf.PersistentMapCodec;
+import org.granite.hibernate.jmf.PersistentSetCodec;
+import org.granite.hibernate.jmf.PersistentSortedMapCodec;
+import org.granite.hibernate.jmf.PersistentSortedSetCodec;
 import org.granite.messaging.jmf.CodecRegistry;
 import org.granite.messaging.jmf.DefaultCodecRegistry;
 import org.granite.messaging.jmf.DefaultSharedContext;
@@ -28,29 +36,35 @@ public class TestExternalizerJMF {
 	
 	private SharedContext serverSharedContext;
 	private ClientSharedContext clientSharedContext;
+	private ClientAliasRegistry clientAliasRegistry = new ClientAliasRegistry();
 	
 	@Before
 	public void before() throws Exception {
-		List<ExtendedObjectCodec> serverCodecs = new ArrayList<ExtendedObjectCodec>();
-		serverCodecs.add(new EntityCodec());
+		List<ExtendedObjectCodec> serverCodecs = Arrays.asList(
+			new EntityCodec(),
+			new PersistentListCodec(),
+			new PersistentSetCodec(),
+			new PersistentBagCodec(),
+			new PersistentMapCodec(),
+			new PersistentSortedSetCodec(),
+			new PersistentSortedMapCodec()
+		);
 		CodecRegistry serverCodecRegistry = new DefaultCodecRegistry(serverCodecs);
 		serverSharedContext = new DefaultSharedContext(serverCodecRegistry);
 		
-		List<ExtendedObjectCodec> clientCodecs = new ArrayList<ExtendedObjectCodec>();
-		//clientCodecs.add(new JavaFXEntityCodec());
+		List<ExtendedObjectCodec> clientCodecs = Arrays.asList((ExtendedObjectCodec)
+			new ClientEntityCodec()
+		);
 		CodecRegistry clientCodecRegistry = new DefaultCodecRegistry(clientCodecs);
-		clientSharedContext = new DefaultClientSharedContext(clientCodecRegistry);
 		
-		clientSharedContext.registerAlias("org.granite.client.persistence.javafx.PersistentSet", "org.granite.client.persistence.collection.PersistentSet");
-		clientSharedContext.registerAlias("org.granite.client.persistence.javafx.PersistentList", "org.granite.client.persistence.collection.PersistentList");
-		clientSharedContext.registerAlias("org.granite.client.persistence.javafx.PersistentMap", "org.granite.client.persistence.collection.PersistentMap");
+		clientSharedContext = new DefaultClientSharedContext(clientCodecRegistry, null, null, clientAliasRegistry);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testExternalizationSetServerToClient() throws Exception {
-		clientSharedContext.registerAlias("org.granite.client.test.javafx.FXEntity1b", "org.granite.client.test.javafx.Entity1b");
-		clientSharedContext.registerAlias("org.granite.client.test.javafx.FXEntity2b", "org.granite.client.test.javafx.Entity2b");
+		clientAliasRegistry.registerAlias(FXEntity1b.class);
+		clientAliasRegistry.registerAlias(FXEntity2b.class);
 		
 		Entity1b entity1 = new Entity1b();
 		entity1.setName("Test");
@@ -75,8 +89,8 @@ public class TestExternalizerJMF {
 
 	@Test
 	public void testExternalizationSetClientToServer() throws Exception {
-		clientSharedContext.registerAlias("org.granite.client.test.javafx.Entity1b", "org.granite.client.test.javafx.FXEntity1b");
-		clientSharedContext.registerAlias("org.granite.client.test.javafx.Entity2b", "org.granite.client.test.javafx.FXEntity2b");
+		clientAliasRegistry.registerAlias(FXEntity1b.class);
+		clientAliasRegistry.registerAlias(FXEntity2b.class);
 		
 		FXEntity1b entity1 = new FXEntity1b();
 		entity1.setName("Test");

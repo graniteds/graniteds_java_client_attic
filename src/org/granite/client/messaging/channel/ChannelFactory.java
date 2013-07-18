@@ -21,6 +21,7 @@
 package org.granite.client.messaging.channel;
 
 import java.net.URI;
+import java.util.Set;
 
 import org.granite.client.messaging.transport.Transport;
 import org.granite.util.ContentType;
@@ -40,7 +41,10 @@ public interface ChannelFactory {
 
 	Transport getMessagingTransport();
 	void setMessagingTransport(Transport messagingTransport);
-
+	
+	void setScanPackageNames(Set<String> packageNames);
+	void setScanRemoteAliases(boolean scan);
+	
 	void start();
 	
 	void stop();

@@ -49,27 +49,27 @@ public class PersistentSet<E> extends AbstractPersistentSimpleCollection<E, Set<
 			throw new IllegalArgumentException("Should not be a SortedSet: " + collection);
 		
 		if (collection != null)
-			init(clone ? new HashSet<E>(collection) : collection, false);
+			init(clone ? new HashSet<E>(collection) : collection, null, false);
 	}
 	
 	@Override
 	public void doInitialize() {
-		init(new HashSet<E>(), false);
+		init(new HashSet<E>(), null, false);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void updateFromSnapshot(ObjectInput in, PersistentCollectionSnapshot snapshot) {
 		if (snapshot.isInitialized())
-			init(new HashSet<E>((Collection<? extends E>)snapshot.getElementsAsCollection()), snapshot.isDirty());
+			init(new HashSet<E>((Collection<? extends E>)snapshot.getElementsAsCollection()), snapshot.getDetachedState(), snapshot.isDirty());
 		else
-			init(null, false);
+			init(null, snapshot.getDetachedState(), false);
 	}
 	
     public PersistentSet<E> clone(boolean uninitialize) {
     	PersistentSet<E> set = new PersistentSet<E>();
     	if (wasInitialized() && !uninitialize)
-    		set.init(getCollection(), isDirty());
+    		set.init(getCollection(), null, isDirty());
         return set; 
     }
 }

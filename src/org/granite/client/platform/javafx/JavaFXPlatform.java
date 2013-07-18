@@ -21,14 +21,7 @@
 package org.granite.client.platform.javafx;
 
 import org.granite.client.configuration.Configuration;
-import org.granite.client.configuration.SimpleConfiguration;
-import org.granite.client.persistence.javafx.PersistentBag;
-import org.granite.client.persistence.javafx.PersistentList;
-import org.granite.client.persistence.javafx.PersistentMap;
-import org.granite.client.persistence.javafx.PersistentSet;
 import org.granite.client.platform.Platform;
-import org.granite.client.validation.InvalidValue;
-import org.granite.config.GraniteConfig;
 import org.granite.messaging.jmf.reflect.Reflection;
 
 /**
@@ -50,17 +43,6 @@ public class JavaFXPlatform extends Platform {
 
 	@Override
 	public Configuration newConfiguration() {
-		Configuration configuration = new SimpleConfiguration("org/granite/client/platform/javafx/granite-config-javafx.xml", null);
-		configuration.addConfigurator(new Configuration.Configurator() {
-			@Override
-			public void configure(GraniteConfig graniteConfig) {
-				graniteConfig.registerClassAlias(PersistentSet.class);
-				graniteConfig.registerClassAlias(PersistentBag.class);
-				graniteConfig.registerClassAlias(PersistentList.class);
-				graniteConfig.registerClassAlias(PersistentMap.class);
-				graniteConfig.registerClassAlias(InvalidValue.class);
-			}
-		});
-		return configuration;
+		return new SimpleJavaFXConfiguration();
 	}
 }

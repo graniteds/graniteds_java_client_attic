@@ -24,10 +24,6 @@ import java.util.Set;
 
 import javax.validation.ConstraintViolation;
 
-import org.granite.client.persistence.LazyableCollection;
-import org.granite.client.tide.collections.ManagedPersistentCollection;
-import org.granite.client.tide.collections.ManagedPersistentMap;
-
 /**
  * @author William DRAI
  */
@@ -35,16 +31,6 @@ public class JavaBeanDataManager extends AbstractDataManager {
 
     @Override
     public void setTrackingHandler(TrackingHandler trackingHandler) {
-    }
-
-    @Override
-    public ManagedPersistentCollection<Object> newPersistentCollection(Object parent, String propertyName, LazyableCollection nextList) {
-        return null;
-    }
-
-    @Override
-    public ManagedPersistentMap<Object, Object> newPersistentMap(Object parent, String propertyName, LazyableCollection nextMap) {
-        return null;
     }
 
     @Override

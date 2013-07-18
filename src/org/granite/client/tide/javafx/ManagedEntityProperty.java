@@ -23,7 +23,7 @@ package org.granite.client.tide.javafx;
 import java.lang.reflect.Method;
 
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.Property;
+import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -79,7 +79,7 @@ public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
 		@Override
 		public void changed(ObservableValue<?> observable, Object oldValue, Object newValue) {
 			if (oldValue != null) {
-				Property<Object> versionProperty = getVersionProperty(oldValue);
+				ReadOnlyProperty<Object> versionProperty = getVersionProperty(oldValue);
 				versionProperty.removeListener(versionChangeListener);
 				dirty.unbind();
 			}
@@ -87,7 +87,7 @@ public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
 			if (newValue == null)
 				return;
 			
-			Property<Object> versionProperty = getVersionProperty(newValue);
+			ReadOnlyProperty<Object> versionProperty = getVersionProperty(newValue);
 			versionProperty.addListener(versionChangeListener);
 			saved.set(versionProperty.getValue() != null);
 			
@@ -121,13 +121,13 @@ public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private Property<Object> getVersionProperty(Object value) {
+	private ReadOnlyProperty<Object> getVersionProperty(Object value) {
 		String versionPropertyName = dataManager.getVersionPropertyName(value);
 		if (versionPropertyName == null)
 			throw new RuntimeException("No version property found on entity " + value);
 		try {
 			Method m = value.getClass().getMethod(versionPropertyName + "Property");
-			return (Property<Object>)m.invoke(value);
+			return (ReadOnlyProperty<Object>)m.invoke(value);
 		}
 		catch (Exception e) {
 			throw new RuntimeException("Could not get version property on entity " + value, e);

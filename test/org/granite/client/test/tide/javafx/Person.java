@@ -30,7 +30,7 @@ import javafx.collections.ObservableList;
 
 import org.granite.client.persistence.Entity;
 import org.granite.client.persistence.Lazy;
-import org.granite.client.persistence.javafx.PersistentList;
+import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
 
 
 @Entity
@@ -42,7 +42,7 @@ public class Person extends AbstractEntity {
     private StringProperty firstName = new SimpleStringProperty(this, "firstName");
     private StringProperty lastName = new SimpleStringProperty(this, "lastName");
     @Lazy
-    private ReadOnlyListWrapper<Contact> contacts = new ReadOnlyListWrapper<Contact>(this, "contacts", new PersistentList<Contact>());
+    private ReadOnlyListWrapper<Contact> contacts = FXPersistentCollections.readOnlyObservablePersistentList(this, "contacts");
     
     
     public Person() {

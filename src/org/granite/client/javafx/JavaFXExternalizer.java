@@ -35,8 +35,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javafx.beans.value.ObservableValue;
-
 import org.granite.client.persistence.Id;
 import org.granite.client.tide.PropertyHolder;
 import org.granite.client.util.BeanUtil;
@@ -49,7 +47,7 @@ import org.granite.messaging.amf.io.util.Property;
 import org.granite.messaging.amf.io.util.externalizer.DefaultExternalizer;
 import org.granite.messaging.annotations.Exclude;
 import org.granite.messaging.annotations.Include;
-import org.granite.messaging.service.annotations.IgnoredMethod;
+import org.granite.messaging.annotations.Serialized;
 
 /**
  * @author William DRAI
@@ -69,36 +67,35 @@ public class JavaFXExternalizer extends DefaultExternalizer {
             fields = new ArrayList<Property>();
 
             Set<String> allFieldNames = new HashSet<String>();
-            allFieldNames.add("__initialized");
-            allFieldNames.add("__detachedState");
-            allFieldNames.add("__dirty");
+            allFieldNames.add("__initialized__");
+            allFieldNames.add("__detachedState__");
             allFieldNames.add("__handlerManager");
             
             for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
 
                 List<Property> newFields = new ArrayList<Property>();
                 
-                for (Method method : c.getDeclaredMethods()) {
-                	if (method.getName().endsWith("Property") && method.getParameterTypes().length == 0 && ObservableValue.class.isAssignableFrom(method.getReturnType())) {
-                		String propertyName = method.getName().substring(0, method.getName().length()-8);
-                		if (!allFieldNames.contains(propertyName) &&
-                            !Modifier.isTransient(method.getModifiers()) &&
-                            !Modifier.isStatic(method.getModifiers()) &&
-                            !isPropertyIgnored(method) &&
-                            !method.isAnnotationPresent(IgnoredMethod.class)) {
-                			
-                			PropertyDescriptor pdesc = null;
-                			for (PropertyDescriptor pd : propertyDescriptors) {
-                				if (pd.getName().equals(propertyName)) {
-                					pdesc = pd;
-                					break;
-                				}
-                			}                			
-            				newFields.add(new JavaFXProperty(converters, propertyName, method, pdesc != null ? pdesc.getReadMethod() : null, pdesc != null ? pdesc.getWriteMethod() : null));
-                            allFieldNames.add(propertyName);
-                		}
-                	}
-                }
+//                for (Method method : c.getDeclaredMethods()) {
+//                	if (method.getName().endsWith("Property") && method.getParameterTypes().length == 0 && ObservableValue.class.isAssignableFrom(method.getReturnType())) {
+//                		String propertyName = method.getName().substring(0, method.getName().length()-8);
+//                		if (!allFieldNames.contains(propertyName) &&
+//                            !Modifier.isTransient(method.getModifiers()) &&
+//                            !Modifier.isStatic(method.getModifiers()) &&
+//                            !isPropertyIgnored(method) &&
+//                            !method.isAnnotationPresent(IgnoredMethod.class)) {
+//                			
+//                			PropertyDescriptor pdesc = null;
+//                			for (PropertyDescriptor pd : propertyDescriptors) {
+//                				if (pd.getName().equals(propertyName)) {
+//                					pdesc = pd;
+//                					break;
+//                				}
+//                			}                			
+//            				newFields.add(new JavaFXProperty(converters, propertyName, method, pdesc != null ? pdesc.getReadMethod() : null, pdesc != null ? pdesc.getWriteMethod() : null));
+//                            allFieldNames.add(propertyName);
+//                		}
+//                	}
+//                }
 
                 // Standard declared fields.
                 for (Field field : c.getDeclaredFields()) {
@@ -109,17 +106,17 @@ public class JavaFXExternalizer extends DefaultExternalizer {
                         !field.isAnnotationPresent(Exclude.class)) {
                     	
                     	boolean found = false;
-                    	if (returnSettersWhenAvailable && propertyDescriptors != null) {
+                    	if (propertyDescriptors != null) {
                     		for (PropertyDescriptor pd : propertyDescriptors) {
-                    			if (pd.getName().equals(field.getName()) && pd.getWriteMethod() != null) {
-                    				newFields.add(new MethodProperty(converters, field.getName(), pd.getWriteMethod(), pd.getReadMethod()));
+                    			if (pd.getName().equals(field.getName())) {
+                    				newFields.add(new JavaFXProperty(converters, field.getName(), field, pd.getReadMethod(), pd.getWriteMethod()));
                     				found = true;
                     				break;
                     			}
                     		}
                     	}
                 		if (!found)
-                    		newFields.add(new FieldProperty(converters, field));
+            				newFields.add(new FieldProperty(converters, field));
                     }
                     allFieldNames.add(field.getName());
                 }
@@ -139,25 +136,21 @@ public class JavaFXExternalizer extends DefaultExternalizer {
                     }
                 }
                 
-                try {
-                	Field f = c.getDeclaredField("__externalizedProperties");
-                	f.setAccessible(true);
-                	final List<String> externalizedProperties = Arrays.asList((String[])f.get(null));
+                if (c.isAnnotationPresent(Serialized.class) && c.getAnnotation(Serialized.class).propertiesOrder().length > 0) {
+                	final List<String> propertiesOrder = Arrays.asList(c.getAnnotation(Serialized.class).propertiesOrder());
 	                Collections.sort(newFields, new Comparator<Property>() {
 	                    public int compare(Property o1, Property o2) {
-	                        return externalizedProperties.indexOf(o1.getName()) - externalizedProperties.indexOf(o2.getName());
+	                        return propertiesOrder.indexOf(o1.getName()) - propertiesOrder.indexOf(o2.getName());
 	                    }
 	                });
                 }
-                catch (NoSuchFieldException e) {
+                else {
+                	// Lexical order
 	                Collections.sort(newFields, new Comparator<Property>() {
 	                    public int compare(Property o1, Property o2) {
 	                        return o1.getName().compareTo(o2.getName());
 	                    }
 	                });
-                }
-                catch (Exception e) {
-                	throw new RuntimeException("Could not get value of __externalizedProperties", e);
                 }
                 
                 fields.addAll(0, newFields);
@@ -179,12 +172,12 @@ public class JavaFXExternalizer extends DefaultExternalizer {
     	Class<?> clazz = o.getClass();
     	while (clazz != null && clazz != Object.class) {
     		try {
-    			initializedField = clazz.getDeclaredField("__initialized");
+    			initializedField = clazz.getDeclaredField("__initialized__");
     		}
     		catch (NoSuchFieldException e) {
     		}
     		try {
-    			detachedStateField = clazz.getDeclaredField("__detachedState");
+    			detachedStateField = clazz.getDeclaredField("__detachedState__");
     		}
     		catch (NoSuchFieldException e) {
     		}
@@ -237,14 +230,14 @@ public class JavaFXExternalizer extends DefaultExternalizer {
     	Class<?> clazz = o.getClass();
     	while (clazz != null && clazz != Object.class) {
     		try {
-    			initializedField = clazz.getDeclaredField("__initialized");
+    			initializedField = clazz.getDeclaredField("__initialized__");
     			initializedField.setAccessible(true);
     			initialized = initializedField.getBoolean(o);
     		}
     		catch (NoSuchFieldException e) {
     		}
     		try {
-    			detachedStateField = clazz.getDeclaredField("__detachedState");
+    			detachedStateField = clazz.getDeclaredField("__detachedState__");
     			detachedStateField.setAccessible(true);
     			detachedState = (String)detachedStateField.get(o);
     		}

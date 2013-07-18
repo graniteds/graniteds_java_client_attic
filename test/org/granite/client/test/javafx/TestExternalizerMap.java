@@ -8,7 +8,10 @@ import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.granite.client.configuration.Configuration;
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.messaging.codec.MessagingCodec.ClientType;
+import org.granite.client.platform.javafx.SimpleJavaFXConfiguration;
 import org.granite.config.GraniteConfig;
 import org.granite.config.flex.ServicesConfig;
 import org.granite.context.SimpleGraniteContext;
@@ -25,19 +28,17 @@ public class TestExternalizerMap {
 
 	@Before
 	public void before() throws Exception {
-		servicesConfig = new ServicesConfig(null, null, false);
-		InputStream is = getClass().getClassLoader().getResourceAsStream("org/granite/client/test/javafx/granite-config-javafx.xml");
-		graniteConfigJavaFX = new GraniteConfig(null, is, null, null);
-		graniteConfigJavaFX.registerClassAlias(FXEntity1.class);
-		graniteConfigJavaFX.registerClassAlias(FXEntity2.class);
-		graniteConfigJavaFX.registerClassAlias(FXEntity1b.class);
-		graniteConfigJavaFX.registerClassAlias(FXEntity2b.class);
-		graniteConfigJavaFX.registerClassAlias(FXEntity1c.class);
-		graniteConfigJavaFX.registerClassAlias(FXEntity2c.class);
-		graniteConfigJavaFX.registerClassAlias(org.granite.client.persistence.javafx.PersistentList.class);
-		graniteConfigJavaFX.registerClassAlias(org.granite.client.persistence.javafx.PersistentSet.class);
-		graniteConfigJavaFX.registerClassAlias(org.granite.client.persistence.javafx.PersistentMap.class);
-		is = getClass().getClassLoader().getResourceAsStream("org/granite/client/test/javafx/granite-config-hibernate.xml");
+		Configuration configuration = new SimpleJavaFXConfiguration();
+		configuration.load();
+		graniteConfigJavaFX = configuration.getGraniteConfig();
+		ClientAliasRegistry aliasRegistry = (ClientAliasRegistry)graniteConfigJavaFX.getAliasRegistry();
+		aliasRegistry.registerAlias(FXEntity1.class);
+		aliasRegistry.registerAlias(FXEntity2.class);
+		aliasRegistry.registerAlias(FXEntity1b.class);
+		aliasRegistry.registerAlias(FXEntity2b.class);
+		aliasRegistry.registerAlias(FXEntity1c.class);
+		aliasRegistry.registerAlias(FXEntity2c.class);
+		InputStream is = getClass().getClassLoader().getResourceAsStream("org/granite/client/test/javafx/granite-config-hibernate.xml");
 		graniteConfigHibernate = new GraniteConfig(null, is, null, null);
 	}
 

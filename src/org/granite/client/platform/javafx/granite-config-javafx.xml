@@ -29,7 +29,7 @@
     
     <externalizers>
     	<externalizer type="org.granite.client.javafx.JavaFXExternalizer">
-    		<include annotated-with="org.granite.client.javafx.JavaFXObject"/>
+    		<include annotated-with="org.granite.messaging.annotations.Serialized"/>
     	</externalizer>
     </externalizers>
 

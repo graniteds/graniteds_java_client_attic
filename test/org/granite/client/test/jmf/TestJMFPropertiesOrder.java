@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.messaging.jmf.ClientSharedContext;
 import org.granite.client.messaging.jmf.DefaultClientSharedContext;
 import org.granite.client.messaging.jmf.ext.ClientEntityCodec;
@@ -32,6 +33,7 @@ public class TestJMFPropertiesOrder {
 	
 	private SharedContext dumpSharedContext;
 	private SharedContext serverSharedContext;
+	private ClientAliasRegistry clientAliasRegistry = new ClientAliasRegistry();
 	private ClientSharedContext clientSharedContext;
 	
 	@Before
@@ -54,7 +56,7 @@ public class TestJMFPropertiesOrder {
 		
 		serverSharedContext = new DefaultSharedContext(new DefaultCodecRegistry(serverExtendedObjectCodecs));
 		
-		clientSharedContext = new DefaultClientSharedContext(new DefaultCodecRegistry(clientExtendedObjectCodecs));
+		clientSharedContext = new DefaultClientSharedContext(new DefaultCodecRegistry(clientExtendedObjectCodecs), null, null, clientAliasRegistry);
 	}
 	
 	@After
@@ -67,7 +69,7 @@ public class TestJMFPropertiesOrder {
 	@Test
 	public void testPropertiesOrder() throws ClassNotFoundException, IOException {
 		
-		clientSharedContext.registerAlias(ClientConcretePersitableChild.class);
+		clientAliasRegistry.registerAlias(ClientConcretePersitableChild.class);
 
 		ConcretePersitableChild entity = new ConcretePersitableChild();
 		entity.setId(12);

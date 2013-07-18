@@ -4,10 +4,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.granite.client.javafx.JavaFXObject;
+import org.granite.messaging.annotations.Serialized;
 
 
-@JavaFXObject
+@Serialized
 public class FXBean1 implements Serializable {
 
 	private static final long serialVersionUID = 1L;
