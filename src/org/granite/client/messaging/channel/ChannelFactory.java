@@ -43,7 +43,6 @@ public interface ChannelFactory {
 	void setMessagingTransport(Transport messagingTransport);
 	
 	void setScanPackageNames(Set<String> packageNames);
-	void setScanRemoteAliases(boolean scan);
 	
 	void start();
 	

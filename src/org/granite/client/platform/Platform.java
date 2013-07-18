@@ -102,10 +102,17 @@ public class Platform {
 		if (instance != null)
 			throw new IllegalStateException("Platform already loaded");
 		
-		if (platformClassName == null)
-			platformClassName = Platform.class.getName();
 		if (platformClassLoader == null)
 			platformClassLoader = Thread.currentThread().getContextClassLoader();
+
+		if (platformClassName == null) {
+			try {
+				platformClassName = platformClassLoader.loadClass("org.granite.client.platform.android.AndroidPlatform").getName();
+			}
+			catch (ClassNotFoundException e) {
+				platformClassName = Platform.class.getName();
+			}
+		}
 		
 		try {
 			@SuppressWarnings("unchecked")

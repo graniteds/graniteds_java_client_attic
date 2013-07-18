@@ -37,19 +37,23 @@ public class AMFChannelFactory extends AbstractChannelFactory {
 	private final Configuration defaultConfiguration;
 	
 	public AMFChannelFactory() {
-		this(null, null, null);
+		this(null, null, null, null);
 	}
 	
-	public AMFChannelFactory(Configuration defaultConfiguration) {
-		this(null, null, defaultConfiguration);
+	public AMFChannelFactory(Object context) {
+		this(context, null, null, null);
+	}
+	
+	public AMFChannelFactory(Object context, Configuration defaultConfiguration) {
+		this(context, null, null, defaultConfiguration);
 	}
 
-	public AMFChannelFactory(Transport remotingTransport, Transport messagingTransport) {
-		this(remotingTransport, messagingTransport, null);
+	public AMFChannelFactory(Object context, Transport remotingTransport, Transport messagingTransport) {
+		this(context, remotingTransport, messagingTransport, null);
 	}
 
-	public AMFChannelFactory(Transport remotingTransport, Transport messagingTransport, Configuration defaultConfiguration) {
-		super(ContentType.AMF, remotingTransport, messagingTransport);
+	public AMFChannelFactory(Object context, Transport remotingTransport, Transport messagingTransport, Configuration defaultConfiguration) {
+		super(ContentType.AMF, context, remotingTransport, messagingTransport);
 		
 		this.defaultConfiguration = (defaultConfiguration != null ? defaultConfiguration : Platform.getInstance().newConfiguration());
 		this.aliasRegistry = this.defaultConfiguration.getGraniteConfig().getAliasRegistry();

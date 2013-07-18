@@ -40,40 +40,27 @@ public class ClientAliasRegistry implements AliasRegistry {
 	
 	private static final Logger log = Logger.getLogger(ClientAliasRegistry.class);
 	
-    private static final String MESSAGING_SCAN_MARKER = "META-INF/messaging-scan.properties";
-	
 	private Map<String, String> serverToClientAliases = new HashMap<String, String>();
 	private Map<String, String> clientToServerAliases = new HashMap<String, String>();
-	private String scanMarker;
-	
-
-	public String getScanMarker() {
-		return scanMarker;
-	}
-
-	public void setScanMarker(String scanMarker) {
-		this.scanMarker = scanMarker;
-	}
-	
 	
 	public void scan(Set<String> packageNames) {
 		if (!packageNames.isEmpty()) {
 			try {
 				RemoteAliasScanner.scan(this, packageNames);
+				return;
 			}
-			catch (Exception e) {
-				log.debug("Extcos scanner not available, using classpath scanner");
+			catch (Throwable t) {
+				log.debug(t, "Extcos scanner not available, using classpath scanner");
 			}
-		}
 		
-		scanMarker = (scanMarker != null ? scanMarker : MESSAGING_SCAN_MARKER);
-		Scanner scanner = ScannerFactory.createScanner(new MessagingScannedItemHandler(), scanMarker);
-        try {
-            scanner.scan();
-        }
-        catch (Exception e) {
-            log.error(e, "Could not scan classpath for @RemoteAlias");
-        }
+			Scanner scanner = ScannerFactory.createScanner(new MessagingScannedItemHandler(packageNames), null);
+	        try {
+	            scanner.scan();
+	        }
+	        catch (Exception e) {
+	            log.error(e, "Could not scan classpath for @RemoteAlias");
+	        }
+		}
 	}
 	
 	public void registerAlias(Class<?> remoteAliasAnnotatedClass) {
@@ -114,6 +101,15 @@ public class ClientAliasRegistry implements AliasRegistry {
 	
 	class MessagingScannedItemHandler implements ScannedItemHandler {
 
+		final String[] packageNames;
+		
+		MessagingScannedItemHandler(Set<String> packageNames) {
+			this.packageNames = new String[packageNames.size()];
+			int i = 0;
+			for (String packageName : packageNames)
+				this.packageNames[i++] = packageName.replace('.', '/') + '/';
+		}
+		
 		@Override
 		public boolean handleMarkerItem(ScannedItem item) {
 			return false;
@@ -122,18 +118,30 @@ public class ClientAliasRegistry implements AliasRegistry {
 		@Override
 		public void handleScannedItem(ScannedItem item) {
 			if ("class".equals(item.getExtension())) {
-				try {
-					Class<?> cls = item.loadAsClass();
-					RemoteAlias alias = cls.getAnnotation(RemoteAlias.class);
-					if (alias != null)
-						registerAlias(cls);
+				boolean scan = false;
+				
+				String path = item.getRelativePath();
+				for (String packageName : packageNames) {
+					if (path.startsWith(packageName)) {
+						scan = true;
+						break;
+					}
 				}
-				catch (ClassFormatError e) {
-				}
-				catch (ClassNotFoundException e) {
-				}
-				catch (IOException e) {
-					log.error(e, "Could not load class: %s", item);
+				
+				if (scan) {
+					try {
+						Class<?> cls = item.loadAsClass();
+						RemoteAlias alias = cls.getAnnotation(RemoteAlias.class);
+						if (alias != null)
+							registerAlias(cls);
+					}
+					catch (ClassFormatError e) {
+					}
+					catch (ClassNotFoundException e) {
+					}
+					catch (IOException e) {
+						log.error(e, "Could not load class: %s", item);
+					}
 				}
 			}
 		}

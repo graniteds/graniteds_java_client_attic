@@ -22,6 +22,7 @@ package org.granite.client.messaging.jmf;
 
 import java.util.List;
 
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.platform.Platform;
 import org.granite.messaging.AliasRegistry;
 import org.granite.messaging.jmf.CodecRegistry;
@@ -47,5 +48,10 @@ public class DefaultClientSharedContext extends DefaultSharedContext implements 
 
 	public DefaultClientSharedContext(CodecRegistry codecRegistry, List<String> defaultStoredStrings, Reflection reflection, AliasRegistry aliasRegistry) {
 		super(codecRegistry, defaultStoredStrings, (reflection != null ? reflection : Platform.reflection()), aliasRegistry);
+	}
+
+	@Override
+	public ClientAliasRegistry getAliasRegistry() {
+		return (ClientAliasRegistry)super.getAliasRegistry();
 	}
 }

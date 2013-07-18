@@ -1,5 +1,7 @@
 package org.granite.client.messaging.channel;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.granite.client.messaging.ClientAliasRegistry;
@@ -18,16 +20,20 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	protected Transport messagingTransport = null;
 	protected Object context = null;
 
-	private boolean scanRemoteAliases = true;
 	private Set<String> scanPackageNames = null;
 	protected AliasRegistry aliasRegistry = null;
 
 	protected AbstractChannelFactory(ContentType contentType) {
-		this(contentType, null, null);
+		this(contentType, null, null, null);
 	}
 
-	protected AbstractChannelFactory(ContentType contentType, Transport remotingTransport, Transport messagingTransport) {
+	protected AbstractChannelFactory(ContentType contentType, Object context) {
+		this(contentType, context, null, null);
+	}
+
+	protected AbstractChannelFactory(ContentType contentType, Object context, Transport remotingTransport, Transport messagingTransport) {
 		this.contentType = contentType;
+		this.context = context;
 		this.remotingTransport = remotingTransport;
 		this.messagingTransport = messagingTransport;
 	}
@@ -60,12 +66,11 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 		this.messagingTransport = messagingTransport;
 	}
 
-	public boolean getScanRemoteAliases() {
-		return scanRemoteAliases;
-	}
-
-	public void setScanRemoteAliases(boolean scanRemoteAliases) {
-		this.scanRemoteAliases = scanRemoteAliases;
+	public void setScanPackageNames(String... packageNames) {
+		if (packageNames != null)
+			this.scanPackageNames = new HashSet<String>(Arrays.asList(packageNames));
+		else
+			this.scanPackageNames = null;
 	}
 
 	public void setScanPackageNames(Set<String> packageNames) {
@@ -91,7 +96,7 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 		if (aliasRegistry == null)
 			aliasRegistry = new ClientAliasRegistry();
 		
-		if (scanRemoteAliases)
+		if (scanPackageNames != null)
 			aliasRegistry.scan(scanPackageNames);
 	}
 	

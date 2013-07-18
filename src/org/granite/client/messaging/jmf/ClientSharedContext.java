@@ -20,11 +20,13 @@
 
 package org.granite.client.messaging.jmf;
 
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.messaging.jmf.SharedContext;
-
 
 /**
  * @author Franck WOLFF
  */
 public interface ClientSharedContext extends SharedContext {
+	
+	ClientAliasRegistry getAliasRegistry();
 }

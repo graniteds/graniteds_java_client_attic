@@ -52,9 +52,13 @@ public class JMFChannelFactory extends AbstractChannelFactory {
 	public JMFChannelFactory() {
 		super(ContentType.JMF_AMF);
 	}
+	
+	public JMFChannelFactory(Object context) {
+		super(ContentType.JMF_AMF, context);
+	}
 
-	public JMFChannelFactory(ClientSharedContext sharedContext, Transport remotingTransport, Transport messagingTransport) {
-		super(ContentType.JMF_AMF, remotingTransport, messagingTransport);
+	public JMFChannelFactory(Object context, ClientSharedContext sharedContext, Transport remotingTransport, Transport messagingTransport) {
+		super(ContentType.JMF_AMF, context, remotingTransport, messagingTransport);
 		
 		this.sharedContext = sharedContext;
 	}

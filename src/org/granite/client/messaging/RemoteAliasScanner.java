@@ -40,18 +40,21 @@ public class RemoteAliasScanner {
 		
 		final String[] basePackageNames = packageNames.toArray(new String[packageNames.size()]);
 		
-		for (Class<?> remoteClass : scanner.getClasses(new ComponentQuery() {
+		Set<Class<?>> remoteClasses = scanner.getClasses(new ComponentQuery() {
 			@Override
 			protected void query() {
 				select(JavaClassResourceType.javaClasses()).from(basePackageNames).returning(allAnnotatedWith(RemoteAlias.class));
 			}
-		})) {
+		});
+		
+		for (Class<?> remoteClass : remoteClasses) {
 			if (remoteClass.isAnnotationPresent(RemoteAlias.class))
 				aliasRegistry.registerAlias(remoteClass);
 		}
 	}	
 	
 	public static class JavaClassResourceType implements ResourceType {
+		
 		private static final String JAVA_CLASS_SUFFIX = "class";
 		private static JavaClassResourceType instance;
 
