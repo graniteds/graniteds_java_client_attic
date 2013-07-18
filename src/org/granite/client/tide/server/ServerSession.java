@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -46,7 +47,6 @@ import javax.inject.Named;
 import org.granite.client.configuration.Configuration;
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.Producer;
-import org.granite.client.messaging.RemoteClassScanner;
 import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.TopicAgent;
@@ -57,6 +57,7 @@ import org.granite.client.messaging.channel.MessagingChannel;
 import org.granite.client.messaging.channel.RemotingChannel;
 import org.granite.client.messaging.channel.SessionAwareChannel;
 import org.granite.client.messaging.channel.UsernamePasswordCredentials;
+import org.granite.client.messaging.codec.MessagingCodec.ClientType;
 import org.granite.client.messaging.events.Event;
 import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IncomingMessageEvent;
@@ -68,6 +69,7 @@ import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler;
+import org.granite.client.platform.Platform;
 import org.granite.client.tide.BeanManager;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
@@ -77,6 +79,7 @@ import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.Update;
 import org.granite.client.tide.data.spi.MergeContext;
+import org.granite.config.GraniteConfig;
 import org.granite.logging.Logger;
 import org.granite.tide.Expression;
 import org.granite.tide.invocation.ContextResult;
@@ -119,7 +122,7 @@ public class ServerSession implements ContextAware {
     
 	@SuppressWarnings("unused")
 	private boolean confChanged = false;
-	private ContentType contentType = ContentType.AMF;
+	private ContentType contentType = ContentType.JMF_AMF;
 	private boolean useWebSocket = true; // TODO remove...
     private Transport remotingTransport = null;
     private Transport messagingTransport = null;
@@ -144,13 +147,12 @@ public class ServerSession implements ContextAware {
 	private LogoutState logoutState = new LogoutState();
 		
 	private String destination = "server";
-	private Configuration configuration = null;
 	private ChannelFactory channelFactory;
     private RemotingChannel remotingChannel;
 	private MessagingChannel messagingChannel;
 	protected Map<String, RemoteService> remoteServices = new HashMap<String, RemoteService>();
 	protected Map<String, TopicAgent> topicAgents = new HashMap<String, TopicAgent>();
-	private RemoteClassScanner remoteClassConfigurator = new RemoteClassScanner();
+	private Set<String> packageNames = new HashSet<String>();
 	
 	
     public ServerSession() throws Exception {
@@ -261,22 +263,21 @@ public class ServerSession implements ContextAware {
 		this.messagingTransport = transport;
 	}
 	
-	public void setConfiguration(Configuration configuration) {
-		this.configuration = configuration;
+	public void addRemoteAliasPackage(String packageName) {		
+		this.packageNames.add(packageName);
 	}
 	
-	public void addRemoteClassPackage(String packageName) {		
-		remoteClassConfigurator.addPackageName(packageName);
+	public void setRemoteAliasPackage(Set<String> packageNames) {
+		this.packageNames.clear();
+		this.packageNames.addAll(packageNames);
 	}
 	
-	public void setRemoteClassPackage(Set<String> packageNames) {
-		remoteClassConfigurator.setPackageNames(packageNames);
-	}
+	private GraniteConfig graniteConfig = null;
 	
 	public Object convert(Object value, Type expectedType) {
-		if (contentType == ContentType.JMF_AMF)
+		if (contentType == ContentType.JMF_AMF || graniteConfig == null)
 			return value;
-		return configuration.getGraniteConfig().getConverters().convert(value, expectedType);
+		return graniteConfig.getConverters().convert(value, expectedType);
 	}
 	
 	@PostConstruct
@@ -284,10 +285,13 @@ public class ServerSession implements ContextAware {
 		if (contentType == ContentType.JMF_AMF)
 			channelFactory = new JMFChannelFactory();
 		else {
-			configuration.addConfigurator(remoteClassConfigurator);
+			Configuration configuration = Platform.getInstance().newConfiguration();
+			configuration.setClientType(ClientType.JAVA);
 			configuration.load();
+			graniteConfig = configuration.getGraniteConfig();
 			channelFactory = new AMFChannelFactory(configuration);
 		}
+		channelFactory.setScanPackageNames(packageNames);
 		
 		if (remotingTransport != null)
 			channelFactory.setRemotingTransport(remotingTransport);
@@ -318,13 +322,17 @@ public class ServerSession implements ContextAware {
 				sessionExpirationFuture.cancel(false);
 				sessionExpirationFuture = null;
 			}
-			sessionExpirationTimer.shutdownNow();
-			sessionExpirationTimer = null;
+			if (sessionExpirationTimer != null) {
+				sessionExpirationTimer.shutdownNow();
+				sessionExpirationTimer = null;
+			}
 		}
 		finally {
-			channelFactory.stop();
-			channelFactory = null;
-
+			if (channelFactory != null) {
+				channelFactory.stop();
+				channelFactory = null;
+			}
+			
 			remotingChannel = null;
 			messagingChannel = null;
 		}
