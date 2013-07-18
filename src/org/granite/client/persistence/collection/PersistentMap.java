@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.SortedMap;
 
 import org.granite.messaging.persistence.PersistentCollectionSnapshot;
-import org.granite.messaging.persistence.PersistentCollectionSnapshotFactory;
 
 /**
  * @author Franck WOLFF
@@ -49,35 +48,35 @@ public class PersistentMap<K, V> extends AbstractPersistentMapCollection<K, V, M
 			throw new IllegalArgumentException("Should not be a SortedMap: " + collection);
 		
 		if (collection != null)
-			init(clone ? new HashMap<K, V>(collection) : collection, false);
+			init(clone ? new HashMap<K, V>(collection) : collection, null, false);
 	}
 	
 	@Override
 	public void doInitialize() {
-		init(new HashMap<K, V>(), false);
+		init(new HashMap<K, V>(), null, false);
 	}
 
 	@Override
-	protected PersistentCollectionSnapshot createSnapshot(boolean forReading) {
-		PersistentCollectionSnapshotFactory factory = PersistentCollectionSnapshotFactory.newInstance();
+	protected PersistentCollectionSnapshot createSnapshot(Object io, boolean forReading) {
+		PersistentCollectionSnapshotFactory factory = PersistentCollectionSnapshotFactory.newInstance(io);
 		if (forReading || !wasInitialized())
-			return factory.newPersistentCollectionSnapshot();
-		return factory.newPersistentCollectionSnapshot(true, isDirty(), this);
+			return factory.newPersistentCollectionSnapshot(getDetachedState());
+		return factory.newPersistentCollectionSnapshot(true, getDetachedState(), isDirty(), this);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void updateFromSnapshot(ObjectInput in, PersistentCollectionSnapshot snapshot) {
 		if (snapshot.isInitialized())
-			init(new HashMap<K, V>((Map<K, V>)snapshot.getElementsAsMap()), snapshot.isDirty());
+			init(new HashMap<K, V>((Map<K, V>)snapshot.getElementsAsMap()), snapshot.getDetachedState(), snapshot.isDirty());
 		else
-			init(null, false);
+			init(null, snapshot.getDetachedState(), false);
 	}
 	
     public PersistentMap<K, V> clone(boolean uninitialize) {
     	PersistentMap<K, V> map = new PersistentMap<K, V>();
     	if (wasInitialized() && !uninitialize)
-    		map.init(getCollection(), isDirty());
+    		map.init(getCollection(), null, isDirty());
         return map;
     }
 }
