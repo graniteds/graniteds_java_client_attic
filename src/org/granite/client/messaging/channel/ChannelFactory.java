@@ -49,6 +49,10 @@ public interface ChannelFactory {
 	void stop();
 	void stop(boolean stopTransports);
 
+	RemotingChannel newRemotingChannel(String id, String uri);
+	RemotingChannel newRemotingChannel(String id, String uri, int maxConcurrentRequests);
+	MessagingChannel newMessagingChannel(String id, String uri);
+
 	RemotingChannel newRemotingChannel(String id, URI uri);
 	RemotingChannel newRemotingChannel(String id, URI uri, int maxConcurrentRequests);
 	MessagingChannel newMessagingChannel(String id, URI uri);

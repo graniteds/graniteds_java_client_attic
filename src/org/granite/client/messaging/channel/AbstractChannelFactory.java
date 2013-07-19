@@ -1,5 +1,7 @@
 package org.granite.client.messaging.channel;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -121,6 +123,36 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 				messagingTransport.stop();
 				messagingTransport = null;
 			}
+		}
+	}
+
+	@Override
+	public RemotingChannel newRemotingChannel(String id, String uri) {
+		try {
+			return newRemotingChannel(id, new URI(uri));
+		}
+		catch (URISyntaxException e) {
+			throw new IllegalArgumentException("Bad uri: " + uri, e);
+		}
+	}
+
+	@Override
+	public RemotingChannel newRemotingChannel(String id, String uri, int maxConcurrentRequests) {
+		try {
+			return newRemotingChannel(id, new URI(uri), maxConcurrentRequests);
+		}
+		catch (URISyntaxException e) {
+			throw new IllegalArgumentException("Bad uri: " + uri, e);
+		}
+	}
+
+	@Override
+	public MessagingChannel newMessagingChannel(String id, String uri) {
+		try {
+			return newMessagingChannel(id, new URI(uri));
+		}
+		catch (URISyntaxException e) {
+			throw new IllegalArgumentException("Bad uri: " + uri, e);
 		}
 	}
 }
