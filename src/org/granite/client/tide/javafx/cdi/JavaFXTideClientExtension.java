@@ -44,14 +44,14 @@ import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.EventBus;
 import org.granite.client.tide.NameAware;
-import org.granite.client.tide.Platform;
-import org.granite.client.tide.PlatformConfigurable;
+import org.granite.client.tide.Application;
+import org.granite.client.tide.ApplicationConfigurable;
 import org.granite.client.tide.cdi.CDIContextManager;
 import org.granite.client.tide.cdi.CDIEventBus;
 import org.granite.client.tide.cdi.ViewContext;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.javafx.JavaFXDataManager;
-import org.granite.client.tide.javafx.JavaFXPlatform;
+import org.granite.client.tide.javafx.JavaFXApplication;
 import org.granite.logging.Logger;
 
 /**
@@ -61,12 +61,12 @@ public class JavaFXTideClientExtension implements Extension {
 	
 	private static final Logger log = Logger.getLogger(JavaFXTideClientExtension.class);
 	
-	private Platform platform = new JavaFXPlatform();
+	private Application platform = new JavaFXApplication();
 	
 	
 	public void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event, BeanManager beanManager) {
 		log.debug("Register internal Tide beans");
-		event.addAnnotatedType(beanManager.createAnnotatedType(JavaFXPlatform.class));
+		event.addAnnotatedType(beanManager.createAnnotatedType(JavaFXApplication.class));
 		event.addAnnotatedType(beanManager.createAnnotatedType(CDIEventBus.class));
 		event.addAnnotatedType(beanManager.createAnnotatedType(JavaFXCDIContextManager.class));
 	}
@@ -94,7 +94,7 @@ public class JavaFXTideClientExtension implements Extension {
 		}
 		
 		@Inject
-		public JavaFXCDIContextManager(Platform platform, EventBus eventBus) {
+		public JavaFXCDIContextManager(Application platform, EventBus eventBus) {
 			super(platform, eventBus);
 		}
 		
@@ -116,13 +116,13 @@ public class JavaFXTideClientExtension implements Extension {
 	
 	public static class ProducerWrapper<T> implements Producer<T> {
 		
-		private Platform platform;
+		private Application application;
 		private BeanManager beanManager;
 		private Producer<T> producer;
 		private AnnotatedMember<T> annotatedMember;
 		
-		public ProducerWrapper(Platform platform, BeanManager beanManager, Producer<T> producer, AnnotatedMember<T> annotatedMember) {
-			this.platform = platform;
+		public ProducerWrapper(Application application, BeanManager beanManager, Producer<T> producer, AnnotatedMember<T> annotatedMember) {
+			this.application = application;
 			this.beanManager = beanManager;
 			this.producer = producer;
 			this.annotatedMember = annotatedMember;
@@ -157,8 +157,8 @@ public class JavaFXTideClientExtension implements Extension {
 				}
 			}
 			
-			if (instance != null && instance.getClass().isAnnotationPresent(PlatformConfigurable.class))
-				platform.configure(instance);
+			if (instance != null && instance.getClass().isAnnotationPresent(ApplicationConfigurable.class))
+				application.configure(instance);
 			
 			return instance;
 		}
@@ -166,12 +166,12 @@ public class JavaFXTideClientExtension implements Extension {
 	
 	public static class InjectionTargetWrapper<T> implements InjectionTarget<T> {
 		
-		private Platform platform;
+		private Application platform;
 		private BeanManager beanManager;
 		private InjectionTarget<T> injectionTarget;
 		private AnnotatedType<T> annotatedType;
 		
-		public InjectionTargetWrapper(Platform platform, BeanManager beanManager, InjectionTarget<T> injectionTarget, AnnotatedType<T> annotatedType) {
+		public InjectionTargetWrapper(Application platform, BeanManager beanManager, InjectionTarget<T> injectionTarget, AnnotatedType<T> annotatedType) {
 			this.platform = platform;
 			this.beanManager = beanManager;
 			this.injectionTarget = injectionTarget;
@@ -215,7 +215,7 @@ public class JavaFXTideClientExtension implements Extension {
 				}
 			}
 			
-			if (instance != null && instance.getClass().isAnnotationPresent(PlatformConfigurable.class))
+			if (instance != null && instance.getClass().isAnnotationPresent(ApplicationConfigurable.class))
 				platform.configure(instance);
 			
 			injectionTarget.postConstruct(instance);

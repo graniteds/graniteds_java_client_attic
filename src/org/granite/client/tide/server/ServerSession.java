@@ -70,14 +70,14 @@ import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.TransportException;
 import org.granite.client.messaging.transport.TransportStatusHandler;
 import org.granite.client.platform.Platform;
-import org.granite.client.tide.BeanManager;
+import org.granite.client.tide.ApplicationConfigurable;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.Identity;
-import org.granite.client.tide.PlatformConfigurable;
 import org.granite.client.tide.PropertyHolder;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.Update;
+import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.config.GraniteConfig;
 import org.granite.logging.Logger;
@@ -91,7 +91,7 @@ import org.granite.util.ContentType;
 /**
  * @author William DRAI
  */
-@PlatformConfigurable
+@ApplicationConfigurable
 @Named
 public class ServerSession implements ContextAware {
 
@@ -147,6 +147,7 @@ public class ServerSession implements ContextAware {
 	private LogoutState logoutState = new LogoutState();
 		
 	private String destination = "server";
+	private Object appContext = null;
 	private ChannelFactory channelFactory;
     private RemotingChannel remotingChannel;
 	private MessagingChannel messagingChannel;
@@ -236,6 +237,13 @@ public class ServerSession implements ContextAware {
 	public void setContext(Context context) {
 		this.context = context;
 	}
+	public Context getContext() {
+		return this.context;
+	}
+	
+	public void setAppContext(Object appContext) {
+	    this.appContext = appContext;
+	}
 	
 	public TrackingContext getTrackingContext() {
 		return trackingContext;
@@ -283,13 +291,13 @@ public class ServerSession implements ContextAware {
 	@PostConstruct
 	public void start() throws Exception {
 		if (contentType == ContentType.JMF_AMF)
-			channelFactory = new JMFChannelFactory();
+			channelFactory = new JMFChannelFactory(appContext);
 		else {
 			Configuration configuration = Platform.getInstance().newConfiguration();
 			configuration.setClientType(ClientType.JAVA);
 			configuration.load();
 			graniteConfig = configuration.getGraniteConfig();
-			channelFactory = new AMFChannelFactory(configuration);
+			channelFactory = new AMFChannelFactory(appContext, configuration);
 		}
 		channelFactory.setScanPackageNames(packageNames);
 		
@@ -679,7 +687,7 @@ public class ServerSession implements ContextAware {
         List<Update> updates = null;
         
         EntityManager entityManager = context.getEntityManager();
-        BeanManager beanManager = context.getBeanManager();
+        DataManager dataManager = context.getDataManager();
         
         try {
             trackingContext.setEnabled(false);
@@ -752,7 +760,7 @@ public class ServerSession implements ContextAware {
                         String[] p = r.getExpression() != null ? r.getExpression().split("\\.") : null;
                         if (p != null && p.length > 1) {
                             for (int i = 0; i < p.length-1; i++)
-                                obj = beanManager.getProperty(obj, p[i]);
+                                obj = dataManager.getPropertyValue(obj, p[i]);
                         }
     //                    else if (p.length == 0)
     //                        _componentStore.setComponentRemoteSync(compName, Tide.SYNC_BIDIRECTIONAL);
@@ -763,9 +771,9 @@ public class ServerSession implements ContextAware {
                             propName = p[p.length-1];
                             
                             if (obj instanceof PropertyHolder)
-                                previous = beanManager.getProperty(((PropertyHolder)obj).getObject(), propName);
+                                previous = dataManager.getPropertyValue(((PropertyHolder)obj).getObject(), propName);
                             else if (obj != null)
-                                previous = beanManager.getProperty(obj, propName);
+                                previous = dataManager.getPropertyValue(obj, propName);
                         }
                         else
                             previous = obj;
@@ -791,7 +799,7 @@ public class ServerSession implements ContextAware {
                                 ((PropertyHolder)obj).setProperty(propName, val);
                             }
                             else if (obj != null)
-                                beanManager.setProperty(obj, propName, val);
+                                dataManager.setPropertyValue(obj, propName, val);
                         }
                         else
                             context.set(compName, val);
