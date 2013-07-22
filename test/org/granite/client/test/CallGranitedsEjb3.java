@@ -37,7 +37,8 @@ import org.granite.client.messaging.events.ResultEvent;
 import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.persistence.Persistence;
 import org.granite.client.platform.Platform;
-import org.granite.messaging.jmf.reflect.Property;
+import org.granite.messaging.reflect.Property;
+
 
 /**
  * @author Franck WOLFF
