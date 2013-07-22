@@ -29,8 +29,6 @@ public interface ContextManager {
 	
     public void setInstanceStoreFactory(InstanceStoreFactory instanceStoreFactory);
     
-    public void setBeanManager(BeanManager beanManager);
-    
     public Context getContext();
     
     public Context getContext(String contextId);

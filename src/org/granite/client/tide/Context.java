@@ -21,17 +21,20 @@
 package org.granite.client.tide;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.granite.logging.Logger;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.impl.EntityManagerImpl;
+import org.granite.client.tide.data.impl.JavaBeanDataManager;
 import org.granite.client.tide.data.impl.RemoteInitializerImpl;
 import org.granite.client.tide.data.spi.DataManager;
-import org.granite.client.tide.impl.DefaultPlatform;
+import org.granite.client.tide.impl.DefaultApplication;
 import org.granite.client.tide.impl.SimpleEventBus;
 import org.granite.client.tide.impl.SimpleInstanceStore;
+import org.granite.logging.Logger;
 
 /**
  * @author William DRAI
@@ -47,11 +50,12 @@ public class Context {
     private ContextManager contextManager = null;
     
     private InstanceStore instanceStore = new SimpleInstanceStore(this);
-    private BeanManager beanManager;
+    private Map<String, Object> initialBeans = new HashMap<String, Object>();
     
-    private Platform platform = new DefaultPlatform();
+    private Application application = new DefaultApplication();
 	private EventBus eventBus = new SimpleEventBus();
     
+	private DataManager dataManager = new JavaBeanDataManager();
     private EntityManager entityManager;
     
     
@@ -74,26 +78,29 @@ public class Context {
     	return entityManager;
     }
     
+    public void setDataManager(DataManager dataManager) {
+    	this.dataManager = dataManager;
+    }
     public DataManager getDataManager() {
-    	return platform.getDataManager();
+        return dataManager;
+    }
+    
+    public Map<String, Object> getInitialBeans() {
+        return Collections.unmodifiableMap(initialBeans);
     }
     
     
-    public void initContext(Platform platform, EventBus eventBus, BeanManager beanManager, InstanceStore instanceStore) {
-    	this.platform = platform;
-    	this.entityManager = new EntityManagerImpl("", platform.getDataManager(), null, null);
-    	this.entityManager.setRemoteInitializer(new RemoteInitializerImpl(this));
+    public void initContext(Application platform, EventBus eventBus, InstanceStore instanceStore) {
+    	this.application = platform;
     	this.eventBus = eventBus;
         this.instanceStore = instanceStore;
-        this.beanManager = beanManager;
+        platform.initContext(this, initialBeans);
+        this.entityManager = new EntityManagerImpl("", dataManager, null, null);
+        this.entityManager.setRemoteInitializer(new RemoteInitializerImpl(this));
     }
     
     public EventBus getEventBus() {
     	return eventBus;
-    }
-    
-    public BeanManager getBeanManager() {
-    	return beanManager;
     }
     
     public void postInit() {
@@ -159,12 +166,12 @@ public class Context {
     	return instanceStore.allNames();
     }
     
-    public void set(String name, Object instance) {
-    	instanceStore.set(name, instance);
+    public <T> T set(String name, T instance) {
+    	return instanceStore.set(name, instance);
     }
     
-    public void set(Object instance) {
-    	instanceStore.set(instance);
+    public <T> T set(T instance) {
+    	return instanceStore.set(instance);
     }
     
     public void remove(String name) {
@@ -183,8 +190,8 @@ public class Context {
     		((ContextAware)instance).setContext(this);
     	if (instance instanceof Initializable)
     		((Initializable)instance).init();
-    	if (instance.getClass().isAnnotationPresent(PlatformConfigurable.class))
-    		platform.configure(instance);
+    	if (instance.getClass().isAnnotationPresent(ApplicationConfigurable.class))
+    		application.configure(instance);
     }   
     
     
@@ -195,9 +202,9 @@ public class Context {
     
     
     public void callLater(Runnable runnable) {
-    	platform.execute(runnable);
+    	application.execute(runnable);
     }
-    	
+    
     
     public void markAsFinished() {
         this.finished = true;

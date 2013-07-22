@@ -151,13 +151,15 @@ public class CDIInstanceStoreFactory implements InstanceStoreFactory {
 		}
 		
 		@Override
-		public void set(String name, Object instance) {
+		public <T> T set(String name, T instance) {
 			// Nothing, managed by CDI
+			return instance;
 		}
 
 		@Override
-		public void set(Object instance) {
+		public <T> T set(T instance) {
 			// Nothing, managed by CDI
+			return instance;
 		}
 
 		@Override

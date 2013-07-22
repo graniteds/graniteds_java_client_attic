@@ -28,7 +28,7 @@ import javax.inject.Inject;
 
 import org.granite.client.tide.Context;
 import org.granite.client.tide.EventBus;
-import org.granite.client.tide.Platform;
+import org.granite.client.tide.Application;
 import org.granite.client.tide.data.Conflicts;
 import org.granite.client.tide.data.DataConflictListener;
 import org.granite.client.tide.data.EntityManager;
@@ -51,8 +51,8 @@ public class CDIContextManager extends SimpleContextManager {
 	}
 	
 	@Inject
-	public CDIContextManager(Platform platform, EventBus eventBus) {
-		super(platform, eventBus);
+	public CDIContextManager(Application application, EventBus eventBus) {
+		super(application, eventBus);
 	}
 	
 	@PostConstruct

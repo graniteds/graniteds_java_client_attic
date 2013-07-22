@@ -27,6 +27,7 @@ import java.util.Set;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.MergeContext;
+import org.granite.client.tide.data.spi.DataManager.TrackingHandler;
 import org.granite.client.tide.server.ServerSession;
 import org.granite.tide.Expression;
 
@@ -64,6 +65,8 @@ public interface EntityManager {
     public void clear();
     
     public DataManager getDataManager();
+    
+    public TrackingHandler getTrackingHandler();
     
     /**
      *  Allow uninitialize of persistent collections

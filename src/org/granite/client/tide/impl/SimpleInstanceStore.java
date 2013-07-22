@@ -53,19 +53,21 @@ public class SimpleInstanceStore implements InstanceStore {
         return (T)instance;
     }
     
-    public void set(String name, Object instance) {
+    public <T> T set(String name, T instance) {
     	context.initInstance(instance, name);
         instances.put(name, instance);
+        return instance;
     }
     
     private int NUM_TYPED_INSTANCE = 1;
     
-    public void set(Object instance) {
+    public <T> T set(T instance) {
     	if (instance == null)
     		throw new NullPointerException("Cannot register null component instance");
     	context.initInstance(instance, null);
     	if (!instances.containsValue(instance))
     		instances.put(TYPED + (NUM_TYPED_INSTANCE++), instance);
+    	return instance;
     }
 
     @Override

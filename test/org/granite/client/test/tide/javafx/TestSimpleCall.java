@@ -40,7 +40,7 @@ import org.granite.client.test.tide.MockServiceFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
 import org.granite.client.tide.impl.ComponentImpl;
-import org.granite.client.tide.impl.DefaultPlatform;
+import org.granite.client.tide.impl.DefaultApplication;
 import org.granite.client.tide.impl.SimpleContextManager;
 import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ServerSession;
@@ -65,7 +65,7 @@ public class TestSimpleCall {
     
     @Before
     public void setup() throws Exception {
-    	contextManager = new SimpleContextManager(new DefaultPlatform());
+    	contextManager = new SimpleContextManager(new DefaultApplication());
         contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext();
         serverSession = new ServerSession("/test", "localhost", 8080);

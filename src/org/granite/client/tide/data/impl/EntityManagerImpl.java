@@ -141,6 +141,10 @@ public class EntityManagerImpl implements EntityManager {
     public DataManager getDataManager() {
     	return dataManager;
     }
+    
+    public TrackingHandler getTrackingHandler() {
+    	return trackingHandler;
+    }
 
     
     /**
@@ -1817,10 +1821,9 @@ public class EntityManagerImpl implements EntityManager {
             Object o = mval.getValue();
             Object d = dataManager.getPropertyValue(dest, propName);
             o = mergeExternal(mergeContext, o, d, expr, isEmbedded ? parent : dest, isEmbedded ? propertyName + "." + propName : propName, false);
-            if (o != d && mergeContext.isMergeUpdate()) {
+            if (o != d && mergeContext.isMergeUpdate())
                 dataManager.setPropertyValue(dest, propName, o);
-                trackingHandler.entityPropertyChangeHandler(dest, propName, d, o);
-            }
+            
             rw.add(propName);
         }
         

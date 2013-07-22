@@ -31,9 +31,9 @@ public interface InstanceStore {
     
     public <T> T getNoProxy(String name);
     
-    public void set(String name, Object instance);
+    public <T> T set(String name, T instance);
 
-    public void set(Object instance);
+    public <T> T set(T instance);
 
     public void remove(String name);
     

@@ -20,11 +20,13 @@
 
 package org.granite.client.tide.spring;
 
+import java.util.Map.Entry;
+
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.EventBus;
 import org.granite.client.tide.NameAware;
-import org.granite.client.tide.Platform;
-import org.granite.client.tide.PlatformConfigurable;
+import org.granite.client.tide.Application;
+import org.granite.client.tide.ApplicationConfigurable;
 import org.granite.client.tide.data.Conflicts;
 import org.granite.client.tide.data.DataConflictListener;
 import org.granite.client.tide.data.EntityManager;
@@ -44,12 +46,12 @@ public class SpringContextManager extends SimpleContextManager implements Applic
 	
 	private ApplicationContext applicationContext;
 	
-	public SpringContextManager(Platform platform) {
-		super(platform, new SpringEventBus());
+	public SpringContextManager(Application application) {
+		super(application, new SpringEventBus());
 	}
 
-	public SpringContextManager(Platform platform, EventBus eventBus) {
-		super(platform, eventBus);
+	public SpringContextManager(Application application, EventBus eventBus) {
+		super(application, eventBus);
 	}
 	
 	@Override
@@ -63,9 +65,9 @@ public class SpringContextManager extends SimpleContextManager implements Applic
     	if (name != null && instance instanceof NameAware)
     		((NameAware)instance).setName(name);
     	if (instance instanceof ContextAware)
-    		((ContextAware)instance).setContext(getContext(null));
-    	if (instance.getClass().isAnnotationPresent(PlatformConfigurable.class))
-    		platform.configure(instance);
+    		((ContextAware)instance).setContext(getContext());
+    	if (instance.getClass().isAnnotationPresent(ApplicationConfigurable.class))
+    		application.configure(instance);
     	return instance;
 	}
 	
@@ -76,11 +78,13 @@ public class SpringContextManager extends SimpleContextManager implements Applic
 	
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		beanFactory.registerSingleton("context", getContext(null));
-		EntityManager entityManager = getContext(null).getEntityManager();
+		beanFactory.registerSingleton("context", getContext());
+		EntityManager entityManager = getContext().getEntityManager();
 		entityManager.addListener(new SpringDataConflictListener());
 		beanFactory.registerSingleton("entityManager", entityManager);
-		beanFactory.registerSingleton("dataManager", getContext(null).getDataManager());
+		beanFactory.registerSingleton("dataManager", getContext().getDataManager());
+		for (Entry<String, Object> entry : getContext().getInitialBeans().entrySet())
+		    beanFactory.registerSingleton(entry.getKey(), entry.getValue());
 		beanFactory.registerScope("view", new ViewScope());
 	}
 	

@@ -18,18 +18,25 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide;
+package org.granite.client.tide.impl;
 
-import org.granite.client.tide.data.spi.DataManager;
+import java.util.Map;
+
+import org.granite.client.tide.Context;
+import org.granite.client.tide.Application;
 
 /**
  * @author William DRAI
  */
-public interface Platform {
-
-	public DataManager getDataManager();
+public class DefaultApplication implements Application {
 	
-	public void configure(Object instance);
-
-	public void execute(Runnable runnable);
+    public void initContext(Context context, Map<String, Object> initialBeans) {
+    }
+    
+	public void configure(Object instance) {
+	}
+    
+    public void execute(Runnable runnable) {
+        runnable.run();
+    }
 }

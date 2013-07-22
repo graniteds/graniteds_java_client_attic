@@ -26,7 +26,7 @@ import org.granite.client.tide.ContextManager;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.impl.SimpleContextManager;
-import org.granite.client.tide.javafx.JavaFXPlatform;
+import org.granite.client.tide.javafx.JavaFXApplication;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +41,7 @@ public class TestResetEntity2 {
     
     @Before
     public void setup() throws Exception {
-        contextManager = new SimpleContextManager(new JavaFXPlatform());
+        contextManager = new SimpleContextManager(new JavaFXApplication());
         contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext("");
         entityManager = ctx.getEntityManager();

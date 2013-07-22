@@ -20,33 +20,40 @@
 
 package org.granite.client.tide.javafx;
 
-import javafx.application.Platform;
+import java.util.Map;
 
+import org.granite.client.tide.Context;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.server.ServerSession;
+import org.granite.logging.Logger;
 
 /**
  * @author William DRAI
  */
-public class JavaFXPlatform implements org.granite.client.tide.Platform {
+public class JavaFXApplication implements org.granite.client.tide.Application {
+    
+    private static final Logger log = Logger.getLogger(JavaFXApplication.class);
 	
-	private DataManager dataManager = new JavaFXDataManager();
-	private final ServerSession.Status serverSessionStatus = new JavaFXServerSessionStatus();
-	
+	public void initContext(Context context, Map<String, Object> initialBeans) {
+	    DataManager dataManager = new JavaFXDataManager();
+	    context.setDataManager(dataManager);
+	    try {
+	        initialBeans.put("validationManager", new JavaFXValidationManager());
+	        initialBeans.put("traversableResolver", new JavaFXTraversableResolver(dataManager));
+	    }
+	    catch (Exception e) {
+	        // Assume Bean Validation not available
+	        log.info("Bean validation not available, support not configured");
+	    }
+	}
 	
 	public void configure(Object instance) {
-		if (instance instanceof ServerSession) {
-			ServerSession serverSession = (ServerSession)instance;
-			serverSession.setStatus(serverSessionStatus);
-		}
+		if (instance instanceof ServerSession)
+			((ServerSession)instance).setStatus(new JavaFXServerSessionStatus());
 	}
 	
 	@Override
-	public DataManager getDataManager() {
-		return dataManager;
-	}
-
-	public void execute(Runnable runnable) {
-		Platform.runLater(runnable);
-	}
+    public void execute(Runnable runnable) {
+        javafx.application.Platform.runLater(runnable);
+    }
 }

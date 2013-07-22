@@ -33,7 +33,7 @@ import org.granite.client.tide.data.EntityManager.UpdateKind;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.MergeContext;
 import org.granite.client.tide.impl.SimpleContextManager;
-import org.granite.client.tide.javafx.JavaFXPlatform;
+import org.granite.client.tide.javafx.JavaFXApplication;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class TestConflictEntity {
     
     @Before
     public void setup() throws Exception {
-        contextManager = new SimpleContextManager(new JavaFXPlatform());
+        contextManager = new SimpleContextManager(new JavaFXApplication());
         contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext("");
         entityManager = ctx.getEntityManager();

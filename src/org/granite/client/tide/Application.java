@@ -18,29 +18,19 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide.impl;
+package org.granite.client.tide;
 
-import org.granite.client.tide.Platform;
-import org.granite.client.tide.data.impl.JavaBeanDataManager;
-import org.granite.client.tide.data.spi.DataManager;
+import java.util.Map;
+
 
 /**
  * @author William DRAI
  */
-public class DefaultPlatform implements Platform {
-	
-	private DataManager dataManager = new JavaBeanDataManager();
-	
-	public void configure(Object instance) {
-	}
-	
-	@Override
-	public void execute(Runnable runnable) {
-		runnable.run();
-	}
+public interface Application {
 
-	@Override
-	public DataManager getDataManager() {
-		return dataManager;
-	}
+	public void initContext(Context context, Map<String, Object> initialBeans);
+	
+	public void configure(Object instance);
+	
+	public void execute(Runnable runnable);
 }

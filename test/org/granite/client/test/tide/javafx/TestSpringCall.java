@@ -37,7 +37,7 @@ import org.granite.client.test.tide.MockServiceFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
 import org.granite.client.tide.impl.ComponentImpl;
-import org.granite.client.tide.impl.DefaultPlatform;
+import org.granite.client.tide.impl.DefaultApplication;
 import org.granite.client.tide.impl.SimpleEventBus;
 import org.granite.client.tide.server.Component;
 import org.granite.client.tide.server.ServerSession;
@@ -60,7 +60,7 @@ public class TestSpringCall {
     
     @Before
     public void setup() throws Exception {
-    	contextManager = new SpringContextManager(new DefaultPlatform(), new SimpleEventBus());
+    	contextManager = new SpringContextManager(new DefaultApplication(), new SimpleEventBus());
         ctx = contextManager.getContext();
         serverSession = new ServerSession("/test", "localhost", 8080);
         serverSession.setServiceFactory(new MockServiceFactory());
