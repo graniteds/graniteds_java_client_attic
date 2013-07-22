@@ -20,6 +20,7 @@
 
 package org.granite.client.messaging;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import net.sf.extcos.ComponentQuery;
@@ -44,7 +45,13 @@ public class ExtCosRemoteAliasScanner implements RemoteAliasScanner {
 			}
 		});
 		
-		return remoteClasses;
+		Set<Class<?>> annotatedRemoteClasses = new HashSet<Class<?>>();
+		for (Class<?> remoteClass : remoteClasses) {
+		    if (remoteClass.isAnnotationPresent(RemoteAlias.class))
+		        annotatedRemoteClasses.add(remoteClass);
+		}
+		
+		return annotatedRemoteClasses;
 	}	
 	
 	public static class JavaClassResourceType implements ResourceType {
