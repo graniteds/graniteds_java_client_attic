@@ -20,9 +20,6 @@
 
 package org.granite.client.tide.data.impl;
 
-import java.util.Set;
-
-import javax.validation.ConstraintViolation;
 
 /**
  * @author William DRAI
@@ -56,9 +53,4 @@ public class JavaBeanDataManager extends AbstractDataManager {
     @Override
     public void notifyEntityDirtyChange(Object entity, boolean oldDirtyEntity, boolean newDirtyEntity) {
     }
-    
-    @Override
-    public void notifyConstraintViolations(Object entity, Set<ConstraintViolation<?>> violations) {    	
-    }
-
 }

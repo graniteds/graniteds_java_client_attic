@@ -20,7 +20,6 @@
 
 package org.granite.client.tide.data.impl;
 
-import java.lang.annotation.ElementType;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,17 +27,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.validation.Path;
-import javax.validation.Path.Node;
-import javax.validation.TraversableResolver;
-
 import org.granite.client.persistence.Persistence;
 import org.granite.client.platform.Platform;
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.logging.Logger;
-import org.granite.messaging.jmf.reflect.Property;
+import org.granite.messaging.reflect.Property;
 import org.granite.util.UUIDUtil;
 
 /**
@@ -217,23 +212,4 @@ public abstract class AbstractDataManager implements DataManager {
 		return entityManager.isDeepDirtyEntity(entity);
     }
     
-    
-    
-    private TraversableResolver traversableResolver = new TraversableResolverImpl();
-    
-    public TraversableResolver getTraversableResolver() {
-    	return traversableResolver;
-    }
-    
-    public class TraversableResolverImpl implements TraversableResolver {
-    	
-    	public boolean isReachable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
-    		return true;
-    	}
-    	
-    	public boolean isCascadable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
-    		return true;
-    	}
-
-    }
 }

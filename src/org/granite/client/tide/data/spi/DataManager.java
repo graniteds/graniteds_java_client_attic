@@ -21,10 +21,6 @@
 package org.granite.client.tide.data.spi;
 
 import java.util.Map;
-import java.util.Set;
-
-import javax.validation.ConstraintViolation;
-import javax.validation.TraversableResolver;
 
 /**
  * @author William DRAI
@@ -117,11 +113,6 @@ public interface DataManager {
     public void notifyDirtyChange(boolean oldDirty, boolean dirty);
 
     public void notifyEntityDirtyChange(Object entity, boolean oldDirtyEntity, boolean newDirtyEntity);
-    
-    
-    public TraversableResolver getTraversableResolver();
-    
-    public void notifyConstraintViolations(Object entity, Set<ConstraintViolation<?>> violation);
     
     
     /**

@@ -18,7 +18,7 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide.data;
+package org.granite.client.tide.validation;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,8 +77,12 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 				violations.add(violation);
 			}
 			
+			ValidationManager validationManager = context.byType(ValidationManager.class);
+			if (validationManager == null)
+			    throw new RuntimeException("No validation manager defined, cannot process validation events");
+			
 			for (Object bean : violationsMap.keySet())
-				context.getDataManager().notifyConstraintViolations(bean, violationsMap.get(bean));
+			    validationManager.notifyConstraintViolations(bean, violationsMap.get(bean));
 		}
 	}
 

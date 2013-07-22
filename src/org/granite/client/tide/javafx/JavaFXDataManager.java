@@ -20,13 +20,11 @@
 
 package org.granite.client.tide.javafx;
 
-import java.lang.annotation.ElementType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -43,19 +41,11 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
-import javafx.event.Event;
-
-import javax.validation.ConstraintViolation;
-import javax.validation.Path;
-import javax.validation.Path.Node;
-import javax.validation.TraversableResolver;
 
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.PersistenceManager;
 import org.granite.client.tide.data.impl.AbstractDataManager;
 import org.granite.client.util.WeakIdentityHashMap;
-import org.granite.client.util.javafx.DataNotifier;
-import org.granite.client.validation.javafx.ConstraintViolationEvent;
 import org.granite.logging.Logger;
 
 /**
@@ -465,36 +455,4 @@ public class JavaFXDataManager extends AbstractDataManager {
         for (ObservableDeepDirtyEntity deepDirtyEntity : deepDirtyEntityCache.values())
         	deepDirtyEntity.fireValueChangedEvent();
     }
-    
-    
-    public void notifyConstraintViolations(Object entity, Set<ConstraintViolation<?>> violations) {
-		if (!(entity instanceof DataNotifier))
-			return;
-		ConstraintViolationEvent event = new ConstraintViolationEvent(ConstraintViolationEvent.CONSTRAINT_VIOLATION, violations);
-		Event.fireEvent((DataNotifier)entity, event);
-    }
-    
-    
-    private TraversableResolver traversableResolver = new TraversableResolverImpl();
-    
-    @Override
-    public TraversableResolver getTraversableResolver() {
-    	return traversableResolver;
-    }
-
-    public class TraversableResolverImpl implements TraversableResolver {
-    	
-    	public boolean isReachable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
-    		if (bean == null || propertyPath.getName() == null || ElementType.TYPE.equals(elementType))
-    			return true;
-    		Object value = getPropertyValue(bean, propertyPath.getName());
-    		return isInitialized(value);
-    	}
-    	
-    	public boolean isCascadable(Object bean, Node propertyPath, Class<?> rootBeanType, Path pathToTraversableObject, ElementType elementType) {
-    		return true;
-    	}
-
-    }
-
 }
