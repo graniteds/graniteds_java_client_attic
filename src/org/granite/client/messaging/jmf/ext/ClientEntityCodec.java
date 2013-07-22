@@ -31,7 +31,7 @@ import org.granite.client.platform.Platform;
 import org.granite.messaging.jmf.ExtendedObjectInput;
 import org.granite.messaging.jmf.ExtendedObjectOutput;
 import org.granite.messaging.jmf.codec.ExtendedObjectCodec;
-import org.granite.messaging.jmf.reflect.Property;
+import org.granite.messaging.reflect.Property;
 
 /**
  * @author Franck WOLFF

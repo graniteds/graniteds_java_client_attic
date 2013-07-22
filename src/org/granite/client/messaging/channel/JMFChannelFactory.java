@@ -34,7 +34,7 @@ import org.granite.client.messaging.transport.Transport;
 import org.granite.client.platform.Platform;
 import org.granite.messaging.jmf.DefaultCodecRegistry;
 import org.granite.messaging.jmf.codec.ExtendedObjectCodec;
-import org.granite.messaging.jmf.reflect.Reflection;
+import org.granite.messaging.reflect.Reflection;
 import org.granite.util.ContentType;
 import org.granite.util.JMFAMFUtil;
 

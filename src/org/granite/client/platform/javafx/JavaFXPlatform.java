@@ -22,7 +22,7 @@ package org.granite.client.platform.javafx;
 
 import org.granite.client.configuration.Configuration;
 import org.granite.client.platform.Platform;
-import org.granite.messaging.jmf.reflect.Reflection;
+import org.granite.messaging.reflect.Reflection;
 
 /**
  * @author Franck WOLFF

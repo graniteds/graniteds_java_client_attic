@@ -26,10 +26,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.granite.client.persistence.collection.PersistentCollection;
-import org.granite.messaging.jmf.reflect.Property;
-import org.granite.messaging.jmf.reflect.PropertyAccessException;
-import org.granite.messaging.jmf.reflect.PropertyNotFoundException;
-import org.granite.messaging.jmf.reflect.Reflection;
+import org.granite.messaging.reflect.Property;
+import org.granite.messaging.reflect.PropertyAccessException;
+import org.granite.messaging.reflect.PropertyNotFoundException;
+import org.granite.messaging.reflect.Reflection;
 
 /**
  * @author Franck WOLFF

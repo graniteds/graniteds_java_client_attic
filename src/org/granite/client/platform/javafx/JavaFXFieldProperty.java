@@ -22,8 +22,8 @@ package org.granite.client.platform.javafx;
 
 import java.lang.reflect.Field;
 
-import org.granite.messaging.jmf.reflect.FieldProperty;
-import org.granite.messaging.jmf.reflect.SimpleFieldProperty;
+import org.granite.messaging.reflect.FieldProperty;
+import org.granite.messaging.reflect.SimpleFieldProperty;
 
 /**
  * @author Franck WOLFF

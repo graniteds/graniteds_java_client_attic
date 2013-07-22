@@ -27,7 +27,7 @@ import org.granite.client.platform.Platform;
 import org.granite.messaging.AliasRegistry;
 import org.granite.messaging.jmf.CodecRegistry;
 import org.granite.messaging.jmf.DefaultSharedContext;
-import org.granite.messaging.jmf.reflect.Reflection;
+import org.granite.messaging.reflect.Reflection;
 
 /**
  * @author Franck WOLFF

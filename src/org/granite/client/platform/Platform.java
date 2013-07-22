@@ -31,7 +31,7 @@ import org.granite.client.messaging.transport.Transport;
 import org.granite.client.messaging.transport.apache.ApacheAsyncTransport;
 import org.granite.client.persistence.Persistence;
 import org.granite.logging.Logger;
-import org.granite.messaging.jmf.reflect.Reflection;
+import org.granite.messaging.reflect.Reflection;
 import org.granite.scan.ServiceLoader;
 
 /**

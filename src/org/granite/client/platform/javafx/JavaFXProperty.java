@@ -20,7 +20,7 @@
 
 package org.granite.client.platform.javafx;
 
-import org.granite.messaging.jmf.reflect.Property;
+import org.granite.messaging.reflect.Property;
 
 /**
  * @author Franck WOLFF

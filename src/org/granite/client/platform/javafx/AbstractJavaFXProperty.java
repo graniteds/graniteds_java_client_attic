@@ -50,9 +50,9 @@ import org.granite.client.persistence.collection.PersistentMap;
 import org.granite.client.persistence.collection.PersistentSet;
 import org.granite.client.persistence.collection.PersistentSortedMap;
 import org.granite.client.persistence.collection.PersistentSortedSet;
+import org.granite.client.persistence.collection.UnsafePersistentCollection;
 import org.granite.client.persistence.collection.javafx.FXPersistentCollections;
-import org.granite.client.persistence.collection.javafx.UnsafePersistentCollection;
-import org.granite.messaging.jmf.reflect.Property;
+import org.granite.messaging.reflect.Property;
 
 import com.sun.javafx.collections.ObservableListWrapper;
 import com.sun.javafx.collections.ObservableMapWrapper;
