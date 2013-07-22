@@ -28,6 +28,7 @@ import java.util.Iterator;
 import org.granite.client.persistence.Loader;
 import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.collection.PersistentSortedSet;
+import org.granite.client.persistence.collection.UnsafePersistentCollection;
 
 import com.sun.javafx.collections.ObservableSetWrapper;
 
@@ -110,10 +111,25 @@ public class ObservablePersistentSortedSet<E> extends ObservableSetWrapper<E> im
 		persistentSortedSet.clearDirty();
 	}
 
-	@Override
-	public void addListener(InitializationListener listener) {
-		persistentSortedSet.addListener(listener);
-	}
+    @Override
+    public void addListener(ChangeListener listener) {
+        persistentSortedSet.addListener(listener);
+    }
+
+    @Override
+    public void removeListener(ChangeListener listener) {
+        persistentSortedSet.removeListener(listener);
+    }
+
+    @Override
+    public void addListener(InitializationListener listener) {
+        persistentSortedSet.addListener(listener);
+    }
+
+    @Override
+    public void removeListener(InitializationListener listener) {
+        persistentSortedSet.removeListener(listener);
+    }
 
 	@Override
 	public void withInitialized(InitializationCallback callback) {

@@ -18,9 +18,8 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.persistence.collection.javafx;
+package org.granite.client.persistence.collection;
 
-import org.granite.client.persistence.collection.PersistentCollection;
 
 /**
  * @author Franck WOLFF

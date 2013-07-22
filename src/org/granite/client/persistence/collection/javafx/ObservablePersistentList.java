@@ -27,6 +27,7 @@ import java.io.ObjectOutput;
 import org.granite.client.persistence.Loader;
 import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.collection.PersistentList;
+import org.granite.client.persistence.collection.UnsafePersistentCollection;
 
 import com.sun.javafx.collections.ObservableListWrapper;
 
@@ -103,10 +104,25 @@ public class ObservablePersistentList<E> extends ObservableListWrapper<E> implem
 		persistentList.clearDirty();
 	}
 
-	@Override
-	public void addListener(InitializationListener listener) {
-		persistentList.addListener(listener);
-	}
+    @Override
+    public void addListener(ChangeListener listener) {
+        persistentList.addListener(listener);
+    }
+
+    @Override
+    public void removeListener(ChangeListener listener) {
+        persistentList.removeListener(listener);
+    }
+
+    @Override
+    public void addListener(InitializationListener listener) {
+        persistentList.addListener(listener);
+    }
+
+    @Override
+    public void removeListener(InitializationListener listener) {
+        persistentList.removeListener(listener);
+    }
 
 	@Override
 	public void withInitialized(InitializationCallback callback) {

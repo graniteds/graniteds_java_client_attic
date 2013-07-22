@@ -44,7 +44,15 @@ public interface PersistentCollection extends Externalizable {
 	void dirty();
 	void clearDirty();
 	
-    public void addListener(InitializationListener listener);
+    public interface ChangeListener {
+        
+        public void changed(PersistentCollection collection);
+    }
+    
+    public void addListener(ChangeListener listener);
+    
+    public void removeListener(ChangeListener listener);
+    
     
     public interface InitializationListener {
         
@@ -52,6 +60,10 @@ public interface PersistentCollection extends Externalizable {
         
         public void uninitialized(PersistentCollection collection);
     }
+    
+    public void addListener(InitializationListener listener);
+    
+    public void removeListener(InitializationListener listener);
     
     public void withInitialized(InitializationCallback callback);
     

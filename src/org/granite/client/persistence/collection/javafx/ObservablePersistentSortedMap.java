@@ -27,6 +27,7 @@ import java.io.ObjectOutput;
 import org.granite.client.persistence.Loader;
 import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.collection.PersistentSortedMap;
+import org.granite.client.persistence.collection.UnsafePersistentCollection;
 
 import com.sun.javafx.collections.ObservableMapWrapper;
 
@@ -103,10 +104,25 @@ public class ObservablePersistentSortedMap<K, V> extends ObservableMapWrapper<K,
 		persistentSortedMap.clearDirty();
 	}
 
-	@Override
-	public void addListener(InitializationListener listener) {
-		persistentSortedMap.addListener(listener);
-	}
+    @Override
+    public void addListener(ChangeListener listener) {
+        persistentSortedMap.addListener(listener);
+    }
+
+    @Override
+    public void removeListener(ChangeListener listener) {
+        persistentSortedMap.removeListener(listener);
+    }
+
+    @Override
+    public void addListener(InitializationListener listener) {
+        persistentSortedMap.addListener(listener);
+    }
+
+    @Override
+    public void removeListener(InitializationListener listener) {
+        persistentSortedMap.removeListener(listener);
+    }
 
 	@Override
 	public void withInitialized(InitializationCallback callback) {

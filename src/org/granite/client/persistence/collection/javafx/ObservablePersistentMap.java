@@ -27,6 +27,7 @@ import java.io.ObjectOutput;
 import org.granite.client.persistence.Loader;
 import org.granite.client.persistence.collection.PersistentCollection;
 import org.granite.client.persistence.collection.PersistentMap;
+import org.granite.client.persistence.collection.UnsafePersistentCollection;
 
 import com.sun.javafx.collections.ObservableMapWrapper;
 
@@ -103,10 +104,25 @@ public class ObservablePersistentMap<K, V> extends ObservableMapWrapper<K, V> im
 		persistentMap.clearDirty();
 	}
 
-	@Override
-	public void addListener(InitializationListener listener) {
-		persistentMap.addListener(listener);
-	}
+    @Override
+    public void addListener(ChangeListener listener) {
+        persistentMap.addListener(listener);
+    }
+
+    @Override
+    public void removeListener(ChangeListener listener) {
+        persistentMap.removeListener(listener);
+    }
+
+    @Override
+    public void addListener(InitializationListener listener) {
+        persistentMap.addListener(listener);
+    }
+
+    @Override
+    public void removeListener(InitializationListener listener) {
+        persistentMap.removeListener(listener);
+    }
 
 	@Override
 	public void withInitialized(InitializationCallback callback) {

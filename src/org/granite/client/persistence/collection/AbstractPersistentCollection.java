@@ -52,7 +52,8 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 	private volatile boolean dirty = false;
 	private volatile String detachedState = null;
 	private Loader<PersistentCollection> loader = new DefaultCollectionLoader();
-    private List<InitializationListener> listeners = new ArrayList<InitializationListener>();
+    private List<ChangeListener> changeListeners = new ArrayList<ChangeListener>();
+    private List<InitializationListener> initializationListeners = new ArrayList<InitializationListener>();
 	
 	protected AbstractPersistentCollection() {
 	}
@@ -105,6 +106,8 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 
 	public void dirty() {
 		dirty = true;
+        for (ChangeListener listener : changeListeners)
+            listener.changed(this);
 	}
 
 	public void clearDirty() {
@@ -542,6 +545,17 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 			return sortedMap.equals(obj);
 		}
 	}
+
+	
+    
+    public void addListener(ChangeListener listener) {
+        if (!changeListeners.contains(listener))
+            changeListeners.add(listener);
+    }
+    
+    public void removeListener(ChangeListener listener) {
+        changeListeners.remove(listener);
+    }
 	
 	
 	private static class DefaultCollectionLoader implements Loader<PersistentCollection> {
@@ -561,12 +575,12 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 	}
     
     public void addListener(InitializationListener listener) {
-        if (!listeners.contains(listener))
-            listeners.add(listener);
+        if (!initializationListeners.contains(listener))
+            initializationListeners.add(listener);
     }
     
     public void removeListener(InitializationListener listener) {
-        listeners.remove(listener);
+        initializationListeners.remove(listener);
     }
     
     public void initializing() {
@@ -576,7 +590,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
 	public void initialize() {
     	loader.onInitialize();
         
-        for (InitializationListener listener : listeners)
+        for (InitializationListener listener : initializationListeners)
             listener.initialized(this);
         
         doInitialize();
@@ -589,7 +603,7 @@ public abstract class AbstractPersistentCollection<C> implements PersistentColle
     public void uninitialize() {
         loader.onUninitialize();
         
-        for (InitializationListener listener : listeners)
+        for (InitializationListener listener : initializationListeners)
             listener.uninitialized(this);
         
         log.debug("uninitialized");
