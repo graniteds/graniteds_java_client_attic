@@ -35,8 +35,16 @@ import java.util.Set;
 public class WeakIdentityHashMap<K, V> implements Map<K, V> {
     
     private final ReferenceQueue<K> queue = new ReferenceQueue<K>();
-    private Map<IdentityWeakReference, V> map = new HashMap<IdentityWeakReference, V>();
+    private Map<IdentityWeakReference, V> map;
 
+    
+    public WeakIdentityHashMap() {
+        map = new HashMap<IdentityWeakReference, V>();
+    }
+    
+    public WeakIdentityHashMap(int size) {
+        map = new HashMap<IdentityWeakReference, V>(size);
+    }
 
     public void clear() {
         map.clear();
