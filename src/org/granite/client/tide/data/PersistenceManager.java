@@ -20,14 +20,16 @@
 
 package org.granite.client.tide.data;
 
-import java.util.WeakHashMap;
+import java.util.Map;
+
+import org.granite.client.util.WeakIdentityHashMap;
 
 /**
  * @author William DRAI
  */
 public class PersistenceManager {
     
-    private static WeakHashMap<Object, EntityManager> entityManagersByEntity = new WeakHashMap<Object, EntityManager>(1000);
+    private static Map<Object, EntityManager> entityManagersByEntity = new WeakIdentityHashMap<Object, EntityManager>(1000);
     
     public static EntityManager getEntityManager(Object object) {
         return entityManagersByEntity.get(object);
@@ -38,6 +40,14 @@ public class PersistenceManager {
             entityManagersByEntity.remove(object);
     	else
     		entityManagersByEntity.put(object, entityManager);
+    }
+    
+    public static void setPropertyValue(Object object, String propertyName, Object oldValue, Object newValue) {
+    	if (newValue == oldValue)
+    		return;
+    	EntityManager entityManager = getEntityManager(object);
+    	if (entityManager != null)
+    		entityManager.getTrackingHandler().entityPropertyChangeHandler(object, propertyName, oldValue, newValue);
     }
 
 }
