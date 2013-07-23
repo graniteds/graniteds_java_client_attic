@@ -631,8 +631,10 @@ public class ServerSession implements ContextAware {
 		if (logoutState.stillWaiting())
 			return;
 		
-		if (logoutState.isSessionExpired())   // Don't remotely logout again if we detected a session expired
+		if (logoutState.isSessionExpired()) {  // Don't remotely logout again if we detected a session expired
+		    logoutState.loggedOut(null);
 		    return;
+		}
 		
 		if (remotingChannel.isAuthenticated()) {
 			remotingChannel.logout(new ResultFaultIssuesResponseListener() {
@@ -944,9 +946,11 @@ public class ServerSession implements ContextAware {
 				logoutTimeout = null;
 			}
 			
-			setChanged();
-			notifyObservers(event);
-			deleteObservers();
+			if (event != null) {
+    			setChanged();
+    			notifyObservers(event);
+    			deleteObservers();
+			}
 			
 			logoutInProgress = false;
 			waitForLogout = 0;
