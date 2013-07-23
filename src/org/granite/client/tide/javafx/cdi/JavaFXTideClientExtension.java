@@ -61,7 +61,7 @@ public class JavaFXTideClientExtension implements Extension {
 	
 	private static final Logger log = Logger.getLogger(JavaFXTideClientExtension.class);
 	
-	private Application platform = new JavaFXApplication();
+	private Application application = new JavaFXApplication();
 	
 	
 	public void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event, BeanManager beanManager) {
@@ -77,11 +77,11 @@ public class JavaFXTideClientExtension implements Extension {
 	}
 	
 	public void processProducer(@Observes ProcessProducer<Object, Object> event, BeanManager beanManager) {
-		event.setProducer(new ProducerWrapper<Object>(platform, beanManager, event.getProducer(), event.getAnnotatedMember()));
+		event.setProducer(new ProducerWrapper<Object>(application, beanManager, event.getProducer(), event.getAnnotatedMember()));
 	}
 	
 	public void processInjectionTarget(@Observes ProcessInjectionTarget<Object> event, BeanManager beanManager) {
-		event.setInjectionTarget(new InjectionTargetWrapper<Object>(platform, beanManager, event.getInjectionTarget(), event.getAnnotatedType()));
+		event.setInjectionTarget(new InjectionTargetWrapper<Object>(application, beanManager, event.getInjectionTarget(), event.getAnnotatedType()));
 	}
 	
 	
