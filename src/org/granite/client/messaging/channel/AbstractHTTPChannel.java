@@ -53,7 +53,6 @@ import org.granite.client.messaging.transport.TransportFuture;
 import org.granite.client.messaging.transport.TransportMessage;
 import org.granite.client.messaging.transport.TransportStopListener;
 import org.granite.logging.Logger;
-//import org.granite.client.messaging.transport.HTTPTransport;
 
 /**
  * @author Franck WOLFF
@@ -376,8 +375,8 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 		return token;
 	}
 	
-	@Override
-	public ResponseMessageFuture logout(ResponseListener... listeners) {
+    @Override
+    public ResponseMessageFuture logout(ResponseListener... listeners) {
 		credentials = null;
 		authenticated = false;
 		return send(new LogoutMessage(), listeners);
@@ -395,12 +394,18 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 					log.warn("Unknown correlation id: %s", response.getCorrelationId());
 					return;
 				}
-
+				
 				switch (response.getType()) {
 					case RESULT:
 						token.dispatchResult((ResultMessage)response);
 						break;
 					case FAULT:
+					    FaultMessage faultMessage = (FaultMessage)response;
+					    if (isAuthenticated() && faultMessage.getCode() == FaultMessage.Code.NOT_LOGGED_IN || faultMessage.getCode() == FaultMessage.Code.SESSION_EXPIRED) {
+					        authenticated = false;
+					        credentials = null;
+					    }
+					    
 						token.dispatchFault((FaultMessage)response);
 						break;
 					default:

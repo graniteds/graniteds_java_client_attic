@@ -51,6 +51,7 @@ import org.granite.client.messaging.RemoteService;
 import org.granite.client.messaging.ResultFaultIssuesResponseListener;
 import org.granite.client.messaging.TopicAgent;
 import org.granite.client.messaging.channel.AMFChannelFactory;
+import org.granite.client.messaging.channel.Channel;
 import org.granite.client.messaging.channel.ChannelFactory;
 import org.granite.client.messaging.channel.JMFChannelFactory;
 import org.granite.client.messaging.channel.MessagingChannel;
@@ -63,6 +64,7 @@ import org.granite.client.messaging.events.FaultEvent;
 import org.granite.client.messaging.events.IncomingMessageEvent;
 import org.granite.client.messaging.events.IssueEvent;
 import org.granite.client.messaging.events.ResultEvent;
+import org.granite.client.messaging.messages.ResponseMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.FaultMessage.Code;
 import org.granite.client.messaging.messages.responses.ResultMessage;
@@ -340,8 +342,8 @@ public class ServerSession implements ContextAware {
 				channelFactory.stop();
 				channelFactory = null;
 			}
-			
-			remotingChannel = null;
+	            
+            remotingChannel = null;
 			messagingChannel = null;
 		}
 	}
@@ -461,6 +463,8 @@ public class ServerSession implements ContextAware {
 		if (sessionExpirationFuture != null)
 			sessionExpirationFuture.cancel(false);
 		
+		String oldSessionId = sessionId;
+		
 		if (event instanceof ResultEvent) {
 			ResultMessage message = ((ResultEvent)event).getMessage();
 			sessionId = (String)message.getHeader(SESSION_ID_TAG);
@@ -473,8 +477,12 @@ public class ServerSession implements ContextAware {
 		else if (event instanceof IncomingMessageEvent<?>)
 			sessionId = (String)((IncomingMessageEvent<?>)event).getMessage().getHeader(SESSION_ID_TAG);
 		
-		if (messagingChannel != null && sessionId != null && messagingChannel instanceof SessionAwareChannel)
+		if (sessionId == null || !sessionId.equals(oldSessionId))
+		    log.info("Received new sessionId %s", sessionId);
+		
+		if (messagingChannel != null && (oldSessionId != null || sessionId != null) && messagingChannel instanceof SessionAwareChannel)
 			((SessionAwareChannel)messagingChannel).setSessionId(sessionId);
+		
 		isFirstCall = false;
 		status.setConnected(true);
 	}
@@ -482,7 +490,9 @@ public class ServerSession implements ContextAware {
 	public void handleFaultEvent(FaultEvent event, FaultMessage emsg) {
 		if (sessionExpirationFuture != null)
 			sessionExpirationFuture.cancel(false);
-		
+				
+        String oldSessionId = sessionId;
+
 		sessionId = (String)event.getMessage().getHeader(SESSION_ID_TAG);
 		if (sessionId != null) {
 			long serverTime = (Long)event.getMessage().getHeader(SERVER_TIME_TAG);
@@ -490,7 +500,10 @@ public class ServerSession implements ContextAware {
 			rescheduleSessionExpirationTask(serverTime, sessionExpirationDelay);
 		}
 		
-		if (messagingChannel != null && sessionId != null && messagingChannel instanceof SessionAwareChannel)
+        if (sessionId == null || !sessionId.equals(oldSessionId))
+            log.info("Received new sessionId %s", sessionId);
+        
+		if (messagingChannel != null && (oldSessionId != null || sessionId != null) && messagingChannel instanceof SessionAwareChannel)
 			((SessionAwareChannel)messagingChannel).setSessionId(sessionId);
 		
         if (emsg != null && emsg.getCode().equals(Code.SERVER_CALL_FAILED))
@@ -553,6 +566,10 @@ public class ServerSession implements ContextAware {
 		log.info("Application session expired");
 		
 		sessionId = null;
+		if (remotingChannel instanceof SessionAwareChannel)
+		    ((SessionAwareChannel)remotingChannel).setSessionId(null);
+        if (messagingChannel != remotingChannel && messagingChannel instanceof SessionAwareChannel)
+            ((SessionAwareChannel)messagingChannel).setSessionId(null);
 		
 		logoutState.sessionExpired();
 		
@@ -563,7 +580,11 @@ public class ServerSession implements ContextAware {
     public void loggedOut(TideRpcEvent event) {
     	log.info("User logged out");
     	
-    	sessionId = null;
+        sessionId = null;
+        if (remotingChannel instanceof SessionAwareChannel)
+            ((SessionAwareChannel)remotingChannel).setSessionId(null);
+        if (messagingChannel != remotingChannel && messagingChannel instanceof SessionAwareChannel)
+            ((SessionAwareChannel)messagingChannel).setSessionId(null);
     	
     	logoutState.loggedOut(event);
     }
@@ -611,6 +632,9 @@ public class ServerSession implements ContextAware {
 	public void tryLogout() {
 		if (logoutState.stillWaiting())
 			return;
+		
+		if (logoutState.isSessionExpired())   // Don't remotely logout again if we detected a session expired
+		    return;
 		
 		if (remotingChannel.isAuthenticated()) {
 			remotingChannel.logout(new ResultFaultIssuesResponseListener() {
@@ -912,7 +936,6 @@ public class ServerSession implements ContextAware {
 			return false;
 		}
 		
-		@SuppressWarnings("unused")
 		public boolean isSessionExpired() {
 			return sessionExpired;
 		}

@@ -144,7 +144,13 @@ public abstract class BaseIdentity extends ComponentImpl implements Identity, Ex
     	
     	clearSecurityCache();
     	
-    	checkLoggedIn(tideResponder);
+    	try {
+    	    // Force synchronous operation to prevent issues with Spring session fixation protection
+    	    // so next remote calls use the correct session id
+    	    checkLoggedIn(tideResponder).get();
+    	}
+    	catch (Exception e) {
+    	}
     }
     
     

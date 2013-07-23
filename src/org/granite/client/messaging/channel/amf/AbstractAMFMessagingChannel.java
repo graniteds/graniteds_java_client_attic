@@ -79,9 +79,9 @@ public class AbstractAMFMessagingChannel extends AbstractAMFChannel implements M
 	}
 	
 	public void setSessionId(String sessionId) {
-		if ((sessionId == null && this.sessionId != null) || !sessionId.equals(this.sessionId)) {
+		if ((sessionId == null && this.sessionId != null) || (sessionId != null && !sessionId.equals(this.sessionId))) {
 			this.sessionId = sessionId;
-			log.info("Received sessionId %s", sessionId);
+			log.info("Messaging channel sessionId %s", sessionId);
 		}				
 	}
 
