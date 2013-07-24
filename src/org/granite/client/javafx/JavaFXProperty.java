@@ -34,6 +34,7 @@ import javafx.beans.value.ObservableDoubleValue;
 import javafx.beans.value.ObservableFloatValue;
 import javafx.beans.value.ObservableIntegerValue;
 import javafx.beans.value.ObservableLongValue;
+import javafx.beans.value.ObservableStringValue;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WritableListValue;
 import javafx.beans.value.WritableMapValue;
@@ -215,6 +216,8 @@ public class JavaFXProperty extends Property {
 				return Double.TYPE;
 			if (ObservableFloatValue.class.isAssignableFrom(type))
 				return Float.TYPE;
+			if (ObservableStringValue.class.isAssignableFrom(type))
+			    return String.class;
 			
 			if (field.getGenericType() instanceof ParameterizedType)
 				return ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];

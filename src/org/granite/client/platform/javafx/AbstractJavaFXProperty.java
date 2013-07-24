@@ -32,6 +32,7 @@ import javafx.beans.value.ObservableDoubleValue;
 import javafx.beans.value.ObservableFloatValue;
 import javafx.beans.value.ObservableIntegerValue;
 import javafx.beans.value.ObservableLongValue;
+import javafx.beans.value.ObservableStringValue;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WritableBooleanValue;
 import javafx.beans.value.WritableDoubleValue;
@@ -138,6 +139,8 @@ public abstract class AbstractJavaFXProperty implements JavaFXProperty {
 				return Double.TYPE;
 			if (ObservableFloatValue.class.isAssignableFrom(type))
 				return Float.TYPE;
+			if (ObservableStringValue.class.isAssignableFrom(type))
+			    return String.class;
 			
 			return Object.class;
 		}

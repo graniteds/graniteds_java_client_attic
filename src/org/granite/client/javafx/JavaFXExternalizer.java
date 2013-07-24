@@ -35,6 +35,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javafx.beans.value.ObservableValue;
+
 import org.granite.client.persistence.Id;
 import org.granite.client.tide.PropertyHolder;
 import org.granite.client.util.BeanUtil;
@@ -75,28 +77,6 @@ public class JavaFXExternalizer extends DefaultExternalizer {
 
                 List<Property> newFields = new ArrayList<Property>();
                 
-//                for (Method method : c.getDeclaredMethods()) {
-//                	if (method.getName().endsWith("Property") && method.getParameterTypes().length == 0 && ObservableValue.class.isAssignableFrom(method.getReturnType())) {
-//                		String propertyName = method.getName().substring(0, method.getName().length()-8);
-//                		if (!allFieldNames.contains(propertyName) &&
-//                            !Modifier.isTransient(method.getModifiers()) &&
-//                            !Modifier.isStatic(method.getModifiers()) &&
-//                            !isPropertyIgnored(method) &&
-//                            !method.isAnnotationPresent(IgnoredMethod.class)) {
-//                			
-//                			PropertyDescriptor pdesc = null;
-//                			for (PropertyDescriptor pd : propertyDescriptors) {
-//                				if (pd.getName().equals(propertyName)) {
-//                					pdesc = pd;
-//                					break;
-//                				}
-//                			}                			
-//            				newFields.add(new JavaFXProperty(converters, propertyName, method, pdesc != null ? pdesc.getReadMethod() : null, pdesc != null ? pdesc.getWriteMethod() : null));
-//                            allFieldNames.add(propertyName);
-//                		}
-//                	}
-//                }
-
                 // Standard declared fields.
                 for (Field field : c.getDeclaredFields()) {
                     if (!allFieldNames.contains(field.getName()) &&
@@ -115,8 +95,12 @@ public class JavaFXExternalizer extends DefaultExternalizer {
                     			}
                     		}
                     	}
-                		if (!found)
-            				newFields.add(new FieldProperty(converters, field));
+                		if (!found) {
+                		    if (ObservableValue.class.isAssignableFrom(field.getType()))
+                		        newFields.add(new JavaFXProperty(converters, field.getName(), field, null, null));
+                		    else
+                		        newFields.add(new FieldProperty(converters, field));
+                		}
                     }
                     allFieldNames.add(field.getName());
                 }
