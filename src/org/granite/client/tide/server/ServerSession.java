@@ -290,6 +290,9 @@ public class ServerSession implements ContextAware {
 	
 	@PostConstruct
 	public void start() throws Exception {
+	    if (channelFactory != null)    // Already started
+	        return;
+	    
 		if (contentType == ContentType.JMF_AMF)
 			channelFactory = new JMFChannelFactory(appContext);
 		else {
