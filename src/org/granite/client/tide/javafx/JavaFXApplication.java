@@ -41,6 +41,7 @@ public class JavaFXApplication implements org.granite.client.tide.Application {
 	public void initContext(Context context, Map<String, Object> initialBeans) {
 	    DataManager dataManager = new JavaFXDataManager();
 	    context.setDataManager(dataManager);
+	    
 	    try {
 	        TraversableResolver traversableResolver = new JavaFXTraversableResolver(dataManager);
 	        ValidatorFactory validatorFactory = NotifyingValidation.byDefaultProvider().configure().traversableResolver(traversableResolver).buildValidatorFactory();

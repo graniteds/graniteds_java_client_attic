@@ -39,19 +39,21 @@ import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.enterprise.inject.spi.ProcessProducer;
 import javax.enterprise.inject.spi.Producer;
 import javax.inject.Inject;
+import javax.validation.TraversableResolver;
 
+import org.granite.client.tide.Application;
+import org.granite.client.tide.ApplicationConfigurable;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextAware;
 import org.granite.client.tide.EventBus;
 import org.granite.client.tide.NameAware;
-import org.granite.client.tide.Application;
-import org.granite.client.tide.ApplicationConfigurable;
 import org.granite.client.tide.cdi.CDIContextManager;
 import org.granite.client.tide.cdi.CDIEventBus;
 import org.granite.client.tide.cdi.ViewContext;
 import org.granite.client.tide.data.EntityManager;
-import org.granite.client.tide.javafx.JavaFXDataManager;
 import org.granite.client.tide.javafx.JavaFXApplication;
+import org.granite.client.tide.javafx.JavaFXDataManager;
+import org.granite.client.validation.NotifyingValidatorFactory;
 import org.granite.logging.Logger;
 
 /**
@@ -63,15 +65,28 @@ public class JavaFXTideClientExtension implements Extension {
 	
 	private Application application = new JavaFXApplication();
 	
+	public JavaFXTideClientExtension() {	    
+	}
+	
+	public JavaFXTideClientExtension(Application application) {
+	    this.application = application;
+	}
+	
 	
 	public void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event, BeanManager beanManager) {
 		log.debug("Register internal Tide beans");
 		event.addAnnotatedType(beanManager.createAnnotatedType(JavaFXApplication.class));
 		event.addAnnotatedType(beanManager.createAnnotatedType(CDIEventBus.class));
 		event.addAnnotatedType(beanManager.createAnnotatedType(JavaFXCDIContextManager.class));
+		try {
+		    event.addAnnotatedType(beanManager.createAnnotatedType(JavaFXValidation.class));
+		}
+		catch (Exception e) {
+		    // Bean validation not present
+		}
 	}
 	
-	public void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
+	public void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
 		log.debug("Register internal Tide scopes");
 		event.addContext(new ViewContext());
 	}
@@ -94,8 +109,8 @@ public class JavaFXTideClientExtension implements Extension {
 		}
 		
 		@Inject
-		public JavaFXCDIContextManager(Application platform, EventBus eventBus) {
-			super(platform, eventBus);
+		public JavaFXCDIContextManager(Application application, EventBus eventBus) {
+			super(application, eventBus);
 		}
 		
 		@Produces
@@ -112,6 +127,32 @@ public class JavaFXTideClientExtension implements Extension {
 		public JavaFXDataManager getDataManager() {
 			return (JavaFXDataManager)super.getDataManager();
 		}
+	}
+	
+	@ApplicationScoped
+	public static class JavaFXValidation {
+	    
+	    private Context context;
+	    
+        protected JavaFXValidation() {
+            super();
+            // CDI proxying...
+        }
+        
+        @Inject
+        public JavaFXValidation(Context context) {
+            this.context = context;
+        }
+        
+	    @Produces
+	    public TraversableResolver getTraversableResolver() {
+	        return (TraversableResolver)context.getInitialBeans().get("traversableResolver");
+	    }
+	    
+	    @Produces
+        public NotifyingValidatorFactory getValidatorFactory() {
+            return (NotifyingValidatorFactory)context.getInitialBeans().get("validatorFactory");
+        }
 	}
 	
 	public static class ProducerWrapper<T> implements Producer<T> {
@@ -166,13 +207,13 @@ public class JavaFXTideClientExtension implements Extension {
 	
 	public static class InjectionTargetWrapper<T> implements InjectionTarget<T> {
 		
-		private Application platform;
+		private Application application;
 		private BeanManager beanManager;
 		private InjectionTarget<T> injectionTarget;
 		private AnnotatedType<T> annotatedType;
 		
-		public InjectionTargetWrapper(Application platform, BeanManager beanManager, InjectionTarget<T> injectionTarget, AnnotatedType<T> annotatedType) {
-			this.platform = platform;
+		public InjectionTargetWrapper(Application application, BeanManager beanManager, InjectionTarget<T> injectionTarget, AnnotatedType<T> annotatedType) {
+			this.application = application;
 			this.beanManager = beanManager;
 			this.injectionTarget = injectionTarget;
 			this.annotatedType = annotatedType;
@@ -216,7 +257,7 @@ public class JavaFXTideClientExtension implements Extension {
 			}
 			
 			if (instance != null && instance.getClass().isAnnotationPresent(ApplicationConfigurable.class))
-				platform.configure(instance);
+				application.configure(instance);
 			
 			injectionTarget.postConstruct(instance);
 		}
