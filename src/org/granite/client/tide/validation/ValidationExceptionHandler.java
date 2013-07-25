@@ -20,9 +20,7 @@
 
 package org.granite.client.tide.validation;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import javax.validation.ConstraintViolation;
@@ -33,6 +31,7 @@ import org.granite.client.tide.Context;
 import org.granite.client.tide.server.ExceptionHandler;
 import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.validation.InvalidValue;
+import org.granite.client.validation.NotifyingValidatorFactory;
 import org.granite.client.validation.ServerConstraintViolation;
 
 /**
@@ -49,7 +48,8 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 	public void handle(Context context, FaultMessage emsg, TideFaultEvent faultEvent) {
 		Object[] invalidValues = emsg.getExtended() != null ? (Object[])emsg.getExtended().get("invalidValues") : null;
 		if (invalidValues != null) {
-			Map<Object, Set<ConstraintViolation<?>>> violationsMap = new HashMap<Object, Set<ConstraintViolation<?>>>();
+			Set<ConstraintViolation<?>> constraintViolations = new HashSet<ConstraintViolation<?>>();
+			
 			for (Object v : invalidValues) {
 				InvalidValue iv = (InvalidValue)v;
 				Object rootBean = context.getEntityManager().getCachedObject(iv.getRootBean(), true);
@@ -65,24 +65,16 @@ public class ValidationExceptionHandler implements ExceptionHandler {
 						leafBean = bean;
 					}
 				}
-				Object bean = leafBean != null ? leafBean : rootBean;
-				
-				Set<ConstraintViolation<?>> violations = violationsMap.get(bean);
-				if (violations == null) {
-					violations = new HashSet<ConstraintViolation<?>>();
-					violationsMap.put(bean, violations);
-				}
 				
 				ServerConstraintViolation violation = new ServerConstraintViolation(iv, rootBean, leafBean);
-				violations.add(violation);
+				constraintViolations.add(violation);
 			}
 			
-			ValidationManager validationManager = context.byType(ValidationManager.class);
-			if (validationManager == null)
-			    throw new RuntimeException("No validation manager defined, cannot process validation events");
+			NotifyingValidatorFactory notifyingValidatorFactory = context.byType(NotifyingValidatorFactory.class);
+			if (notifyingValidatorFactory == null)
+			    throw new RuntimeException("No suitable validator factory defined, cannot process validation events");
 			
-			for (Object bean : violationsMap.keySet())
-			    validationManager.notifyConstraintViolations(bean, violationsMap.get(bean));
+		    notifyingValidatorFactory.getValidator().notifyConstraintViolations(null, constraintViolations);
 		}
 	}
 

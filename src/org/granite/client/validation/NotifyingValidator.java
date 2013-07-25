@@ -18,33 +18,26 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.validation.javafx;
+package org.granite.client.validation;
 
 import java.util.Set;
 
-import javafx.event.Event;
-import javafx.event.EventType;
-
 import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
 
 /**
  * @author William DRAI
  */
-public class ConstraintViolationEvent extends Event {
+public interface NotifyingValidator extends Validator {
 
-	private static final long serialVersionUID = 1L;
-	
-	public static EventType<ConstraintViolationEvent> ANY = new EventType<ConstraintViolationEvent>(EventType.ROOT);
-	public static EventType<ConstraintViolationEvent> CONSTRAINT_VIOLATION = new EventType<ConstraintViolationEvent>(ANY, "constraintViolation");
-
-	private final Set<ConstraintViolation<?>> violations;
-	
-	public ConstraintViolationEvent(EventType<? extends ConstraintViolationEvent> type, Set<ConstraintViolation<?>> violations) {
-		super(type);
-		this.violations = violations;
-	}
-
-	public Set<ConstraintViolation<?>> getViolations() {
-		return violations;
-	}
+    public <T> void notifyConstraintViolations(T entity, Set<ConstraintViolation<?>> violations);
+    
+    public <T> void addConstraintViolationsHandler(T entity, ConstraintViolationsHandler<T> handler);
+    
+    public <T> void removeConstraintViolationsHandler(T entity, ConstraintViolationsHandler<T> handler);
+    
+    public interface ConstraintViolationsHandler<T> {
+        
+        public void handle(T entity, Set<ConstraintViolation<T>> constraintViolations);
+    }
 }

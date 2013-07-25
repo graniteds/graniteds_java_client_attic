@@ -18,28 +18,14 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.tide.javafx;
+package org.granite.client.validation;
 
-import java.util.Set;
-
-import javafx.event.Event;
-
-import javax.validation.ConstraintViolation;
-
-import org.granite.client.tide.validation.ValidationManager;
-import org.granite.client.util.javafx.DataNotifier;
-import org.granite.client.validation.javafx.ConstraintViolationEvent;
+import javax.validation.ValidatorFactory;
 
 /**
  * @author William DRAI
  */
-public class JavaFXValidationManager implements ValidationManager {
+public interface NotifyingValidatorFactory extends ValidatorFactory {
     
-    public void notifyConstraintViolations(Object entity, Set<ConstraintViolation<?>> violations) {
-		if (!(entity instanceof DataNotifier))
-			return;
-		ConstraintViolationEvent event = new ConstraintViolationEvent(ConstraintViolationEvent.CONSTRAINT_VIOLATION, violations);
-		Event.fireEvent((DataNotifier)entity, event);
-    }
-
+    public NotifyingValidator getValidator();
 }

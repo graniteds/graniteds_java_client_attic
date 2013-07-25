@@ -22,9 +22,13 @@ package org.granite.client.tide.javafx;
 
 import java.util.Map;
 
+import javax.validation.TraversableResolver;
+import javax.validation.ValidatorFactory;
+
 import org.granite.client.tide.Context;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.server.ServerSession;
+import org.granite.client.validation.NotifyingValidation;
 import org.granite.logging.Logger;
 
 /**
@@ -38,8 +42,11 @@ public class JavaFXApplication implements org.granite.client.tide.Application {
 	    DataManager dataManager = new JavaFXDataManager();
 	    context.setDataManager(dataManager);
 	    try {
-	        initialBeans.put("validationManager", new JavaFXValidationManager());
-	        initialBeans.put("traversableResolver", new JavaFXTraversableResolver(dataManager));
+	        TraversableResolver traversableResolver = new JavaFXTraversableResolver(dataManager);
+	        ValidatorFactory validatorFactory = NotifyingValidation.byDefaultProvider().configure().traversableResolver(traversableResolver).buildValidatorFactory();
+	        
+	        initialBeans.put("traversableResolver", traversableResolver);
+	        initialBeans.put("validatorFactory", validatorFactory);
 	    }
 	    catch (Exception e) {
 	        // Assume Bean Validation not available

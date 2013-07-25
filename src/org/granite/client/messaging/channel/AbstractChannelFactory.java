@@ -52,6 +52,10 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	public ContentType getContentType() {
 		return contentType;
 	}
+	
+	public void setAliasRegistry(AliasRegistry aliasRegistry) {
+	    this.aliasRegistry = aliasRegistry;
+	}
 
 	public Transport getRemotingTransport() {
 		return remotingTransport;

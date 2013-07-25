@@ -25,7 +25,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -43,21 +42,17 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
-import javafx.event.EventHandler;
-import javafx.event.EventTarget;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Skinnable;
 import javafx.scene.control.TextInputControl;
 
 import javax.validation.ConstraintViolation;
-import javax.validation.TraversableResolver;
-import javax.validation.Validation;
-import javax.validation.ValidatorFactory;
 import javax.validation.groups.Default;
 
-import org.granite.client.util.javafx.DataNotifier;
+import org.granite.client.validation.NotifyingValidator;
+import org.granite.client.validation.NotifyingValidator.ConstraintViolationsHandler;
+import org.granite.client.validation.NotifyingValidatorFactory;
 import org.granite.client.validation.ValidationResult;
 import org.granite.logging.Logger;
 
@@ -80,23 +75,15 @@ public class FormValidator {
 	protected List<ConstraintViolation<?>> violations = new ArrayList<ConstraintViolation<?>>();
 	protected ObservableList<ConstraintViolation<?>> unhandledViolations = FXCollections.observableArrayList();
 	
+	private final NotifyingValidator validator;
+	
 	
 	/**
-	 * The <code>ValidatorFactory</code> to be used in the validation
+	 * The <code>Validator</code> to be used in the validation
 	 * process (initialized with the the default instance).
-	 */
-	private final ValidatorFactory validatorFactory;
-	
-	public FormValidator() {
-		this.validatorFactory = Validation.buildDefaultValidatorFactory();
-	}
-	
-	public FormValidator(TraversableResolver traversableResolver) {
-		this.validatorFactory = Validation.byDefaultProvider().configure().traversableResolver(traversableResolver).buildValidatorFactory();
-	}
-	
-	public FormValidator(ValidatorFactory validatorFactory) {
-		this.validatorFactory = validatorFactory;
+	 */	
+	public FormValidator(NotifyingValidatorFactory validatorFactory) {
+	    this.validator = validatorFactory.getValidator();
 	}
 	
 	/**
@@ -110,36 +97,6 @@ public class FormValidator {
 	}
 	public void setValidateOnChange(boolean validateOnChange) {
 		this.validateOnChangeProperty.set(validateOnChange);
-	}
-	
-	
-	public boolean validate(EventTarget entity) {
-		Set<ConstraintViolation<Object>> allViolations = validatorFactory.getValidator().validate((Object)entity, groups);
-		
-		Map<Object, Set<ConstraintViolation<?>>> violationsMap = new HashMap<Object, Set<ConstraintViolation<?>>>();
-		for (ConstraintViolation<Object> violation : allViolations) {
-			Object rootBean = violation.getRootBean();
-			Object leafBean = violation.getLeafBean();
-			Object bean = leafBean != null && leafBean instanceof DataNotifier ? leafBean : rootBean;
-			
-			Set<ConstraintViolation<?>> violations = violationsMap.get(bean);
-			if (violations == null) {
-				violations = new HashSet<ConstraintViolation<?>>();
-				violationsMap.put(bean, violations);
-			}			
-			violations.add(violation);
-		}
-		
-		for (Object bean : violationsMap.keySet()) {
-			if (bean instanceof DataNotifier) {
-				ConstraintViolationEvent event = new ConstraintViolationEvent(ConstraintViolationEvent.CONSTRAINT_VIOLATION, violationsMap.get(bean));
-				Event.fireEvent((DataNotifier)bean, event);
-			}
-		}
-		
-		focusedOutOnce.addAll(inputs);
-		
-		return allViolations.isEmpty();
 	}
 	
 	
@@ -298,8 +255,8 @@ public class FormValidator {
 			Property<?> entityProperty = entityProperties.remove(node);
 			Property<?> inputProperty = inputProperties.remove(node);
 			
-			if (entityProperty != null && entityProperty.getBean() instanceof DataNotifier)
-				((DataNotifier)entityProperty.getBean()).removeEventHandler(ConstraintViolationEvent.CONSTRAINT_VIOLATION, constraintViolationHandler);
+			if (entityProperty != null && entityProperty.getBean() != null)
+			    validator.removeConstraintViolationsHandler(entityProperty.getBean(), constraintViolationHandler);
 			
 			inputProperty.removeListener(valueChangeListener);
 			node.focusedProperty().removeListener(inputFocusChangeListener);
@@ -319,8 +276,8 @@ public class FormValidator {
 				inputProperties.put(node, inputProperty);
 				entityProperties.put(node, entityProperty);
 				
-				if (entityProperty.getBean() instanceof DataNotifier)
-					((DataNotifier)entityProperty.getBean()).addEventHandler(ConstraintViolationEvent.CONSTRAINT_VIOLATION, constraintViolationHandler);
+				if (entityProperty.getBean() != null)
+					validator.addConstraintViolationsHandler(entityProperty.getBean(), constraintViolationHandler);
 				
 				inputProperty.addListener(valueChangeListener);
 				node.focusedProperty().addListener(inputFocusChangeListener);
@@ -336,8 +293,8 @@ public class FormValidator {
 		int idx = inputs.indexOf(node);
 		if (idx >= 0) {
 			Property<?> entityProperty = entityProperties.remove(node);
-			if (entityProperty.getBean() instanceof DataNotifier)
-				((DataNotifier)entityProperty.getBean()).removeEventHandler(ConstraintViolationEvent.CONSTRAINT_VIOLATION, constraintViolationHandler);
+			if (entityProperty.getBean() != null)
+				validator.removeConstraintViolationsHandler(entityProperty.getBean(), constraintViolationHandler);
 			
 			node.fireEvent(new ValidationResultEvent(this, node, ValidationResultEvent.VALID, null));
 			
@@ -411,12 +368,17 @@ public class FormValidator {
 	}
 	
 	
-	private ConstraintViolationHandler constraintViolationHandler = new ConstraintViolationHandler();
+	private ConstraintViolationsHandler<Object> constraintViolationHandler = new ConstraintViolationHandlerImpl();
 	
-	private class ConstraintViolationHandler implements EventHandler<ConstraintViolationEvent> {
+	private class ConstraintViolationHandlerImpl implements ConstraintViolationsHandler<Object> {
 		@Override
-		public void handle(ConstraintViolationEvent event) {
-			for (ConstraintViolation<?> violation : event.getViolations()) {
+		public void handle(Object entity, Set<ConstraintViolation<Object>> violations) {
+	        focusedOutOnce.addAll(inputs);
+	        
+	        if (violations == null)
+	            return;
+	        
+			for (ConstraintViolation<?> violation : violations) {
 				Object leafBean = violation.getLeafBean();
 				String property = null;
 				Iterator<javax.validation.Path.Node> in = violation.getPropertyPath().iterator();
@@ -467,7 +429,7 @@ public class FormValidator {
 		
 		@SuppressWarnings("unchecked")
 		Class<Object> entityClass = (Class<Object>)entityProperty.getBean().getClass();
-		Set<ConstraintViolation<Object>> violations = validatorFactory.getValidator().validateValue(entityClass, entityProperty.getName(), value, groups);
+		Set<ConstraintViolation<Object>> violations = validator.validateValue(entityClass, entityProperty.getName(), value, groups);
 		if (violations == null)
 			violations = Collections.emptySet();
 		if (violations.isEmpty() && !nulled)

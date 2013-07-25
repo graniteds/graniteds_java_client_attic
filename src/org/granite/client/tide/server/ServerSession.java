@@ -45,6 +45,7 @@ import javax.annotation.PreDestroy;
 import javax.inject.Named;
 
 import org.granite.client.configuration.Configuration;
+import org.granite.client.messaging.ClientAliasRegistry;
 import org.granite.client.messaging.Consumer;
 import org.granite.client.messaging.Producer;
 import org.granite.client.messaging.RemoteService;
@@ -79,6 +80,7 @@ import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.EntityManager.Update;
 import org.granite.client.tide.data.spi.DataManager;
 import org.granite.client.tide.data.spi.MergeContext;
+import org.granite.client.validation.InvalidValue;
 import org.granite.config.GraniteConfig;
 import org.granite.logging.Logger;
 import org.granite.tide.Expression;
@@ -293,6 +295,9 @@ public class ServerSession implements ContextAware {
 	    if (channelFactory != null)    // Already started
 	        return;
 	    
+	    ClientAliasRegistry aliasRegistry = new ClientAliasRegistry();
+	    aliasRegistry.registerAlias(InvalidValue.class);
+	    
 		if (contentType == ContentType.JMF_AMF)
 			channelFactory = new JMFChannelFactory(appContext);
 		else {
@@ -302,6 +307,7 @@ public class ServerSession implements ContextAware {
 			graniteConfig = configuration.getGraniteConfig();
 			channelFactory = new AMFChannelFactory(appContext, configuration);
 		}
+        channelFactory.setAliasRegistry(aliasRegistry);
 		channelFactory.setScanPackageNames(packageNames);
 		
 		if (remotingTransport != null)
