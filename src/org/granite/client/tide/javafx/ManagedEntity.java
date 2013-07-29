@@ -23,42 +23,47 @@ package org.granite.client.tide.javafx;
 import java.lang.reflect.Method;
 
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
+import javax.inject.Named;
+
 import org.granite.client.tide.data.EntityManager;
 import org.granite.client.tide.data.PersistenceManager;
 
 
-public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
-
+@Named
+public class ManagedEntity<T> {
+    
+    private ObjectProperty<T> instance = new SimpleObjectProperty<T>(this, "instance");
+    
 	private EntityManager entityManager;
 	private JavaFXDataManager dataManager;
 	
 	private BooleanProperty saved = new SimpleBooleanProperty(this, "saved", true);
 	private BooleanProperty dirty = new SimpleBooleanProperty(this, "dirty", false);
 	
-	public ManagedEntityProperty(EntityManager entityManager, JavaFXDataManager dataManager) {
-		super();
-		init(entityManager, dataManager);
+	public ManagedEntity(EntityManager entityManager) {
+		init(entityManager);
 	}
 	
-	public ManagedEntityProperty(EntityManager entityManager, JavaFXDataManager dataManager, T value) {
-		super(value);
-		init(entityManager, dataManager);
+	public ManagedEntity(EntityManager entityManager, T value) {
+		init(entityManager);
+		instance.set(value);
 	}
 	
-	public ManagedEntityProperty(EntityManager entityManager, JavaFXDataManager dataManager, Object bean, String property) {
-		super(bean, property);
-		init(entityManager, dataManager);
+	public ObjectProperty<T> instanceProperty() {
+	    return instance;
 	}
-	
-	public ManagedEntityProperty(EntityManager entityManager, JavaFXDataManager dataManager, Object bean, String property, T value) {
-		super(bean, property, value);
-		init(entityManager, dataManager);
+	public T getInstance() {
+	    return instance.get();
+	}
+	public void setInstance(T value) {
+	    this.instance.set(value);
 	}
 	
 	public BooleanProperty savedProperty() {
@@ -93,8 +98,9 @@ public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
 			
 			EntityManager entityManager = PersistenceManager.getEntityManager(newValue);
 			if (entityManager == null)
-				ManagedEntityProperty.this.entityManager.mergeExternalData(newValue);				
-			else if (entityManager != ManagedEntityProperty.this.entityManager)
+				ManagedEntity.this.entityManager.mergeExternalData(newValue);
+			
+			else if (entityManager != ManagedEntity.this.entityManager)
 				throw new RuntimeException("Entity " + newValue + " cannot be attached: already attached to another entity manager");
 			
 			dirty.bind(dataManager.deepDirtyEntity(newValue));
@@ -108,16 +114,16 @@ public class ManagedEntityProperty<T> extends SimpleObjectProperty<T> {
 		}
 	};
 	
-	private void init(EntityManager entityManager, JavaFXDataManager dataManager) {
+	private void init(EntityManager entityManager) {
 		this.entityManager = entityManager;
-		this.dataManager = dataManager;		
-		this.addListener(entityChangeListener);
+		this.dataManager = (JavaFXDataManager)entityManager.getDataManager();		
+		this.instance.addListener(entityChangeListener);
 	}
 	
 	public void reset() {
-		if (get() == null)
+		if (instance.get() == null)
 			return;
-		entityManager.resetEntity(get());
+		entityManager.resetEntity(instance.get());
 	}
 	
 	@SuppressWarnings("unchecked")
