@@ -33,6 +33,7 @@ import org.granite.client.messaging.messages.responses.FaultMessage;
 import org.granite.client.messaging.messages.responses.ResultMessage;
 import org.granite.client.test.MockRemoteService;
 import org.granite.client.test.ResponseBuilder;
+import org.granite.client.test.tide.MockAMFChannelFactory;
 import org.granite.client.test.tide.MockServiceFactory;
 import org.granite.client.tide.Context;
 import org.granite.client.tide.ContextManager;
@@ -63,6 +64,7 @@ public class TestSpringCall {
     	contextManager = new SpringContextManager(new DefaultApplication(), new SimpleEventBus());
         ctx = contextManager.getContext();
         serverSession = new ServerSession("/test", "localhost", 8080);
+        serverSession.setChannelFactoryClass(MockAMFChannelFactory.class);
         serverSession.setServiceFactory(new MockServiceFactory());
         ctx.set(serverSession);
         serverSession.start();

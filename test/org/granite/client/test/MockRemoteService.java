@@ -46,8 +46,6 @@ public class MockRemoteService extends RemoteService {
     
     private static Executor executor = Executors.newSingleThreadExecutor();
     
-    private MockAMFRemotingChannel mockChannel = new MockAMFRemotingChannel();
-    
     public MockRemoteService(RemotingChannel remotingChannel, String destination) {
     	super(remotingChannel, destination);
     }
@@ -107,7 +105,7 @@ public class MockRemoteService extends RemoteService {
 					PublicByteArrayOutputStream os = new PublicByteArrayOutputStream(512);
 					TransportMessage message = null;
 					try {
-						message = mockChannel.createMessage(token);
+						message = ((MockAMFRemotingChannel)getChannel()).createMessage(token);
 						message.encode(os);
 					}
 					catch (IOException e) {

@@ -17,8 +17,8 @@ import org.granite.client.messaging.transport.TransportStopListener;
 
 public class MockAMFRemotingChannel extends AMFRemotingChannel {
 
-	public MockAMFRemotingChannel() {
-		super(new MockTransport(), null, "test", URI.create("/temp"), RemotingChannel.DEFAULT_MAX_CONCURRENT_REQUESTS);
+	public MockAMFRemotingChannel(Configuration configuration) {
+		super(new MockTransport(), configuration, "test", URI.create("/temp"), RemotingChannel.DEFAULT_MAX_CONCURRENT_REQUESTS);
 	}
 	
 	public TransportMessage createMessage(AsyncToken token) throws UnsupportedEncodingException {
@@ -78,14 +78,12 @@ public class MockAMFRemotingChannel extends AMFRemotingChannel {
 		}
 
 		@Override
-		public TransportFuture send(Channel channel, TransportMessage message)
-				throws TransportException {
+		public TransportFuture send(Channel channel, TransportMessage message) throws TransportException {
 			return null;
 		}
 
 		@Override
-		public void poll(Channel channel, TransportMessage message)
-				throws TransportException {
+		public void poll(Channel channel, TransportMessage message) throws TransportException {
 		}
 		
 	}

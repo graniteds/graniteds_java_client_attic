@@ -20,6 +20,7 @@
 
 package org.granite.client.tide.server;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.ArrayList;
@@ -125,6 +126,7 @@ public class ServerSession implements ContextAware {
 	@SuppressWarnings("unused")
 	private boolean confChanged = false;
 	private ContentType contentType = ContentType.JMF_AMF;
+	private Class<? extends ChannelFactory> channelFactoryClass = null;
 	private boolean useWebSocket = true; // TODO remove...
     private Transport remotingTransport = null;
     private Transport messagingTransport = null;
@@ -200,6 +202,10 @@ public class ServerSession implements ContextAware {
 		if (contentType == null)
 			throw new NullPointerException("contentType cannot be null");
 		this.contentType = contentType;
+	}
+	
+	public void setChannelFactoryClass(Class<? extends ChannelFactory> channelFactoryClass) {
+	    this.channelFactoryClass = channelFactoryClass;
 	}
 
 	public void setContextRoot(String contextRoot) {
@@ -298,7 +304,23 @@ public class ServerSession implements ContextAware {
 	    ClientAliasRegistry aliasRegistry = new ClientAliasRegistry();
 	    aliasRegistry.registerAlias(InvalidValue.class);
 	    
-		if (contentType == ContentType.JMF_AMF)
+	    
+	    if (channelFactoryClass != null) {
+	        Constructor<? extends ChannelFactory> constructor = null;
+	        try {
+	            constructor = channelFactoryClass.getConstructor(Object.class, Configuration.class);
+	            Configuration configuration = Platform.getInstance().newConfiguration();
+	            configuration.setClientType(ClientType.JAVA);
+	            configuration.load();
+	            graniteConfig = configuration.getGraniteConfig();
+	            channelFactory = constructor.newInstance(appContext, configuration);
+	        }
+	        catch (NoSuchMethodException e) {
+	            constructor = channelFactoryClass.getConstructor(Object.class);
+                channelFactory = constructor.newInstance(appContext);
+	        }	        
+	    }
+	    else if (contentType == ContentType.JMF_AMF)
 			channelFactory = new JMFChannelFactory(appContext);
 		else {
 			Configuration configuration = Platform.getInstance().newConfiguration();
