@@ -22,6 +22,7 @@ package org.granite.client.messaging.channel;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import org.granite.client.messaging.ResponseListener;
 import org.granite.client.messaging.messages.RequestMessage;
@@ -33,15 +34,20 @@ import org.granite.client.messaging.transport.TransportMessage;
  */
 public interface Channel {
 	
-    public static final String RECONNECT_INTERVAL_MS_KEY = "reconnect-interval-ms";
-    public static final String RECONNECT_MAX_ATTEMPTS_KEY = "reconnect-max-attempts";
+    static final String RECONNECT_INTERVAL_MS_KEY = "reconnect-interval-ms";
+    static final String RECONNECT_MAX_ATTEMPTS_KEY = "reconnect-max-attempts";
     
-    public static final String BYTEARRAY_BODY_HEADER = "GDS_BYTEARRAY_BODY";    
+    static final long DEFAULT_TIME_TO_LIVE = TimeUnit.MINUTES.toMillis(1L); // 1 mn.
+    
+    static final String BYTEARRAY_BODY_HEADER = "GDS_BYTEARRAY_BODY";    
 
 	Transport getTransport();
 	String getId();
 	URI getUri();
 	String getClientId();
+	
+	long getDefaultTimeToLive();
+	void setDefaultTimeToLive(long defaultTimeToLive);
 	
 	boolean start();
 	boolean isStarted();
