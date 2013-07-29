@@ -34,6 +34,9 @@ public interface ChannelFactory {
 
 	ContentType getContentType();
 	
+	long getDefaultTimeToLive();
+	void setDefaultTimeToLive(long defaultTimeToLive);
+	
 	Object getContext();
 	void setContext(Object context);
 

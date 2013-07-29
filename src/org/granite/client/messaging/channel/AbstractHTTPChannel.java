@@ -71,7 +71,7 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 	protected volatile boolean pinged = false;
 	protected volatile boolean authenticated = false;
 	protected volatile int maxConcurrentRequests;
-	protected volatile long defaultTimeToLive = TimeUnit.MINUTES.toMillis(1L); // 1 mn.
+	protected volatile long defaultTimeToLive = DEFAULT_TIME_TO_LIVE; // 1 mn.
 	
 	public AbstractHTTPChannel(Transport transport, String id, URI uri, int maxConcurrentRequests) {
 		super(transport, id, uri);
@@ -94,6 +94,14 @@ public abstract class AbstractHTTPChannel extends AbstractChannel<Transport> imp
 		return false;
 	}
 	
+	public long getDefaultTimeToLive() {
+		return defaultTimeToLive;
+	}
+
+	public void setDefaultTimeToLive(long defaultTimeToLive) {
+		this.defaultTimeToLive = defaultTimeToLive;
+	}
+
 	public boolean isAuthenticated() {
 		return authenticated;
 	}

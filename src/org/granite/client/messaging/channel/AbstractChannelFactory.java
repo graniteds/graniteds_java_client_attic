@@ -25,6 +25,8 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	protected Set<String> scanPackageNames = null;
 	protected AliasRegistry aliasRegistry = null;
 
+	protected Long defaultTimeToLive = null;
+
 	
 	protected AbstractChannelFactory(ContentType contentType) {
 		this(contentType, null, null, null);
@@ -53,6 +55,14 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 		return contentType;
 	}
 	
+	public long getDefaultTimeToLive() {
+		return (defaultTimeToLive != null ? defaultTimeToLive.longValue() : -1L);
+	}
+
+	public void setDefaultTimeToLive(long defaultTimeToLive) {
+		this.defaultTimeToLive = Long.valueOf(defaultTimeToLive);
+	}
+
 	public void setAliasRegistry(AliasRegistry aliasRegistry) {
 	    this.aliasRegistry = aliasRegistry;
 	}
@@ -133,7 +143,10 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	@Override
 	public RemotingChannel newRemotingChannel(String id, String uri) {
 		try {
-			return newRemotingChannel(id, new URI(uri));
+			RemotingChannel channel = newRemotingChannel(id, new URI(uri));
+			if (defaultTimeToLive != null)
+				channel.setDefaultTimeToLive(defaultTimeToLive);
+			return channel;
 		}
 		catch (URISyntaxException e) {
 			throw new IllegalArgumentException("Bad uri: " + uri, e);
@@ -143,7 +156,10 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	@Override
 	public RemotingChannel newRemotingChannel(String id, String uri, int maxConcurrentRequests) {
 		try {
-			return newRemotingChannel(id, new URI(uri), maxConcurrentRequests);
+			RemotingChannel channel = newRemotingChannel(id, new URI(uri), maxConcurrentRequests);
+			if (defaultTimeToLive != null)
+				channel.setDefaultTimeToLive(defaultTimeToLive);
+			return channel;
 		}
 		catch (URISyntaxException e) {
 			throw new IllegalArgumentException("Bad uri: " + uri, e);
@@ -153,7 +169,10 @@ public abstract class AbstractChannelFactory implements ChannelFactory {
 	@Override
 	public MessagingChannel newMessagingChannel(String id, String uri) {
 		try {
-			return newMessagingChannel(id, new URI(uri));
+			MessagingChannel channel = newMessagingChannel(id, new URI(uri));
+			if (defaultTimeToLive != null)
+				channel.setDefaultTimeToLive(defaultTimeToLive);
+			return channel;
 		}
 		catch (URISyntaxException e) {
 			throw new IllegalArgumentException("Bad uri: " + uri, e);
