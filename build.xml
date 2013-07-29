@@ -69,6 +69,7 @@
             <fileset dir="src">
                 <include name="org/granite/**/*.xml"/>
                 <include name="org/granite/client/**/*.xml"/>
+                <include name="META-INF/services/**"/>
             </fileset>
         </copy>
     </target>
