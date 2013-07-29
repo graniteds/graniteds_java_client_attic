@@ -17,10 +17,6 @@
 	<classpathentry kind="lib" path="libs/validation-api.jar"/>
 	<classpathentry kind="lib" path="libs/commons-codec-1.6.jar"/>
 	<classpathentry kind="lib" path="libs/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-beta3.jar"/>
-	<classpathentry kind="lib" path="libs/httpclient-4.2.1.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-4.2.2.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-nio-4.2.2.jar"/>
 	<classpathentry kind="lib" path="libs/cdi-api.jar"/>
 	<classpathentry kind="lib" path="libs/javax.inject.jar"/>
 	<classpathentry kind="lib" path="examples-libs/ejb3-persistence.jar"/>
@@ -28,7 +24,11 @@
 	<classpathentry kind="lib" path="libs/slf4j-api.jar"/>
 	<classpathentry kind="lib" path="libs/slf4j-jdk14.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="/graniteds/build/granite-client.jar" sourcepath="/graniteds/core"/>
-	<classpathentry kind="lib" path="/graniteds/build/granite-hibernate.jar" sourcepath="/graniteds/hibernate"/>
+	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-beta4.jar"/>
+	<classpathentry kind="lib" path="libs/httpclient-4.3-beta1.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-4.3-beta2.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-nio-4.3-beta2.jar"/>
+	<classpathentry kind="lib" path="/graniteds/build/granite-client.jar"/>
+	<classpathentry kind="lib" path="/graniteds/build/granite-hibernate.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
