@@ -315,6 +315,9 @@ public class ServerSession implements ContextAware {
 		if (messagingTransport != null)
 			channelFactory.setMessagingTransport(messagingTransport);
 		
+		if (defaultTimeToLive >= 0)
+		    channelFactory.setDefaultTimeToLive(defaultTimeToLive);
+		
 		channelFactory.start();
 		
 		channelFactory.getRemotingTransport().setStatusHandler(statusHandler);
@@ -1026,6 +1029,21 @@ public class ServerSession implements ContextAware {
 		}		
 	}
 	
+	
+	private long defaultTimeToLive = -1;
+	
+	public void setDefaultTimeToLive(long timeToLive) {
+	    defaultTimeToLive = timeToLive;
+	    
+	    if (channelFactory != null)
+	        channelFactory.setDefaultTimeToLive(timeToLive);
+	    
+	    if (messagingChannel != null)
+	        messagingChannel.setDefaultTimeToLive(timeToLive);
+	    
+	    if (remotingChannel != null)
+	        remotingChannel.setDefaultTimeToLive(timeToLive);
+	}
 	
 	private List<TransportIOListener> transportIOListeners = new ArrayList<TransportIOListener>();
 	private List<TransportExceptionListener> transportExceptionListeners = new ArrayList<TransportExceptionListener>();
