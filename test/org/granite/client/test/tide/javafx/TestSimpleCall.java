@@ -49,6 +49,7 @@ import org.granite.client.tide.server.TideFaultEvent;
 import org.granite.client.tide.server.TideResponder;
 import org.granite.client.tide.server.TideResultEvent;
 import org.granite.tide.invocation.InvocationResult;
+import org.granite.util.ContentType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,6 +71,7 @@ public class TestSimpleCall {
         contextManager.setInstanceStoreFactory(new MockInstanceStoreFactory());
         ctx = contextManager.getContext();
         serverSession = new ServerSession("/test", "localhost", 8080);
+        serverSession.setContentType(ContentType.AMF);
         serverSession.setChannelFactoryClass(MockAMFChannelFactory.class);
         serverSession.setServiceFactory(new MockServiceFactory());
         ctx.set(serverSession);
