@@ -1,8 +1,14 @@
 /build
+/core/build/
+/core/.settings/
+/tide/build/
+/tide/.settings/
+/javafx/build/
+/javafx/.settings/
 /bin
 /bin-test
 /libs/test
 /test-reports
 junit*.properties
-
+/.settings
 /.gradle

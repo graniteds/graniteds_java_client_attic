@@ -1,36 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src/main/java"/>
-	<classpathentry kind="src" path="src/main/resources"/>
-	<classpathentry kind="src" path="src/test/java"/>
-	<classpathentry kind="src" path="src/test/resources"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
-	<classpathentry kind="lib" path="libs/jetty-client-8.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/jetty-websocket-8.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/jetty-util-8.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/jetty-io-8.1.1.v20120215.jar"/>
-	<classpathentry kind="lib" path="libs/jetty-http-8.1.1.v20120215.jar"/>
-	<classpathentry kind="lib" path="libs/extcos-0.3b.jar"/>
-	<classpathentry kind="lib" path="libs/asm-all-3.2.jar"/>
-	<classpathentry kind="lib" path="libs/jfxrt.jar"/>
-	<classpathentry kind="lib" path="libs/spring-beans.jar"/>
-	<classpathentry kind="lib" path="libs/spring-context.jar"/>
-	<classpathentry kind="lib" path="libs/spring-core.jar"/>
-	<classpathentry kind="lib" path="libs/validation-api.jar"/>
-	<classpathentry kind="lib" path="libs/commons-codec-1.6.jar"/>
-	<classpathentry kind="lib" path="libs/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/cdi-api.jar"/>
-	<classpathentry kind="lib" path="libs/javax.inject.jar"/>
-	<classpathentry kind="lib" path="examples-libs/ejb3-persistence.jar"/>
-	<classpathentry kind="lib" path="examples-libs/hibernate3.jar"/>
-	<classpathentry kind="lib" path="libs/slf4j-api.jar"/>
-	<classpathentry kind="lib" path="libs/slf4j-jdk14.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="libs/httpasyncclient-4.0-beta4.jar"/>
-	<classpathentry kind="lib" path="libs/httpclient-4.3-beta1.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-4.3-beta2.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-nio-4.3-beta2.jar"/>
-	<classpathentry kind="lib" path="/graniteds/build/granite-client.jar"/>
-	<classpathentry kind="lib" path="/graniteds/build/granite-hibernate.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry exported="true" kind="con" path="org.springsource.ide.eclipse.gradle.classpathcontainer"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

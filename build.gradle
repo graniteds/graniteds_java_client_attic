@@ -1,33 +1,93 @@
-apply plugin: 'java'
-
-sourceCompatibility = 1.6
-version = '3.0.0.M3'
-
-repositories {
-    mavenCentral()
+allprojects {
+	
+	apply plugin: 'java'
+	apply plugin: 'eclipse'
+	
+	group = "org.graniteds"
+	version = '3.0.0.M3'
+	
+	repositories {
+		mavenCentral()
+	}
+	
+	dependencies {
+		compile files('C:/Dev/workspaceseam3/graniteds/build/granite-client.jar')
+		
+	    testCompile 'junit:junit:4.+'
+	}
 }
 
-dependencies {
-    
-    compile 'org.apache.httpcomponents:httpasyncclient:4.0-beta4',
-    	'javax.enterprise:cdi-api:1.0-SP4',
-    	'javax.inject:javax.inject:1',
-    	'net.sf.extcos:extcos:0.3b',
-    	'org.eclipse.jetty:jetty-client:8.1.+',
-    	'org.eclipse.jetty:jetty-websocket:8.1.+',
-    	'javax.validation:validation-api:1.0.0.GA',
-    	'org.springframework:spring-beans:3.1.4.RELEASE',
-    	'org.springframework:spring-context:3.1.4.RELEASE'
-    	
-    compile files('../graniteds/build/granite-client.jar', 'libs/jfxrt.jar')
-    
-    testCompile 'junit:junit:4.+',
-    	'org.hibernate:hibernate-core:3.6.10.Final',
-    	'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
-
-    testCompile files('../graniteds/build/granite-hibernate.jar', '../graniteds/build/granite.jar')
+project(':core') {
+	
+	sourceCompatibility = 1.6
+	
+	dependencies {		
+		compile 'org.apache.httpcomponents:httpasyncclient:4.0-beta4',
+			'javax.enterprise:cdi-api:1.0-SP4',
+			'javax.inject:javax.inject:1',
+			'net.sf.extcos:extcos:0.3b',
+			'org.eclipse.jetty:jetty-client:8.1.+',
+			'org.eclipse.jetty:jetty-websocket:8.1.+',
+			'javax.validation:validation-api:1.0.0.GA',
+			'org.springframework:spring-beans:3.1.4.RELEASE',
+			'org.springframework:spring-context:3.1.4.RELEASE'
+	}
+	
+	test {
+		exclude 'org/granite/client/test/websocket/**'
+	}
+	
+	jar {
+		baseName 'graniteds-java-client'
+		
+		from(files('C:/Dev/workspaceseam3/graniteds/build/granite-client.jar'))
+	}
+	
 }
 
-test {
-	exclude 'org/granite/client/test/websocket/**'
+project(':tide') {
+	
+	sourceCompatibility = 1.6
+	
+	dependencies {
+		compile 'javax.enterprise:cdi-api:1.0-SP4',
+			'javax.inject:javax.inject:1',
+			'javax.validation:validation-api:1.0.0.GA',
+			'org.springframework:spring-beans:3.1.4.RELEASE',
+			'org.springframework:spring-context:3.1.4.RELEASE'
+			
+		compile project(':core')
+	}
+	
 }
+
+project(':javafx') {
+	
+	sourceCompatibility = 1.6
+	
+	dependencies {
+		compile 'javax.enterprise:cdi-api:1.0-SP4',
+			'javax.inject:javax.inject:1',
+			'javax.validation:validation-api:1.0.0.GA',
+			'org.springframework:spring-beans:3.1.4.RELEASE',
+			'org.springframework:spring-context:3.1.4.RELEASE'
+			
+		compile project(':core'), project(':tide')
+		
+		compile files('../libs/jfxrt.jar')
+		
+		testCompile files(project(':core').sourceSets.test.output.classesDir)
+		
+	    testCompile 'org.hibernate:hibernate-core:3.6.10.Final',
+	    	'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
+			
+	    testCompile files('C:/Dev/workspaceseam3/graniteds/build/granite-hibernate.jar', 'C:/Dev/workspaceseam3/graniteds/build/granite.jar')
+	}
+	
+	jar {
+		baseName 'graniteds-javafx-client'
+		
+		from(files(project(':tide').sourceSets.main.output.classesDir))
+	}
+}
+
