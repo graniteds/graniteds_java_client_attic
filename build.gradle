@@ -1,0 +1,33 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.6
+version = '3.0.0.M3'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    
+    compile 'org.apache.httpcomponents:httpasyncclient:4.0-beta4',
+    	'javax.enterprise:cdi-api:1.0-SP4',
+    	'javax.inject:javax.inject:1',
+    	'net.sf.extcos:extcos:0.3b',
+    	'org.eclipse.jetty:jetty-client:8.1.+',
+    	'org.eclipse.jetty:jetty-websocket:8.1.+',
+    	'javax.validation:validation-api:1.0.0.GA',
+    	'org.springframework:spring-beans:3.1.4.RELEASE',
+    	'org.springframework:spring-context:3.1.4.RELEASE'
+    	
+    compile files('../graniteds/build/granite-client.jar', 'libs/jfxrt.jar')
+    
+    testCompile 'junit:junit:4.+',
+    	'org.hibernate:hibernate-core:3.6.10.Final',
+    	'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
+
+    testCompile files('../graniteds/build/granite-hibernate.jar', '../graniteds/build/granite.jar')
+}
+
+test {
+	exclude 'org/granite/client/test/websocket/**'
+}

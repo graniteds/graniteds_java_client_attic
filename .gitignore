@@ -5,3 +5,4 @@
 /test-reports
 junit*.properties
 
+/.gradle
