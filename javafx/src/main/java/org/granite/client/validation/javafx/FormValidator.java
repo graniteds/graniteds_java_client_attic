@@ -53,7 +53,6 @@ import javax.validation.groups.Default;
 import org.granite.client.validation.NotifyingValidator;
 import org.granite.client.validation.NotifyingValidator.ConstraintViolationsHandler;
 import org.granite.client.validation.NotifyingValidatorFactory;
-import org.granite.client.validation.ValidationResult;
 import org.granite.logging.Logger;
 
 /**
@@ -406,9 +405,6 @@ public class FormValidator {
 	}
 	
 	
-	/**
-	 * @private
-	 */
 	protected boolean validateValue(Node input, boolean focusOut) {
 		Property<?> entityProperty = entityProperties.get(input);
 		Property<?> inputProperty = inputProperties.get(input);

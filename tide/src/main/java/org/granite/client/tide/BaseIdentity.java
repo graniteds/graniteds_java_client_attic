@@ -71,8 +71,8 @@ public abstract class BaseIdentity extends ComponentImpl implements Identity, Ex
      * 	Triggers a remote call to check is user is currently logged in
      *  Can be used at application startup to handle browser refresh cases
      * 
-     *  @param resultHandler optional result handler
-     *  @param faultHandler optional fault handler 
+     *  @param tideResponder a responder for the remote call
+     *  @return future result returning the username if logged in or null
      */
     public Future<String> checkLoggedIn(final TideResponder<String> tideResponder) {
     	return super.call("isLoggedIn", new SimpleTideResponder<String>() {

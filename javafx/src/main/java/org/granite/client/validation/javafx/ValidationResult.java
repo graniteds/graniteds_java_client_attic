@@ -18,7 +18,7 @@
   along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-package org.granite.client.validation;
+package org.granite.client.validation.javafx;
 
 import javafx.beans.property.Property;
 

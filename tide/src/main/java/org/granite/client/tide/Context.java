@@ -124,7 +124,6 @@ public class Context {
     }
     
     /**
-     *  @private
      *  Update the context id
      *  @param contextId context id
      *  @param fromServer is this id received from the server ?

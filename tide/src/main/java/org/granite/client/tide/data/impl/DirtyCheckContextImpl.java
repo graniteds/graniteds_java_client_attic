@@ -505,7 +505,6 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     }
     
     /**
-     *  @private 
      *  Interceptor for managed entity setters
      *
      *  @param entity entity to intercept
@@ -567,12 +566,14 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 
 
     /**
-     *  @private 
      *  Collection event handler to save changes on managed collections
      *
      *  @param owner owner entity of the collection
      *  @param propName property name of the collection
-     *  @param event collection event
+     *  @param coll collection
+     *  @param kind change kind
+     *  @param location change location
+     *  @param items changed items
      */ 
     @SuppressWarnings("unchecked")
 	public void entityCollectionChangeHandler(Object owner, String propName, Collection<?> coll, ChangeKind kind, Integer location, Object[] items) {
@@ -656,14 +657,15 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     }
 
 
-        /**
-         *  @private 
-         *  Collection event handler to save changes on managed maps
-         *
-         *  @param owner owner entity of the collection
-         *  @param propName property name of the collection
-         *  @param event map event
-         */ 
+    /**
+     *  Map event handler to save changes on managed maps
+     *
+     *  @param owner owner entity of the map
+     *  @param propName property name of the map
+     *  @param map map
+     *  @param kind change kind
+     *  @param items changed items
+     */ 
     @SuppressWarnings("unchecked")
 	public void entityMapChangeHandler(Object owner, String propName, Map<?, ?> map, ChangeKind kind, Object[] items) {
         boolean oldDirty = isDirty();
@@ -743,10 +745,10 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
 
 
     /**
-     *  @private 
      *  Mark an object merged from the server as not dirty
      *
      *  @param object merged object
+     *  @param entity owner entity (when handling embedded objects)
      */ 
     public void markNotDirty(Object object, Object entity) {
     	if (entity != null)
@@ -775,13 +777,13 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     
     
     /**
-     *  @private 
      *  Check if dirty properties of an object are the same than those of another entity
      *  When they are the same, unmark the dirty flag
      *
+     *	@param mergeContext current merge context
      *  @param entity merged entity
      *  @param source source entity
-     *  @param owner owner entity for embedded objects
+     *  @param parent owner entity for embedded objects
      *  @return true if the entity is still dirty after comparing with incoming object
      */ 
     public boolean checkAndMarkNotDirty(MergeContext mergeContext, Object entity, Object source, Object parent) {
@@ -997,7 +999,6 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     
     
     /**
-     *  @private
      *  Internal implementation of entity reset
      */ 
     @SuppressWarnings("unchecked")
@@ -1030,7 +1031,7 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
                 	for (Object e : savedArray)
                 		coll.add(e);
                     
-                    // Must be here because collection reset has triggered other useless CollectionEvents
+                    // Must be here because collection reset may have triggered other useless collection change events
                     markNotDirty(val, parent);
                 }
                 
@@ -1089,8 +1090,10 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     
     
     /**
-     *  @private
      *  Internal implementation of entity reset all
+     *  
+     *  @param mergeContext current merge context
+     *  @param cache graph traversal cache
      */ 
     public void resetAllEntities(MergeContext mergeContext, Set<Object> cache) {
         boolean found = false;
@@ -1112,9 +1115,9 @@ public class DirtyCheckContextImpl implements DirtyCheckContext {
     
     
     /**
-     *  @private 
      *  Check if a value is empty
      *
+     *	@param val value
      *  @return value is empty
      */ 
     public boolean isEmpty(Object val) {

@@ -22,7 +22,7 @@ package org.granite.client.validation.javafx;
 
 import java.util.List;
 
-import org.granite.client.validation.ValidationResult;
+import org.granite.client.validation.javafx.ValidationResult;
 
 import javafx.event.Event;
 import javafx.event.EventTarget;

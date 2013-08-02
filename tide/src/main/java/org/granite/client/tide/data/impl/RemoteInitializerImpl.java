@@ -70,16 +70,13 @@ public class RemoteInitializerImpl implements RemoteInitializer {
 	private List<Object[]> objectsInitializing = new ArrayList<Object[]>();
     
 	/**
-	 * 	{@inheritdoc}
+	 * 	{@inheritDoc}
 	 */
     public boolean initializeObject(ServerSession serverSession, Object entity, String propertyName, Object object) {
 		if (!enabled || context.isFinished())
 			return false;
 		
 		log.debug("initialize {0}", ObjectUtil.toString(object));
-		
-//		if (!(object instanceof ManagedPersistentAssociation && dataManager.isEntity(((ManagedPersistentAssociation)object).getOwner())))
-//			return false;
 		
 		EntityManager entityManager = PersistenceManager.getEntityManager(entity);
 		if (entityManager == null)

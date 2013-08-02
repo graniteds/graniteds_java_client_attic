@@ -112,12 +112,12 @@ public class ComponentImpl implements Component, ContextAware, NameAware, Invoca
     /**
      *  Calls a remote component
      * 
-     *  @param component the target component
-     *  @param op name of the called metho
-     *  @param arg method parameters
+     *  @param context the source context
+     *  @param operation name of the called metho
+     *  @param args method arguments
      *  @param withContext add context sync data to call
      * 
-     *  @return the operation token
+     *  @return future returning the result of the call
      */
     @SuppressWarnings("unchecked")
 	protected <T> Future<T> callComponent(Context context, String operation, Object[] args, boolean withContext) {

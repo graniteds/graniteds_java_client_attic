@@ -41,7 +41,7 @@ public interface ExceptionHandler {
      * 
      *  @param context the context in which the error occured
      *  @param emsg the error message
-     *  @param event the full fault event
+     *  @param faultEvent the full fault event
      */
     public void handle(Context context, FaultMessage emsg, TideFaultEvent faultEvent);
 

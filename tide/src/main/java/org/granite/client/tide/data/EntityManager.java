@@ -126,24 +126,24 @@ public interface EntityManager {
      *  @param entity an entity
      *  @param parent the parent entity
      *  @param propName name of the parent entity property that references the entity
-     *  @param res the context expression
+     *  @param expr the context expression
      */ 
     public void addReference(Object entity, Object parent, String propName, Expression expr);
     
     /**
      *  Remove a reference on the provided object
      *
-     *  @param obj an entity
+     *  @param entity an entity
      *  @param parent the parent entity to dereference
      *  @param propName name of the parent entity property that references the entity
-     *  @param res expression to remove
+     *  @param expr expression to remove
      */ 
-    public boolean removeReference(Object entity, Object parent, String propName, Expression exp);
+    public boolean removeReference(Object entity, Object parent, String propName, Expression expr);
     
     /**
      *  Retrieves context expression path for the specified entity (internal implementation)
      *   
-     *  @param obj an entity
+     *  @param entity an entity
      *  @param recurse should recurse until 'real' context path, otherwise object reference can be returned
      *  @param cache graph visitor cache
      * 
@@ -183,7 +183,6 @@ public interface EntityManager {
     public boolean isPersisted(Object entity);
     
     /**
-     *  @private 
      *  Retrieve an entity in the cache from its uid
      *   
      *  @param object an entity
@@ -203,7 +202,8 @@ public interface EntityManager {
      *  @param obj external object
      *  @param prev existing local object to merge with
      *  @param externalDataSessionId sessionId from which the data is coming (other user/server), null if local or current user session
-     *  @param removals array of entities to remove from the entity manager cache
+     *  @param removals list of entities to remove from the entity manager cache
+     *  @param persists list of entities newly persisted to be added in the entity manager cache
      *
      *  @return merged object (should === previous when previous not null)
      */
@@ -212,6 +212,7 @@ public interface EntityManager {
     /**
      *  Merge an object coming from a remote location (in general from a service) in the local context
      *
+     *	@param serverSession the current server session
      *  @param obj external object
      *
      *  @return merged object
@@ -221,10 +222,12 @@ public interface EntityManager {
     /**
      *  Merge an object coming from a remote location (in general from a service) in the local context
      *
+     *	@param serverSession the current server session
      *  @param obj external object
      *  @param prev existing local object to merge with
      *  @param externalDataSessionId sessionId from which the data is coming (other user/server), null if local or current user session
      *  @param removals array of entities to remove from the entity manager cache
+     *  @param persists list of entities newly persisted to be added in the entity manager cache
      *
      *  @return merged object (should === previous when previous not null)
      */
@@ -242,12 +245,12 @@ public interface EntityManager {
     // public Object internalMergeExternalData(MergeContext mergeContext, Object obj, Object prev, List<Object> removals);
     
     /**
-     *  @private 
      *  Merge an object coming from another entity manager (in general in the global context) in the local context
      *
      *  @param sourceEntityManager source context of incoming data
      *  @param obj external object
      *  @param externalDataSessionId is merge from external data
+     *  @param uninitializing the merge should uninitialize all collections/entities when possible
      *
      *  @return merged object (should === previous when previous not null)
      */
@@ -265,14 +268,11 @@ public interface EntityManager {
      *  Discard changes of entity from last version received from the server
      *
      *  @param entity entity to restore
-     *  @param cache reset cache
      */ 
     public void resetEntity(Object entity);
     
     /**
      *  Discard changes of all cached entities from last version received from the server
-     * 
-     *  @param cache reset cache
      */ 
     public void resetAllEntities();
     
@@ -341,9 +341,9 @@ public interface EntityManager {
     }
     
     /**
-     *  @private
      *  Handle data updates
      *
+     *	@param mergeContext current merge context
      *  @param sourceSessionId sessionId from which data updates come (null when from current session) 
      *  @param updates list of data updates
      */
@@ -367,9 +367,10 @@ public interface EntityManager {
     /**
      *  Trigger remote initialization of lazy-loaded objects
      * 
+     *  @param serverSession current server session
      *  @param entity owner entity
      *  @param propertyName property name
-     *  @param object a lazy-loaded object
+     *  @param object a lazily loaded object
      * 
      *  @return true if initialization triggered
      */
@@ -378,7 +379,9 @@ public interface EntityManager {
     /**
      *  Trigger remote validation of objects
      * 
-     *  @param object a lazy-loaded object
+     *  @param object an object to remotely validate
+     *  @param property a property to validate
+     *  @param value value to check
      * 
      *  @return true if validation triggered
      */

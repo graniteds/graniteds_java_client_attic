@@ -105,7 +105,7 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  {@inheritdoc}
+     *  {@inheritDoc}
      */
     public boolean isActive() {
         return active;
@@ -225,7 +225,6 @@ public class EntityManagerImpl implements EntityManager {
     
     
     /**
-     *  @private
      *  Attach an entity to this context
      * 
      *  @param entity an entity
@@ -235,7 +234,6 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  @private
      *  Attach an entity to this context
      * 
      *  @param entity an entity
@@ -256,11 +254,11 @@ public class EntityManagerImpl implements EntityManager {
        
     
     /**
-     *  @private
-     *  Detach an entity from this context only if it's not persistent
+     *  Detach an entity from this context
      * 
      *  @param entity an entity
      *  @param removeFromCache remove entity from cache
+     *  @param forceRemove remove even if persistent
      */
     public void detachEntity(Object entity, boolean removeFromCache, boolean forceRemove) {
 		if (!forceRemove) {
@@ -277,7 +275,7 @@ public class EntityManagerImpl implements EntityManager {
     
     
     /**
-     *  {@inheritdoc}
+     *  {@inheritDoc}
      */
     public boolean isPersisted(Object entity) {
         if (dataManager.hasVersionProperty(entity) && dataManager.getVersion(entity) != null)
@@ -295,11 +293,11 @@ public class EntityManagerImpl implements EntityManager {
     
     
 	/**
-	 *	@private
 	 *  Internal implementation of object detach
 	 * 
 	 *  @param object object
 	 *  @param cache internal cache to avoid graph loops
+	 *  @param forceRemove force removal even if persisted
 	 */ 
 	public void detach(Object object, IdentityHashMap<Object, Object> cache, boolean forceRemove) {
 		if (object == null || ObjectUtil.isSimple(object))
@@ -340,11 +338,12 @@ public class EntityManagerImpl implements EntityManager {
 	}
     
     /**
-     *  @private 
-     *  Retrives an entity in the cache from its uid
-     *   
+     *  Retrieve an entity in the cache from its uid
+     *  
      *  @param object an entity
      *  @param nullIfAbsent return null if entity not cached in context
+     *  
+     *  @return cached object with the same uid as the specified object
      */
     public Object getCachedObject(Object object, boolean nullIfAbsent) {
         Object entity = null;
@@ -367,10 +366,10 @@ public class EntityManagerImpl implements EntityManager {
     }
 
     /** 
-     *  @private 
-     *  Retrives the owner entity of the provided object (collection/map/entity)
+     *  Retrieve the owner entity of the provided object (collection/map/entity)
      *   
      *  @param object an entity
+     *  @return array containing owner entity and property name
      */
     public Object[] getOwnerEntity(Object object) {
         List<Object> refs = entityReferences.get(object);
@@ -385,10 +384,10 @@ public class EntityManagerImpl implements EntityManager {
     }
 
     /**
-     *  @private
-     *  Retrives the owner entity of the provided object (collection/map/entity)
+     *  Retrieve the owner entity of the provided object (collection/map/entity)
      *
      *  @param object an entity
+     *  @return list of arrays containing owner and property name
      */
     public List<Object[]> getOwnerEntities(Object object) {
         List<Object> refs = entityReferences.get(object);
@@ -408,7 +407,7 @@ public class EntityManagerImpl implements EntityManager {
 
     
     /**
-     *  {@inheritdoc}
+     *  {@inheritDoc}
      */
     public Expression getReference(Object obj, boolean recurse, Set<Object> cache) {
         if (cache != null) {
@@ -454,10 +453,10 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  @private
      *  Init references array for an object
      *   
      *  @param obj an entity
+     *  @return list of current references
      */
     private List<Object> initRefs(Object obj) {
         List<Object> refs = entityReferences.get(obj);
@@ -470,7 +469,7 @@ public class EntityManagerImpl implements EntityManager {
     
 
     /**
-     *  Registers a reference to the provided object with either a parent or res
+     *  Register a reference to the provided object with either a parent or res
      * 
      *  @param obj an entity
      *  @param parent the parent entity
@@ -533,12 +532,13 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  Removes a reference on the provided object
+     *  Remove a reference on the provided object
      *
      *  @param obj an entity
      *  @param parent the parent entity to dereference
      *  @param propName name of the parent entity property that references the entity
      *  @param res expression to remove
+     *  @return true if actually removed
      */ 
     public boolean removeReference(Object obj, Object parent, String propName, Expression res) {
         List<Object> refs = entityReferences.get(obj);
@@ -613,6 +613,7 @@ public class EntityManagerImpl implements EntityManager {
     /**
      *  Merge an object coming from the server in the context
      *
+     *	@param mergeContext current merge context
      *  @param obj external object
      *  @param previous previously existing object in the context (null if no existing object)
      *  @param expr current path from the context
@@ -739,9 +740,9 @@ public class EntityManagerImpl implements EntityManager {
 
 
     /**
-     *  @private 
      *  Merge an entity coming from the server in the context
      *
+     *	@param mergeContext current merge context
      *  @param obj external entity
      *  @param previous previously existing object in the context (null if no existing object)
      *  @param expr current path from the context
@@ -944,9 +945,9 @@ public class EntityManagerImpl implements EntityManager {
     
     
     /**
-     *  @private 
      *  Merge a collection coming from the server in the context
      *
+     *	@param mergeContext current merge context
      *  @param coll external collection
      *  @param previous previously existing collection in the context (can be null if no existing collection)
      *  @param expr current path from the context
@@ -1112,9 +1113,9 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  @private 
      *  Merge a collection coming from the server in the context
      *
+     *	@param mergeContext current merge context
      *  @param coll external collection
      *  @param previous previously existing collection in the context (can be null if no existing collection)
      *  @param expr current path from the context
@@ -1273,13 +1274,14 @@ public class EntityManagerImpl implements EntityManager {
     }
 
     /**
-     *  @private 
      *  Merge a map coming from the server in the context
      *
+     *	@param mergeContext current merge context
      *  @param map external map
      *  @param previous previously existing map in the context (null if no existing map)
      *  @param expr current path from the context
      *  @param parent owner object for the map if applicable
+     *  @param propertyName property name from the owner
      * 
      *  @return merged map (=== previous when previous not null)
      */ 
@@ -1410,9 +1412,9 @@ public class EntityManagerImpl implements EntityManager {
 
 
     /**
-     *  @private 
      *  Wraps a persistent collection to manage lazy initialization
      *
+     *	@param mergeContext current merge context
      *  @param coll the collection to wrap
      *  @param previous the previous existing collection
      *  @param expr the path expression from the context
@@ -1503,7 +1505,6 @@ public class EntityManagerImpl implements EntityManager {
 
     
     /**
-     *  @private 
      *  Merge an object coming from another entity manager (in general in the global context) in the local context
      *
      *  @param sourceEntityManager source context of incoming data
@@ -1533,7 +1534,6 @@ public class EntityManagerImpl implements EntityManager {
     
     
     /**
-     *  @private 
      *  Merge an object coming from a remote location (in general from a service) in the local context
      *
      *  @param obj external object
@@ -1554,13 +1554,14 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  @private 
      *  Merge an object coming from a remote location (in general from a service) in the local context
      *
+     *	@param serverSession server session
      *  @param obj external object
      *  @param prev existing local object to merge with
      *  @param externalDataSessionId sessionId from which the data is coming (other user/server), null if local or current user session
-     *  @param removals array of entities to remove from the entity manager cache
+     *  @param removals list of entities to remove from the entity manager cache
+     *  @param persists list of newly persisted entities
      *
      *  @return merged object (should === previous when previous not null)
      */
@@ -1578,13 +1579,13 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  @private 
      *  Merge an object coming from a remote location (in general from a service) in the local context
      *
+     *	@param mergeContext current merge context
      *  @param obj external object
      *  @param prev existing local object to merge with
-     *  @param externalDataSessionId sessionId from which the data is coming (other user/server), null if local or current user session
      *  @param removals array of entities to remove from the entity manager cache
+     *  @param persists list of newly persisted entities
      *
      *  @return merged object (should === previous when previous not null)
      */
@@ -1655,7 +1656,9 @@ public class EntityManagerImpl implements EntityManager {
     /**
      *  Remove elements from cache and managed collections
      *
-     *  @param removals array of entity instances to remove from the entity manager cache
+     *	@param mergeContext current merge context
+     *  @param removals list of entity instances to remove from the entity manager cache
+     *  @param persists list of newly persisted entity instances
      */
     public void handleRemovalsAndPersists(MergeContext mergeContext, List<Object> removals, List<Object> persists) {
         for (Object removal : removals) {
@@ -1737,7 +1740,9 @@ public class EntityManagerImpl implements EntityManager {
     }
 
     /**
-     *  Dispatch an event when last merge generated conflicts 
+     *  Dispatch an event when last merge generated conflicts
+     *   
+     *	@param mergeContext current merge context
      */
     public void handleMergeConflicts(MergeContext mergeContext) {
         // Clear thread cache so acceptClient/acceptServer can work inside the conflicts handler
@@ -1753,6 +1758,7 @@ public class EntityManagerImpl implements EntityManager {
     /**
      *  Resolve merge conflicts
      * 
+     *	@param mergeContext current merge context
      *  @param modifiedEntity the received entity
      *  @param localEntity the locally cached entity
      *  @param resolving true to keep client state
@@ -1774,16 +1780,6 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     
-//    /**
-//     *  Enables or disabled dirty checking in this context
-//     *  
-//     *  @param enabled
-//     */
-//    public void setDirtyCheckEnabled(boolean enabled) {
-//        _mergeContext.merging = !enabled;
-//    }
-    
-    
     /**
      *  {@inheritDoc}
      */
@@ -1799,7 +1795,7 @@ public class EntityManagerImpl implements EntityManager {
      *  Default implementation of entity merge for simple ActionScript beans with public properties
      *  Can be used to implement Tide managed entities with simple objects
      *
-     *  @param em the context
+     *	@param mergeContext current merge context
      *  @param obj source object
      *  @param dest destination object
      *  @param expr current path of the entity in the context (mostly for internal use)
@@ -1884,8 +1880,6 @@ public class EntityManagerImpl implements EntityManager {
 
     /**
      *  Discard changes of all cached entities from last version received from the server
-     * 
-     *  @param cache reset cache
      */ 
     public void resetAllEntities() {
         try {
@@ -1902,7 +1896,7 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  {@inheritdoc}
+     *  {@inheritDoc}
      */ 
     public void acceptConflict(Conflict conflict, boolean client) {
         boolean saveTracking = trackingContext.isEnabled();
@@ -1953,7 +1947,7 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  {@inheritdoc}
+     *  {@inheritDoc}
      */
     public boolean initializeObject(ServerSession serverSession, Object entity, String propertyName, Object object) {
         boolean initialize = false;
@@ -1969,33 +1963,17 @@ public class EntityManagerImpl implements EntityManager {
         }
         return initialize;
     }
-//    
-//    /**
-//     *  {@inheritdoc}
-//     */
-//    public boolean validateObject(Object object, String property, Object value) {
-//        boolean validate = false;
-//        if (remoteValidator != null) {
-//            boolean saveTracking = trackingContext.isEnabled();
-//            try {
-//                trackingContext.setEnabled(false);
-//                validate = remoteValidator.validateObject(object, property, value);
-//            }
-//            finally {
-//                trackingContext.setEnabled(saveTracking);
-//            }
-//        }
-//        return validate;
-//    }
 
     
     public class DefaultTrackingHandler implements DataManager.TrackingHandler {
         
         /**
-         *  @private 
-         *  Property event handler to save changes on embedded objects
+         *  Property change handler to save changes on embedded objects
          *
-         *  @param event collection event
+         *  @param target changed object
+         *  @param property property name
+         *  @param oldValue old value
+         *  @param newValue new value
          */ 
         public void entityPropertyChangeHandler(Object target, String property, Object oldValue, Object newValue) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
@@ -2023,17 +2001,15 @@ public class EntityManagerImpl implements EntityManager {
                 else if (owner instanceof Object[] && isEntity(((Object[])owner)[0]))
                     dirtyCheckContext.entityPropertyChangeHandler(((Object[])owner)[0], target, property, oldValue, newValue);
             }
-            
-            // TODO: EntityManager embedded
-    //        PropertyChangeEvent pce = new PropertyChangeEvent("entityEmbeddedChange", event.property, event.oldValue, event.newValue, event.source);
-    //        dispatchEvent(pce);
         }
         
         /**
-         *  @private 
-         *  Collection event handler to save changes on collections
+         *  Collection change handler to save changes on collections
          *
-         *  @param event collection event
+         *  @param kind change kind
+         *  @param target collection
+         *  @param location location of change
+         *  @param items changed items
          */ 
         public void collectionChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
@@ -2048,10 +2024,12 @@ public class EntityManagerImpl implements EntityManager {
         }
         
         /**
-         *  @private 
-         *  Collection event handler to save changes on managed collections
+         *  Collection change handler to save changes on owned collections
          *
-         *  @param event collection event
+         *  @param kind change kind
+         *  @param target collection
+         *  @param location location of change
+         *  @param items changed items
          */ 
         public void entityCollectionChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
@@ -2118,10 +2096,12 @@ public class EntityManagerImpl implements EntityManager {
         }
         
         /**
-         *  @private 
-         *  Map event handler to save changes on maps
+         *  Map change handler to save changes on maps
          *
-         *  @param event map event
+         *  @param kind change kind
+         *  @param target collection
+         *  @param location location of change
+         *  @param items changed items
          */ 
         public void mapChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
@@ -2136,10 +2116,12 @@ public class EntityManagerImpl implements EntityManager {
         }
         
         /**
-         *  @private 
-         *  Collection event handler to save changes on managed maps
+         *  Map change handler to save changes on owned maps
          *
-         *  @param event map event
+         *  @param kind change kind
+         *  @param target collection
+         *  @param location location of change
+         *  @param items changed items
          */ 
         public void entityMapChangeHandler(ChangeKind kind, Object target, Integer location, Object[] items) {
             MergeContext mergeContext = MergeContext.get(PersistenceManager.getEntityManager(target));
@@ -2236,7 +2218,6 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  @private 
      *  Track updates on target object
      *
      *  @param object tracked object
@@ -2250,9 +2231,9 @@ public class EntityManagerImpl implements EntityManager {
     }
     
     /**
-     *  @private
      *  Handle data updates
      *
+     *	@param mergeContext current merge context
      *  @param sourceSessionId sessionId from which data updates come (null when from current session) 
      *  @param updates list of data updates
      */

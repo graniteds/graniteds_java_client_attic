@@ -20,6 +20,7 @@
 
 package org.granite.client.tide.javafx;
 
+import java.nio.charset.Charset;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.Future;
@@ -101,8 +102,8 @@ public abstract class BaseIdentity extends ComponentImpl implements Identity, Ex
      * 	Triggers a remote call to check is user is currently logged in
      *  Can be used at application startup to handle browser refresh cases
      * 
-     *  @param resultHandler optional result handler
-     *  @param faultHandler optional fault handler 
+     *  @param tideResponder optional responder
+     *  @return future result: username or null
      */
     public Future<String> checkLoggedIn(final TideResponder<String> tideResponder) {
     	return super.call("isLoggedIn", new SimpleTideResponder<String>() {
@@ -152,7 +153,21 @@ public abstract class BaseIdentity extends ComponentImpl implements Identity, Ex
     	catch (Exception e) {
     	}
     }
-    
+
+    public void login(final String username, String password, Charset charset, final TideResponder<String> tideResponder) {
+    	getServerSession().login(username, password, charset);
+    	
+    	clearSecurityCache();
+    	
+    	try {
+    	    // Force synchronous operation to prevent issues with Spring session fixation protection
+    	    // so next remote calls use the correct session id
+    	    checkLoggedIn(tideResponder).get();
+    	}
+    	catch (Exception e) {
+    	}
+    }
+
     
     public void logout(final TideResponder<Void> tideResponder) {
     	final Observer observer = new Observer() {

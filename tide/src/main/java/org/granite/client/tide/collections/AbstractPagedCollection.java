@@ -49,37 +49,16 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
     private static final Logger log = Logger.getLogger(AbstractPagedCollection.class);
     
 	
-	/**
-	 * 	@private
-	 */
     protected boolean initializing = false;
     private boolean initSent = false;
     
-	/**
-	 * 	@private
-	 */
 	protected int first;
-	/**
-	 * 	@private
-	 */
     protected int last;			// Current last index of local data
-	/**
-	 * 	@private
-	 */
     protected int max;           // Page size
-	/**
-	 * 	@private
-	 */
     protected int count;         // Result count
     private E[] localIndex = null;
     
-	/**
-	 * 	@private
-	 */
 	protected boolean fullRefresh = false;
-	/**
-	 * 	@private
-	 */
 	protected boolean filterRefresh = false;
 	
 
@@ -96,7 +75,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	/**
 	 *	Get total number of elements
 	 *  
-	 *  @return collection total length
+	 *  @return collection total size
 	 */
 	@Override
 	public int size() {
@@ -237,7 +216,7 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	 *  @param first first index requested
 	 *  @param max max elements requested
 	 *   
-	 *  @return an object containing data from the collection
+	 *  @return a Page object containing data from the collection
 	 *      resultList   : the retrieved data
 	 *      resultCount  : the total count of elements (non paged)
 	 *      firstResult  : the index of the first retrieved element
@@ -255,16 +234,14 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	
 	
 	/**
-	 * 	@private
 	 *  Initialize collection after first find
 	 *   
-	 *  @param the result event of the first find
+	 *  @param event the result event of the first find
 	 */
 	protected void initialize(TideResultEvent<?> event) {
 	}
 	
 	/**
-	 * 	@private
 	 *	Event handler for results query
 	 * 
 	 *  @param event the result event
@@ -278,11 +255,12 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	}
 	
 	/**
-	 * 	@private
 	 *	Event handler for results query
-	 * 
-	 *  @param result the result object
+	 *
+	 *  @param page the result page
 	 *  @param event the result event
+	 *  @param first first requested index
+	 *  @param max max elements requested
 	 */
 	@SuppressWarnings("unchecked")
 	protected void handleResult(Page<E> page, TideResultEvent<?> event, int first, int max) {
@@ -380,7 +358,6 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	}
 	
 	/**
-	 *  @private
 	 *	Event handler for results fault
 	 *  
 	 *  @param event the fault event
@@ -392,7 +369,6 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	}
 	
 	/**
-	 * 	@private
 	 *	Event handler for results query fault
 	 * 
 	 *  @param event the fault event
@@ -421,10 +397,9 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	
 	
 	/**
-	 * 	Override of getItemAt with ItemPendingError management
+	 * 	Override of get() with lazy page loading
 	 * 
 	 *	@param index index of requested item
-	 *	@param prefetch not used
 	 *  @return object at specified index
 	 */
 	@Override
@@ -610,16 +585,6 @@ public abstract class AbstractPagedCollection<E> implements List<E>, TideEventOb
 	public List<E> subList(int fromIndex, int toIndex) {
 		throw new UnsupportedOperationException();
 	}
-    
-//    protected void itemUpdateHandler(PropertyChangeEvent event) {
-//		if (hasEventListener(CollectionEvent.COLLECTION_CHANGE)) {
-//	        var ce:CollectionEvent = new CollectionEvent(CollectionEvent.COLLECTION_CHANGE);
-//	        ce.kind = CollectionEventKind.UPDATE;
-//	        ce.items.push(event);
-//	        ce.location = -1;
-//	        dispatchEvent(ce);
-//	    }
-//    }
 
 	
 	public class PagedCollectionIterator implements ListIterator<E> {

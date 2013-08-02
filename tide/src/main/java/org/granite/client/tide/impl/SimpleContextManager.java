@@ -138,10 +138,10 @@ public class SimpleContextManager implements ContextManager {
     }
 
     /**
-     *  @private
      *  Create a new context if it does not exist
      * 
      *  @param contextId the requested context id
+     *  @param parentContextId request parent context id
      *  @return the context
      */
     public Context newContext(String contextId, String parentContextId) {
@@ -164,7 +164,6 @@ public class SimpleContextManager implements ContextManager {
     }
     
     /**
-     *  @private
      *  Destroy a context
      * 
      *  @param contextId context id
@@ -219,7 +218,6 @@ public class SimpleContextManager implements ContextManager {
 //    }       
     
     /**
-     *  @private
      *  Destroy all contexts
      * 
      *  @param force force complete destruction of contexts (all event listeners...), used for testing
@@ -240,7 +238,6 @@ public class SimpleContextManager implements ContextManager {
     }
     
     /**
-     *  @private
      *  Destroy finished contexts and reset current pending contexts
      */
     public void destroyFinishedContexts() {
@@ -251,7 +248,6 @@ public class SimpleContextManager implements ContextManager {
     
     
     /**
-     *  @private
      *  Remove context from the list of contexts to destroy
      *  
      *  @param contextId context id
@@ -263,7 +259,6 @@ public class SimpleContextManager implements ContextManager {
     }
     
     /**
-     *  @private
      *  Add context to the list of contexts to destroy
      *  
      *  @param contextId context id
@@ -306,21 +301,6 @@ public class SimpleContextManager implements ContextManager {
     }
     
     /**
-     *  @private
-     *  
-     *  Destroys component instances in all contexts
-     * 
-     *  @param name component name
-     */
-    // TODO: destroy component instances
-//    public void destroyComponentInstances(String name) {
-//        for (Context ctx : contextsById.values())
-//            ctx.destroy(name, true);
-//    }
-    
-    /**
-     *  @private
-     * 
      *  Defines new context for existing id
      * 
      *  @param previousContextId existing id

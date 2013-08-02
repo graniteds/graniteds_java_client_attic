@@ -23,6 +23,7 @@ package org.granite.client.tide.server;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -568,26 +569,29 @@ public class ServerSession implements ContextAware {
 	};
 	
 	
-    /**
-     *  @private
-     *  Implementation of component invocation
-     *  
-     *  @param component component proxy
-     *  @param op remote operation
-     *  @param args array of operation arguments
-     *  @param responder Tide responder
-     *  @param withContext send additional context with the call
-     *  @param handler optional operation handler
-     * 
-     *  @return token for the remote operation
-     */
-	
-    
+	/**
+	 * 	Implementation of login
+	 * 	
+	 * 	@param username user name
+	 *  @param password password
+	 */
     public void login(String username, String password) {
     	remotingChannel.setCredentials(new UsernamePasswordCredentials(username, password));
     	messagingChannel.setCredentials(new UsernamePasswordCredentials(username, password));
     }
-    
+
+	/**
+	 * 	Implementation of login using a specific charset for username/password encoding
+	 * 	
+	 * 	@param username user name
+	 *  @param password password
+	 *  @param charset charset used for encoding
+	 */
+    public void login(String username, String password, Charset charset) {
+    	remotingChannel.setCredentials(new UsernamePasswordCredentials(username, password, charset));
+    	messagingChannel.setCredentials(new UsernamePasswordCredentials(username, password, charset));
+    }
+
     public void afterLogin() {
 		log.info("Application session authenticated");
 		
@@ -622,7 +626,6 @@ public class ServerSession implements ContextAware {
     }
     
 	/**
-	 * 	@private
 	 * 	Implementation of logout
 	 * 	
 	 * 	@param logoutObserver observer that will be notified of logout result
@@ -726,13 +729,13 @@ public class ServerSession implements ContextAware {
 	
 	
     /**
-     *  @private  
      *  (Almost) abstract method: manages a remote call result
      *  This should be called by the implementors at the end of the result processing
      * 
+     * 	@param context source context of the remote call
      *  @param componentName name of the target component
      *  @param operation name of the called operation
-     *  @param ires invocation result object
+     *  @param invocationResult invocation result object
      *  @param result result object
      *  @param mergeWith previous value with which the result will be merged
      */
@@ -911,9 +914,9 @@ public class ServerSession implements ContextAware {
     }
 
     /**
-     *  @private 
-     *  Abstract method: manages a remote call fault
-     * 
+     *  (almost) abstract method: manages a remote call fault
+     * 	
+     *  @param context source context of the remote call
      *  @param componentName name of the target component
      *  @param operation name of the called operation
      *  @param emsg error message
@@ -1103,18 +1106,16 @@ public class ServerSession implements ContextAware {
 	}
     
 	
-    /**
-     *  @private
-     *  Comparator for expression evaluation ordering
-     * 
-     *  @param r1 expression 1
-     *  @param r2 expression 2
-     *  @param fields unused
-     * 
-     *  @return comparison value
-     */
     private static class ResultsComparator implements Comparator<ContextUpdate> {
         
+        /**
+         *  Comparator for expression evaluation ordering
+         * 
+         *  @param r1 expression 1
+         *  @param r2 expression 2
+         * 
+         *  @return comparison value
+         */
         public int compare(ContextUpdate r1, ContextUpdate r2) {
             
             if (r1.getComponentClassName() != null && r2.getComponentClassName() != null && !r1.getComponentClassName().equals(r2.getComponentClassName()))

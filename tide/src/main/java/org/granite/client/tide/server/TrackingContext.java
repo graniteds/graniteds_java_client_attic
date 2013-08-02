@@ -45,7 +45,6 @@ public class TrackingContext {
     private List<String> lastResults = new ArrayList<String>();
 
     /**
-     *  @private
      *  Enable/disable tracking on the context
      * 
      *  @param enabled enable or disable tracking on the current context
@@ -55,7 +54,6 @@ public class TrackingContext {
     }
     
     /**
-     *  @private
      *  Return tracking mode
      * 
      *  @return true if tracking enabled
@@ -65,7 +63,6 @@ public class TrackingContext {
     }
     
     /**
-     *  @private
      *  @return current list of updates that will be sent to the server
      */
     public List<ContextUpdate> getUpdates() {
@@ -73,7 +70,6 @@ public class TrackingContext {
     }
     
     /**
-     *  @private
      *  @return current list of results that will be requested from the server
      */
     public List<ContextResult> getResults() {
@@ -81,8 +77,7 @@ public class TrackingContext {
     }       
     
     /**
-     *  @private
-     *  Resets the context
+     *  Reset the context
      */
     public void clear() {
         updates.clear();
@@ -92,7 +87,7 @@ public class TrackingContext {
     }
     
     /**
-     *  Resets the current updates and optionally saves them as pending
+     *  Reset the current updates and optionally saves them as pending
      * 
      *  @param savePending moves existing updates to pending before clearing
      */
@@ -103,7 +98,7 @@ public class TrackingContext {
     }
     
     /**
-     *  Resets the current pending updates
+     *  Reset the current pending updates
      */
     public void clearPendingUpdates() {
         pendingUpdates.clear();
@@ -130,7 +125,6 @@ public class TrackingContext {
     
     
     /**
-     *  @private
      *  Add update to current context 
      *  Note: always move the update in last position in case the value can depend on previous updates
      * 
@@ -138,14 +132,12 @@ public class TrackingContext {
      *  @param componentClassName class name of the component/context variable or null if untyped component name
      *  @param expr EL expression to evaluate
      *  @param value value to send to server
-     *  @param typed component name represents a typed component instance  
      */
     public void addUpdate(String componentName, String componentClassName, String expr, Object value) {
         internalAddUpdate(componentName, componentClassName, expr, value, ScopeType.EVENT, SyncMode.NONE, componentName == null);             
     }
     
     /**
-     *  @private
      *  Add update to current context 
      *  Note: always move the update in last position in case the value can depend on previous updates
      * 
@@ -191,7 +183,6 @@ public class TrackingContext {
     }
     
     /**
-     *  @private
      *  Add result evaluator in current context
      * 
      *  @param componentName name of the component/context variable
@@ -206,7 +197,6 @@ public class TrackingContext {
     }
     
     /**
-     *  @private
      *  Add result evaluator in current context
      * 
      *  @param componentName name of the component/context variable
@@ -275,8 +265,6 @@ public class TrackingContext {
     
     
     /**
-     *  @private
-     * 
      *  Reset current tracking context and returns saved context
      * 
      *  @return saved tracking context
@@ -297,8 +285,6 @@ public class TrackingContext {
     }
     
     /**
-     *  @private
-     * 
      *  Restore tracking context
      * 
      *  @param trackingContext object containing the current call context

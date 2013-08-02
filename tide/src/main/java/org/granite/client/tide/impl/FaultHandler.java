@@ -40,16 +40,9 @@ import org.granite.client.tide.server.TideResponder;
 import org.granite.logging.Logger;
 
 /**
- *  @private
  *  Implementation of fault handler
  *  
- *  @param sourceContext source context of remote call
- *  @param info fault object
- *  @param componentName component name
- *  @param op remote operation
- *  @param tideResponder Tide responder for the remote call
- *  
- * @author William DRAI
+ * 	@author William DRAI
  */
 public class FaultHandler<T> implements Runnable {
 	
