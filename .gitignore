@@ -12,3 +12,4 @@
 junit*.properties
 /.settings
 /.gradle
+/.settings/

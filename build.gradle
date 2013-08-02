@@ -1,27 +1,72 @@
-allprojects {
+ext {
+	granitedsVersion = '3.0-SNAPSHOT'
+	repositoryUserName = ''
+	repositoryPassword = ''
+}
+
+subprojects {
 	
 	apply plugin: 'java'
+	apply plugin: 'maven'
 	apply plugin: 'eclipse'
 	
-	group = "org.graniteds"
-	version = '3.0.0.M3'
+	group = 'org.graniteds'
+	version = granitedsVersion
 	
 	repositories {
+		mavenLocal()
 		mavenCentral()
 	}
-	
+
 	dependencies {
-		compile files('C:/Dev/workspaceseam3/graniteds/build/granite-client.jar')
+		compile 'org.graniteds:granite-client:' + granitedsVersion
 		
 	    testCompile 'junit:junit:4.+'
 	}
+}
+
+configure(subprojects.findAll { it.name != ':tide' }) {
+	
+	configurations {
+		deployerJars
+	}
+	
+	dependencies {
+		deployerJars 'org.apache.maven.wagon:wagon-ssh:2.2'		
+	}
+
+	task sourcesJar(type: Jar, dependsOn: classes) {
+		classifier = 'sources'
+		from sourceSets.main.allSource
+	}
+	
+	task javadocJar(type: Jar, dependsOn: javadoc) {
+		classifier = 'javadoc'
+		from javadoc.destinationDir
+	}
+	
+	artifacts {
+		archives sourcesJar
+		archives javadocJar
+	}
+
+	uploadArchives {
+		repositories {
+			mavenDeployer {
+				repository(url: "http://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+					authentication(userName: repositoryUserName, password: repositoryPassword)
+				}
+			}
+		}
+	}
+
 }
 
 project(':core') {
 	
 	sourceCompatibility = 1.6
 	
-	dependencies {		
+	dependencies {
 		compile 'org.apache.httpcomponents:httpasyncclient:4.0-beta4',
 			'javax.enterprise:cdi-api:1.0-SP4',
 			'javax.inject:javax.inject:1',
@@ -40,9 +85,24 @@ project(':core') {
 	jar {
 		baseName 'graniteds-java-client'
 		
-		from(files('C:/Dev/workspaceseam3/graniteds/build/granite-client.jar'))
+		from(configurations['compile'].files { it.name == 'granite-client' })
+	}
+	sourcesJar {
+		baseName 'graniteds-java-client'
+	}
+	javadocJar {
+		baseName 'graniteds-java-client'
 	}
 	
+	javadoc {
+		title 'GraniteDS Java Client Documentation'		
+	}
+	
+	eclipse {
+		project {
+			name 'graniteds-java-client-core'
+		}
+	}
 }
 
 project(':tide') {
@@ -59,6 +119,16 @@ project(':tide') {
 		compile project(':core')
 	}
 	
+	jar {
+		baseName 'graniteds-java-client-tide'
+	}
+	
+	eclipse {
+		project {
+			name 'graniteds-java-client-tide'
+		}
+	}
+
 }
 
 project(':javafx') {
@@ -74,20 +144,41 @@ project(':javafx') {
 			
 		compile project(':core'), project(':tide')
 		
-		compile files('../libs/jfxrt.jar')
+		compile files(System.properties.'java.home' + '/lib/jfxrt.jar')
 		
 		testCompile files(project(':core').sourceSets.test.output.classesDir)
 		
 	    testCompile 'org.hibernate:hibernate-core:3.6.10.Final',
 	    	'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
-			
-	    testCompile files('C:/Dev/workspaceseam3/graniteds/build/granite-hibernate.jar', 'C:/Dev/workspaceseam3/graniteds/build/granite.jar')
+		
+	    testCompile 'org.graniteds:granite-core:' + granitedsVersion,
+			'org.graniteds:granite-hibernate:' + granitedsVersion
 	}
 	
 	jar {
 		baseName 'graniteds-javafx-client'
 		
-		from(files(project(':tide').sourceSets.main.output.classesDir))
+		from project(':tide').sourceSets.main.output.classesDir
+	}
+	sourcesJar {
+		baseName 'graniteds-javafx-client'
+		
+		from project(':tide').sourceSets.main.allSource
+	}
+	javadocJar {
+		baseName 'graniteds-javafx-client'
+	}
+
+	javadoc {
+		title 'GraniteDS JavaFX Client Documentation'
+		
+		source project(':tide').sourceSets.main.java
+	}
+	
+	eclipse {
+		project {
+			name = 'graniteds-java-client-javafx'
+		}
 	}
 }
 
