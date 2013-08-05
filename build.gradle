@@ -108,7 +108,7 @@ project(':core') {
 	
 	eclipse {
 		project {
-			name 'granite-java-client-core'
+			name 'graniteds-java-client-core'
 		}
 	}
 }
@@ -133,7 +133,7 @@ project(':tide') {
 	
 	eclipse {
 		project {
-			name 'granite-java-client-tide'
+			name 'graniteds-java-client-tide'
 		}
 	}
 
@@ -186,7 +186,7 @@ project(':javafx') {
 	
 	eclipse {
 		project {
-			name = 'granite-java-client-javafx'
+			name = 'graniteds-java-client-javafx'
 		}
 	}
 }
