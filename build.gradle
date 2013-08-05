@@ -83,15 +83,15 @@ project(':core') {
 	}
 	
 	jar {
-		baseName 'graniteds-java-client'
+		baseName 'granite-java-client'
 		
 		from(configurations['compile'].files { it.name == 'granite-client' })
 	}
 	sourcesJar {
-		baseName 'graniteds-java-client'
+		baseName 'granite-java-client'
 	}
 	javadocJar {
-		baseName 'graniteds-java-client'
+		baseName 'granite-java-client'
 	}
 	
 	javadoc {
@@ -100,7 +100,7 @@ project(':core') {
 	
 	eclipse {
 		project {
-			name 'graniteds-java-client-core'
+			name 'granite-java-client-core'
 		}
 	}
 }
@@ -120,12 +120,12 @@ project(':tide') {
 	}
 	
 	jar {
-		baseName 'graniteds-java-client-tide'
+		baseName 'granite-java-client-tide'
 	}
 	
 	eclipse {
 		project {
-			name 'graniteds-java-client-tide'
+			name 'granite-java-client-tide'
 		}
 	}
 
@@ -157,17 +157,17 @@ project(':javafx') {
 	}
 	
 	jar {
-		baseName 'graniteds-javafx-client'
+		baseName 'granite-javafx-client'
 		
 		from project(':tide').sourceSets.main.output.classesDir
 	}
 	sourcesJar {
-		baseName 'graniteds-javafx-client'
+		baseName 'granite-javafx-client'
 		
 		from project(':tide').sourceSets.main.allSource
 	}
 	javadocJar {
-		baseName 'graniteds-javafx-client'
+		baseName 'granite-javafx-client'
 	}
 
 	javadoc {
@@ -178,7 +178,7 @@ project(':javafx') {
 	
 	eclipse {
 		project {
-			name = 'graniteds-java-client-javafx'
+			name = 'granite-java-client-javafx'
 		}
 	}
 }
