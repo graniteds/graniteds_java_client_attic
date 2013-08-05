@@ -66,6 +66,8 @@ project(':core') {
 	
 	sourceCompatibility = 1.6
 	
+	configurations.add('sources')
+	
 	dependencies {
 		compile 'org.apache.httpcomponents:httpasyncclient:4.0-beta4',
 			'javax.enterprise:cdi-api:1.0-SP4',
@@ -76,6 +78,8 @@ project(':core') {
 			'javax.validation:validation-api:1.0.0.GA',
 			'org.springframework:spring-beans:3.1.4.RELEASE',
 			'org.springframework:spring-context:3.1.4.RELEASE'
+		
+		sources group: 'org.graniteds', name: 'granite-client', version: granitedsVersion, classifier: 'sources'
 	}
 	
 	test {
@@ -85,10 +89,14 @@ project(':core') {
 	jar {
 		baseName 'granite-java-client'
 		
-		from(configurations['compile'].files { it.name == 'granite-client' })
+		def graniteClientJar = (configurations['compile'].files { it.name == 'granite-client' }).iterator().next()
+		from zipTree(graniteClientJar)
 	}
 	sourcesJar {
 		baseName 'granite-java-client'
+		
+		def graniteClientSourceJar = (configurations['sources'].files { it.name == 'granite-client' }).iterator().next()
+		from zipTree(graniteClientSourceJar)
 	}
 	javadocJar {
 		baseName 'granite-java-client'
