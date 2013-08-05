@@ -149,7 +149,8 @@ project(':javafx') {
 		testCompile files(project(':core').sourceSets.test.output.classesDir)
 		
 	    testCompile 'org.hibernate:hibernate-core:3.6.10.Final',
-	    	'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
+	    	'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final',
+	    	'antlr:antlr:2.7.7'	    	
 		
 	    testCompile 'org.graniteds:granite-core:' + granitedsVersion,
 			'org.graniteds:granite-hibernate:' + granitedsVersion
