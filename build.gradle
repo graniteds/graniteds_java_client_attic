@@ -1,13 +1,8 @@
-ext {
-	granitedsVersion = '3.0-SNAPSHOT'
-	repositoryUserName = ''
-	repositoryPassword = ''
-}
-
 subprojects {
 	
 	apply plugin: 'java'
 	apply plugin: 'maven'
+	apply plugin: 'signing'
 	apply plugin: 'eclipse'
 	
 	group = 'org.graniteds'
@@ -32,15 +27,15 @@ configure(subprojects.findAll { it.name != ':tide' }) {
 	}
 	
 	dependencies {
-		deployerJars 'org.apache.maven.wagon:wagon-ssh:2.2'		
+		deployerJars 'org.apache.maven.wagon:wagon-http:2.2'		
 	}
 
-	task sourcesJar(type: Jar, dependsOn: classes) {
+	task sourcesJar(type: Jar, dependsOn: 'classes') {
 		classifier = 'sources'
 		from sourceSets.main.allSource
 	}
 	
-	task javadocJar(type: Jar, dependsOn: javadoc) {
+	task javadocJar(type: Jar, dependsOn: 'javadoc') {
 		classifier = 'javadoc'
 		from javadoc.destinationDir
 	}
@@ -49,12 +44,50 @@ configure(subprojects.findAll { it.name != ':tide' }) {
 		archives sourcesJar
 		archives javadocJar
 	}
-
+	
+	signing {
+		sign configurations.archives
+	}
+	
 	uploadArchives {
 		repositories {
 			mavenDeployer {
-				repository(url: "http://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-					authentication(userName: repositoryUserName, password: repositoryPassword)
+				beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+				
+				repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+					authentication(userName: sonatypeOssUserName, password: sonatypeOssPassword)
+				}
+				
+				pom.project {
+					name 'GraniteDS Java client'
+					packaging 'jar'
+					description 'GraniteDS Java client'
+					url 'http://www.graniteds.org'
+					
+					scm {
+						url 'scm:git@github.com:graniteds/graniteds_java_client.git'
+						connection 'scm:git@github.com:graniteds/graniteds_java_client.git'
+						developerConnection 'scm:git@github.com:graniteds/graniteds_java_client.git'
+					}
+	  
+					licenses {
+						license {
+							name 'GNU LIBRARY GENERAL PUBLIC LICENSE, Version 2, June 1991'
+							url 'http://opensource.org/licenses/LGPL-2.1'
+							distribution 'repo'
+						}
+					}
+	  
+					developers {
+						developer {
+							id 'fwolff'
+							name 'Franck Wolff'
+						}
+						developer {
+							id 'wdrai'
+							name 'William Drai'
+						}
+					}
 				}
 			}
 		}
